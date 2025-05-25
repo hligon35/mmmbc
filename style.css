@@ -620,8 +620,7 @@ footer {
 /* Medium screens (e.g., tablets) */
 @media (max-width: 1024px) {
     main {
-        margin-left: 100px;
-        margin-right: 100px;
+        width: 85%; /* Adjusted from fixed margins */
     }
 
     .hero-content h1 {
@@ -653,7 +652,7 @@ footer {
     }
 
     .event-image-container,
-    #schedule-app-container {
+    #schedule-app-container { /* Assuming #schedule-app-container is still relevant for layout */
         max-width: 100%; /* Allow them to take full width when stacked */
         width: 100%;
     }
@@ -664,64 +663,85 @@ footer {
     }
 }
 
-/* Smaller screens (e.g., large phones, small tablets) */
+/* Tablet Viewports (e.g., portrait tablets) */
 @media (max-width: 768px) {
     body {
-        padding-top: 50px; /* Ensure this is consistent with nav height */
+        padding-top: 80px; /* Consistent with nav height */
     }
 
-    main {
-        margin-left: 20px;
-        margin-right: 20px;
-        padding-top: 15px;
+    .top-nav {
+        height: 80px;
+        padding: 0 15px;
+    }
+
+    .nav-logo {
+        height: 80px;
+    }
+
+    .menu-button {
+        height: 35px;
+        width: 35px;
+    }
+
+    .nav-links {
+        top: 80px; /* Position below the adjusted nav bar */
+        right: 15px;
+        width: 200px; /* Slightly wider for tablet */
     }
 
     .hero-content h1 {
-        font-size: 2.5em;
-    }
-    .hero-content .hero-subtitle {
-        font-size: 0.7em;
+        font-size: 2.5em; /* From older rules, smaller */
     }
 
-    .btn-contact {
+    .hero-content .hero-subtitle {
+        font-size: 0.7em; /* From older rules, smaller */
+    }
+    
+    .btn-contact { /* From older rules */
         font-size: 1em;
         padding: 8px 12px;
     }
 
-    section h2 {
-        font-size: 2em;
-        margin-bottom: 20px;
+    main {
+        width: 95%;
+        padding-top: 15px;
     }
 
     section {
         padding: 15px;
-        margin-bottom: 20px;
+        margin-bottom: 20px; /* Added from older rules */
     }
 
-    .days-container {
-        flex-direction: column; /* Stack day blocks vertically */
-        align-items: center; /* Center them when stacked */
-        gap: 15px;
-    }
-
-    .day {
-        width: 90%; /* Allow day blocks to take more width */
-        max-width: 400px; /* But not too wide */
+    section h2 {
+        font-size: 2em; /* From older rules, smaller */
+        margin-bottom: 20px; /* From older rules, smaller */
     }
 
     .service-times-row {
-        flex-direction: column; /* Stack time slots vertically */
+        flex-direction: column;
         align-items: center;
-        gap: 5px;
+        gap: 5px; /* From older rules (was 0.5rem in my previous) */
     }
 
     .time-slot {
-        font-size: 1.1em;
-        margin: 5px 0; /* Adjust margin for stacked layout */
+        margin: 5px 0; /* Stack vertically */
+        font-size: 1.1em; /* From older rules */
     }
 
     #ministries .thursday-schedule .time-slot {
-        left: 0; /* Reset specific positioning */
+        left: 0; /* Reset for stacked layout */
+    }
+
+    .days-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px; /* From older rules */
+    }
+
+    .day {
+        max-width: 90%; 
+        width: 90%; 
+        margin-bottom: 15px;
     }
 
     .side-by-side-divs {
@@ -730,81 +750,214 @@ footer {
     }
 
     .side-by-side-divs > div {
-        margin-bottom: 10px; /* Add space between stacked divs */
+        flex-basis: auto; 
+        width: 90%; 
+        margin-bottom: 10px;
     }
-
-    .pastor-container {
+    .side-by-side-divs > div:last-child {
+        margin-bottom: 0;
+    }
+    
+    .pastor-container { /* From older rules */
         padding: 10px;
     }
 
-    .pastor-image {
-        float: none; /* Remove float */
-        display: block; /* Make it a block element */
-        margin: 0 auto 15px auto; /* Center and add bottom margin */
-        max-width: 200px; /* Further reduce size */
+    .pastor-image { /* From older rules, more restrictive */
+        float: none;
+        display: block;
+        margin: 0 auto 15px auto;
+        max-width: 200px;
         width: 70%;
     }
 
-    .faq-item {
+    .faq-section-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .faq-container,
+    .faq-image-stack-container {
+        max-width: 90%;
+        width: 100%;
+    }
+
+    .faq-image-stack-container {
+        padding-top: 20px; 
+        flex-direction: row; 
+        justify-content: space-around;
+    }
+
+    .stacked-image {
+        max-width: 45%; /* For row layout */
+    }
+    
+    .faq-item { /* From older rules */
         margin-bottom: 8px;
     }
 
-    .faq-question {
+    .faq-question { /* From older rules */
         font-size: 1em;
         padding: 8px;
     }
 
-    .faq-answer p {
+    .faq-answer p { /* From older rules */
         font-size: 0.9em;
     }
 
-    .stacked-image {
-        max-width: 200px; /* Adjust FAQ stacked images */
+    .footer-top-row {
+        flex-direction: column;
+        text-align: center;
+    }
+    .footer-text-content {
+        align-items: center;
+        text-align: center;
     }
 
-    /* .schedule-controls input, button styles were for a non-modal version, no longer needed */
+    .footer-bottom-row {
+        flex-direction: column;
+        align-items: center;
+    }
 
-    /* #schedule-display max-height for mobile is in schedule_app.css if needed, or here if general */
+    .footer-links-section {
+        width: 80%; 
+        margin-bottom: 15px;
+    }
+    .footer-links-section:last-child {
+        margin-bottom: 0;
+    }
 }
 
-/* Very small screens (e.g., standard phones) */
+/* Mobile Viewports (e.g., <= 480px) */
 @media (max-width: 480px) {
-    main {
-        margin-left: 10px;
-        margin-right: 10px;
+    body {
+        padding-top: 60px; 
+    }
+
+    .top-nav {
+        height: 60px;
+        padding: 0 10px;
+    }
+
+    .nav-logo {
+        height: 60px;
+    }
+    
+    .menu-button {
+        height: 30px;
+        width: 30px;
+    }
+
+    .nav-links {
+        top: 60px; 
+        left: 10px; 
+        right: 10px; 
+        width: auto; 
+        border-radius: 0 0 5px 5px; 
+    }
+    
+    .nav-links a {
+        font-size: 0.9em;
+        padding: 8px 5px;
+    }
+
+    .hero-section {
+        height: auto; 
+        min-height: 70vh;
+        padding: 20px 0;
     }
 
     .hero-content h1 {
-        font-size: 2em;
+        font-size: 2em; 
+    }
+
+    .hero-content .hero-subtitle {
+        font-size: 0.8em;
+    }
+
+    .btn-contact {
+        font-size: 1em;
+        padding: 8px 12px;
+    }
+
+    main {
+        width: 98%; 
+        padding-top: 10px;
+    }
+
+    section {
+        padding: 10px;
+        margin-bottom: 15px;
     }
 
     section h2 {
-        font-size: 1.8em;
+        font-size: 1.8em; 
+        margin-bottom: 20px;
+    }
+    
+    section div p {
+        font-size: 1em; 
     }
 
     .worship-day {
-        font-size: 1.5em;
+        font-size: 1.5em; 
     }
 
     .time-slot {
-        font-size: 1em;
+        font-size: 1em; /* From older rules */
+        padding: 3px 6px;
+    }
+    
+    .day {
+        max-width: 95%;
     }
 
-    section div p {
-        font-size: 1em; /* Adjust general paragraph font size in sections */
+    .side-by-side-divs > div {
+        width: 95%;
     }
 
     .pastor-image {
-        max-width: 150px;
+        max-width: 150px; /* From older rules */
     }
 
     .faq-question {
+        font-size: 0.9em; /* From older rules */
+        padding: 12px; 
+    }
+
+    .faq-answer p {
+        font-size: 0.95em;
+    }
+    
+    .faq-image-stack-container {
+        flex-direction: column; 
+        align-items: center;
+    }
+
+    .stacked-image {
+        max-width: 80%; 
+        margin-bottom: 10px;
+    }
+    .stacked-image:last-child {
+        margin-bottom: 0;
+    }
+
+    .footer-logo {
+        height: 80px;
+    }
+    .footer-text-content p, .footer-text-content a {
         font-size: 0.9em;
     }
 
-    /* .event-item and .btn-delete-event responsive styles are in schedule_app.css */
+    .footer-links-section {
+        width: 90%;
+    }
+    .footer-links-section h4 {
+        font-size: 1.1em;
+    }
+    .footer-links-section ul li a {
+        font-size: 0.85em;
+    }
+    .footer-copyright-row p {
+        font-size: 0.8em;
+    }
 }
-
-/* Schedule App Modal Styling */
-/* Specifically, #scheduleAppContainer, .schedule-controls, #eventList, etc. 
-   are no longer used as the modal structure is simpler and some styles were moved to style.css or consolidated. */
