@@ -7,6 +7,8 @@ body, html {
     font-family: 'Arial', sans-serif;
     color: #ffffff;
     scroll-behavior: smooth;
+    min-height: 100vh; /* Ensure html takes at least full viewport height */
+    height: 100%; /* Ensure html stretches */
 }
 
 body {
@@ -16,6 +18,8 @@ body {
     background-repeat: no-repeat;
     background-size: cover;
     padding-top: 100px; /* Adjusted to prevent content overlap by 100px fixed navbar */
+    min-height: calc(100% - 100px); /* Ensure body content area can fill remaining space */
+    box-sizing: border-box; /* Include padding in height calculation */
 }
 
 /********** Top Navigation Bar Styling **********/
@@ -23,7 +27,7 @@ body {
 .top-nav {
     background-color: rgba(0, 0, 0, 0.3);
     height: 100px;
-    padding: 0 25px; /* Handles margins for logo and button */
+    padding: 0 10px; /* Handles margins for logo and button */
     display: flex;
     align-items: center;
     justify-content: space-between; /* Ensures logo and menu button are spaced out */
@@ -38,28 +42,29 @@ body {
 .nav-logo {
     height: 100px; /* Adjust as needed to fit well */
     width: auto;
-    margin-right: 20px; /* Add some space between logo and links */
+  /*  margin-left: 10px; /* Add some space between logo and links */
 }
 
 /********** Menu Button Styling **********/
 
 .menu-button {
     background-color: transparent;
-    border: none;
-    padding: 0;
+    border: 2px solid black; /* Added border */
+    padding: 5px; /* Added padding for space around lines */
     cursor: pointer;
     display: flex; /* Changed from none to flex to make it visible by default */
     flex-direction: column;
     justify-content: space-between;
-    height: 40px; /* Adjusted for 4 lines (2px each) and 3 spaces (2px each) = 14px, with some extra for visual balance */
+    height: 45px; /* Adjusted for 4 lines (2px each) and 3 spaces (2px each) = 14px, with some extra for visual balance */
     width: 40px; 
+    box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
     /* margin-left: 25px; Removed - positioning handled by flex layout of parent */
 }
 
 .menu-button span {
     display: block;
     width: 100%; 
-    height: 2px; 
+    height: 4px; 
     background-color: #c46123; 
 }
 
@@ -756,6 +761,24 @@ footer {
         margin-bottom: 20px; /* From older rules, smaller */
     }
 
+    /* Ensure Sunday's internal layout does not stack when .days-container stacks */
+    #worship-times .day:first-child .service-times-row {
+        flex-direction: row; /* Override to keep times in a row for Sunday */
+        justify-content: space-around; /* Or your preferred alignment */
+    }
+
+    #worship-times .day:first-child .side-by-side-divs {
+        flex-direction: row; /* Override to keep service details in a row for Sunday */
+        justify-content: space-around; /* Or your preferred alignment */
+    }
+    
+    #worship-times .day:first-child .side-by-side-divs > div {
+      flex-basis: 45%; /* Maintain original flex-basis for Sunday's internal divs */
+      width: auto; /* Reset width if previously set to a percentage for stacking */
+      margin-bottom: 0; /* Remove bottom margin if added for stacking */
+    }
+
+    /* General stacking for other .service-times-row and .side-by-side-divs */
     .service-times-row {
         flex-direction: column;
         align-items: center;
@@ -783,86 +806,17 @@ footer {
         margin-bottom: 15px;
     }
 
+    /* General stacking for other .side-by-side-divs */
     .side-by-side-divs {
         flex-direction: column;
         align-items: center;
     }
 
+    /* General stacking for children of .side-by-side-divs */
     .side-by-side-divs > div {
         flex-basis: auto; 
         width: 90%; 
         margin-bottom: 10px;
-    }
-    .side-by-side-divs > div:last-child {
-        margin-bottom: 0;
-    }
-    
-    .pastor-container { /* From older rules */
-        padding: 10px;
-    }
-
-    .pastor-image { /* From older rules, more restrictive */
-        float: none;
-        display: block;
-        margin: 0 auto 15px auto;
-        max-width: 200px;
-        width: 70%;
-    }
-
-    .faq-section-wrapper {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .faq-container,
-    .faq-image-stack-container {
-        max-width: 90%;
-        width: 100%;
-    }
-
-    .faq-image-stack-container {
-        padding-top: 20px; 
-        flex-direction: row; 
-        justify-content: space-around;
-    }
-
-    .stacked-image {
-        max-width: 45%; /* For row layout */
-    }
-    
-    .faq-item { /* From older rules */
-        margin-bottom: 8px;
-    }
-
-    .faq-question { /* From older rules */
-        font-size: 1em;
-        padding: 8px;
-    }
-
-    .faq-answer p { /* From older rules */
-        font-size: 0.9em;
-    }
-
-    .footer-top-row {
-        flex-direction: column;
-        text-align: center;
-    }
-    .footer-text-content {
-        align-items: center;
-        text-align: center;
-    }
-
-    .footer-bottom-row {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .footer-links-section {
-        width: 80%; 
-        margin-bottom: 15px;
-    }
-    .footer-links-section:last-child {
-        margin-bottom: 0;
     }
 }
 
