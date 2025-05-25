@@ -142,7 +142,7 @@ body {
 
 main {
     background-color: rgba(255, 255, 255, 0); 
-    padding-top: 25px;
+    padding-top: 100px;
     margin-left: auto; /* Center main content */
     margin-right: auto; /* Center main content */
     max-width: 1200px; /* Set a max-width for main content area */
