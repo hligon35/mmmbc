@@ -10,20 +10,23 @@
 
 /* START OF MOVED STYLES FROM style.css */
 #schedule-display-area {
-    flex: 2;
+    flex: 1; /* Changed from 2 to 1 to ensure equal space with event-image-container */
     background-color: rgb(196, 97, 35, 0.3);
-    padding: 20px;
-    border-radius: 10px;
+    padding: 10px 10px 10px 10px;
+    border-radius: 15px;
     color: #fff;
     display: flex;
     flex-direction: column;
+    position: relative; /* Added for positioning context if needed */
+    left: -5px; /* Move left by 5px */
 }
 
 .schedule-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* Center the month text */
     align-items: center;
     margin-bottom: 15px;
+    width: 100%; /* Ensure header takes full width for centering */
 }
 
 .schedule-header h3 {
@@ -36,12 +39,16 @@
     min-height: 150px;
     max-height: 400px;
     width: 100%; 
+    height: 100%;
     overflow-y: auto; 
     background-color: rgba(0, 0, 0, 0.3); 
     border: 1px dashed #555;
     border-radius: 5px;
-    padding: 10px;
+    padding: 0px; 
     color: #fff;
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
+    align-items: center; /* Added - to center child items */
 }
 /* END OF MOVED STYLES FROM style.css */
 
@@ -89,8 +96,8 @@
     overflow-y: auto;
     background-color: rgba(0, 0, 0, 0.25);
     border: 1px dashed #454545;
-    border-radius: 4px;
-    padding: 8px;
+    border-radius: 15px;
+    padding: 10px;
     margin-top: 8px;
     margin-bottom: 15px;
 }
@@ -117,25 +124,33 @@
 
 /* Styles for individual event items (used in modal preview AND live display) */
 .event-item {
-    background-color: rgba(0, 0, 0, 0.35);
+    background-color: rgba(0, 0, 0, 0.7);
     padding: 12px;
     margin-bottom: 10px;
     border-radius: 5px;
     border-left: 4px solid rgb(196, 97, 35);
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Default for modal view with button */
     align-items: center;
     transition: background-color 0.2s ease;
+    width: 95%; /* Make items slightly less than full width to see centering */
+    box-sizing: border-box; /* Added for consistent width calculation */
 }
 
-.event-item:hover {
-    background-color: rgba(0, 0, 0, 0.45);
+/* Specific override for event items in the live display area */
+#schedule-display .event-item {
+    display: block; /* Override the default flex display for event items in this context */
+    text-align: center; /* Center the text and inline-block children */
+    width: 95%; /* Keep for visual debugging, helps see the block is centered */
+    box-sizing: border-box; 
+    /* justify-content: center; /* No longer needed as it's not a flex container here */
 }
 
 .event-item p {
     margin: 3px 0;
-    flex-grow: 1;
+    /* flex-grow: 1; /* Removed as parent is not flex in this context */
     color: #e0e0e0;
+    text-align: center; /* Ensure text within p is centered */
 }
 
 .event-item strong {
@@ -143,6 +158,7 @@
     margin-bottom: 4px;
     color: #ffffff;
     font-size: 1.05em;
+    text-align: center; /* Ensure text within strong is centered */
 }
 
 /* Delete button (only shown in modal preview) */

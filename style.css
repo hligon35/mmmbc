@@ -109,7 +109,7 @@ body {
 /********** Hero Section **********/
 
 .hero-section {
-    height: 50vh;
+    height: 75vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -121,8 +121,8 @@ body {
 
 .hero-content h1 {
     font-size: 3.5em;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    margin-bottom: 0px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
 }
 
 .hero-content .hero-subtitle {
@@ -138,7 +138,7 @@ body {
     color: white;
     text-decoration: none;
     font-size: 1.2em;
-    border-radius: 15px;
+    border-radius: 20px;
     transition: background-color 0.3s ease, transform 0.3s ease; /* Added transform to transition */
 }
 
@@ -179,13 +179,13 @@ section:last-of-type {
 
 section h2 {    /*Section Names*/
     font-size: 3em;
-    margin-bottom: 40px;
+    margin-bottom: 5px;
     color: #c46123;
 }
 
 section div {   /*Days Container*/
     background-color: rgba(0, 0, 0, 0); /* Simplified from #c4238100 */
-    margin: auto auto auto auto;
+    margin: 0;
     padding: 5px 5px 5px 5px;
     border-radius: 15px;
    /* box-shadow: 0 1px 3px rgb(208, 255, 0);*/
@@ -202,7 +202,7 @@ section div p {
 .worship-day {
     text-align: center;
     font-size: 2em; /* Made Sunday a bit larger */
-    margin-bottom: 10px;
+    margin-bottom: 0px;
     font-weight: bold; /* Make day names bold */
 }
 
@@ -211,7 +211,7 @@ section div p {
     justify-content: space-around; /* Evenly space the time slots -> Changed to center */
     align-items: flex-start; /* Align time slots to the top of this container */
     margin-top: 0px; /* Space below "Sunday" */
-    gap: 1rem; /* Ensures a minimum space between time slots */
+    gap: 5.25rem; /* Ensures a minimum space between time slots */
 }
 
 .time-slot {    /*Individual times*/
@@ -228,35 +228,30 @@ section div p {
 
 #ministries .thursday-schedule .time-slot {
     position: relative;
-    left: 30px;
+    left: 32px;
 }
 
 /********** Day Container Styling **********/
 
 .days-container {
     display: flex;
-    justify-content: center; /* Changed from space-around to center */
-    align-items: flex-start; /* Align items to the top */
-    gap: 20px; /* Space between the day blocks */
+    justify-content: space-around; 
+    align-items: stretch; /* Makes all .day items in a row the same height */
+    gap: 20px; 
+    flex-wrap: wrap; /* Allows items to wrap */
 }
 
 .day {
-    padding: 10px 10px 10px 10px; /* Internal padding for each day block */
-    background-color: #af2a2a3d; /* Slight background tint for visibility */
+    padding: 0px 10px 0px 10px; 
+    background-color: rgba(0, 0, 0, 0); 
     border-radius: 15px;
-   /* box-shadow: 0 1px 3px rgba(0,0,0,0.7); */
-    flex: 1; /* Allows day blocks to grow and shrink equally */
-    max-width: calc(33.333% - 20px); /* Aim for 1/3 width, accounting for gap. Adjust as needed. */
-    /* Ensure content within .day is centered if it doesn't fill the space */
+    flex: 1; /* Allows day blocks to grow and shrink equally to fill space */
+    /* min-width: calc(33.333% - 20px); */ /* Consider re-adding if you want a strict 3-per-row on larger screens */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center content horizontally */
-    text-align: center; /* Center text content */
-}
-
-.day .service-times-row,
-.day .side-by-side-divs {
-    width: 100%; /* Ensure these internal flex containers take full width of .day */
+    align-items: center; 
+    text-align: center; 
+    justify-content: flex-start; /* ADDED: Aligns items to the top of the .day container */
 }
 
 /********** Styling for side-by-side divs A and B **********/
@@ -270,7 +265,7 @@ section div p {
 .side-by-side-divs > div { /* Style for direct children (divA and divB) */
     flex-basis: 45%; /* Example: each div takes up slightly less than half, allowing for some space between */
     /* Add other styling for divA and divB as needed, e.g., padding, background */
-    padding: 0px 0px 0px 0px;
+    padding: 0px 10px 0px 10px;
     background-color: #c4612380; /* Light grey background for distinction */
     border: 1px solid #bd5f25;
     border-radius: 5px;
@@ -289,12 +284,12 @@ section div p {
 }
 
 .pastor-image {
-    width: 900px; /* Adjusted width to help fit */
+    width: 1200px; /* Adjusted width to help fit */
     height: auto;
-    border-radius: 10px;
+    border-radius: 15px;
     float: center;
-    margin-right: 15px;
-    margin-bottom: 10px;
+    margin-right: 5px;
+    margin-bottom: 5px;
 }
 
 /********** FAQ Section Styling **********/
@@ -302,8 +297,8 @@ section div p {
 .faq-section-wrapper {
     display: flex;
     justify-content: space-between; /* Adjust as needed: space-around, center, etc. */
-    align-items: flex-start; /* Align items to the top */
-    gap: 20px; /* Space between FAQ list and image container */
+    align-items: center; /* Align items to the top */
+    gap: 10px; /* Space between FAQ list and image container */
 }
 
 .faq-container {
@@ -505,10 +500,10 @@ footer {
 
 #events {
     background-color: rgba(0, 0, 0, 0.7); /* Transparent white background */
-    padding: 0px;
-    margin-bottom: 50px;
-    border-radius: 25px;
-    border-bottom: 1px solid rgb(196, 97, 35);
+    padding: 10px 10px 10px 10px; /* Padding around the section */
+    /*margin-bottom: 0px; */
+    border-radius: 15px;
+   /* border-bottom: 1px solid rgb(196, 97, 35); */
 }
 
 #events h2 {
@@ -520,17 +515,28 @@ footer {
 .events-container {
     display: flex;
     gap: 20px;
-    align-items: center; /* Changed from flex-start to center */
+    align-items: stretch; /* Ensures children are of equal height */
 }
 
 .event-image-container {
-    flex: 1;
-    max-width: 40%; /* Adjust as needed */
+    flex: 1; /* Takes up 1 part of the available space */
+    display: flex; /* To allow image to fill height */
+    flex-direction: column; /* Stack content vertically if any */
+    /* Removed max-width to allow flex to control width */
 }
 
 .event-image {
     width: 100%;
-    border-radius: 10px;
+    height: 100%; /* Makes the image take the full height of its container */
+    object-fit: cover; /* Ensures the image covers the area, maintaining aspect ratio */
+    border-radius: 15px;
+}
+
+#schedule-display-area {
+    flex: 1; /* Takes up 1 part of the available space */
+    display: flex; /* Added to allow its content to be flex-managed if needed */
+    flex-direction: column; /* Align content within this area */
+    /* border: 1px dashed lime; /* For debugging layout */
 }
 
 /* Modal Styles */
@@ -543,7 +549,7 @@ footer {
     width: 100%; /* Full width */
     height: 100%; /* Full height */
     overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
 }
 
 .modal-content {
@@ -668,24 +674,31 @@ footer {
 
     .faq-image-stack-container {
         margin-top: 20px;
-        padding-top: 0; /* Reset padding as it's stacked now */
+        padding-top: 0; /* Reset padding as it\'s stacked now */
         max-width: 80%;
     }
 
     .events-container {
         flex-direction: column; /* Stack event image and schedule app */
-        align-items: center;
+        align-items: center; /* Center items when stacked */
     }
 
     .event-image-container,
-    #schedule-app-container { /* Assuming #schedule-app-container is still relevant for layout */
+    #schedule-display-area {
         max-width: 100%; /* Allow them to take full width when stacked */
-        width: 100%;
+        width: 100%; /* Ensure they take full width */
     }
 
     .event-image-container {
-        margin-bottom: 20px;
-        max-width: 60%; /* Or a specific max-width for the image */
+        margin-bottom: 20px; /* Add space when stacked */
+        /* max-width: 60%; /* Removed: Let it be 100% when stacked, or adjust as needed */
+        height: auto; /* Allow height to adjust based on content or aspect ratio */
+    }
+    .event-image { /* Ensure image is responsive within the stacked container */
+        max-height: 400px; /* Example: constrain image height in stacked view */
+        width: auto;
+        max-width: 100%;
+        object-fit: contain; /* Use contain if you want to see the whole image, or cover if cropping is ok */
     }
 }
 
