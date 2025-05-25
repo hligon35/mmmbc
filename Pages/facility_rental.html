@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="../schedule_app.css">
     <title>Facility Rental - Mt. Moriah Missionary Baptist Church</title>
 </head>
 <body>
     <nav class="top-nav">
         <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="nav-logo">
         <div class="nav-links" id="navLinks">
-            <a href="index.html">Home</a>
+            <a href="../index.html">Home</a>
             <a href="ministries.html">Ministries</a>
             <a href="leadership.html">Leadership & Staff</a>
             <a href="church_history.html">Church History</a>
@@ -48,7 +47,7 @@
             <div class="footer-links-section" id="quick-links">
                 <h4>Quick Links</h4>
                 <ul>
-                    <li><a href="index.html"><img src="../Icons/home.png" alt="Home icon" class="link-icon"><span class="link-text">Home</span></a></li>
+                    <li><a href="../index.html"><img src="../Icons/home.png" alt="Home icon" class="link-icon"><span class="link-text">Home</span></a></li>
                     <li><a href="ministries.html"><img src="../Icons/leadership.png" alt="Leadership icon" class="link-icon"><span class="link-text">Leadership</span></a></li>
                     <li><a href="leadership.html"><img src="../Icons/churchhistory.png" alt="Church History icon" class="link-icon"><span class="link-text">Church History</span></a></li>
                     <li><a href="facility_rental.html"><img src="../Icons/facilityrental.png" alt="Facility Rental icon" class="link-icon"><span class="link-text">Facility Rental</span></a></li>
@@ -91,14 +90,12 @@
             const toggleButton = document.getElementById('toggle-debug-panel');
             const debugPanel = document.getElementById('debug-panel');
 
-            // Page Name (simple extraction from URL)
             const pageNameSpan = document.getElementById('debug-page-name');
             if (pageNameSpan) {
                 const pathArray = window.location.pathname.split('/');
-                pageNameSpan.textContent = pathArray[pathArray.length - 1] || 'index.html'; 
+                pageNameSpan.textContent = pathArray[pathArray.length - 1] || 'facility_rental.html';
             }
 
-            // Viewport Dimensions
             const viewportWidthSpan = document.getElementById('debug-viewport-width');
             const viewportHeightSpan = document.getElementById('debug-viewport-height');
             function updateViewportInfo() {
@@ -108,7 +105,6 @@
             updateViewportInfo();
             window.addEventListener('resize', updateViewportInfo);
 
-            // User Agent
             const userAgentSpan = document.getElementById('debug-user-agent');
             if (userAgentSpan) {
                 userAgentSpan.textContent = navigator.userAgent;
