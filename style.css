@@ -1,0 +1,810 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    color: #ffffff;
+    scroll-behavior: smooth;
+}
+
+body {
+    background-image: url('ConImg/Church.jpg');
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding-top: 100px; /* Adjusted to prevent content overlap by 100px fixed navbar */
+}
+
+/* Top Navigation Bar Styling */
+.top-nav {
+    background-color: #00000070;
+    height: 100px;
+    padding: 0 25px; /* Handles margins for logo and button */
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Ensures logo and menu button are spaced out */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding is included in width/height */
+    z-index: 1000; /* Keeps navbar on top */
+}
+
+.nav-logo {
+    height: 100px; /* Adjust as needed to fit well */
+    width: auto;
+    margin-right: 20px; /* Add some space between logo and links */
+}
+
+.menu-button {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex; /* Changed from none to flex to make it visible by default */
+    flex-direction: column;
+    justify-content: space-between;
+    height: 40px; /* Adjusted for 4 lines (2px each) and 3 spaces (2px each) = 14px, with some extra for visual balance */
+    width: 40px; 
+    /* margin-left: 25px; Removed - positioning handled by flex layout of parent */
+}
+
+.menu-button span {
+    display: block;
+    width: 100%; 
+    height: 2px; 
+    background-color: #c46123; 
+}
+
+.nav-links {
+    display: none; /* Hidden by default, shown when .active */
+    flex-direction: column;
+    width: 150px; /* Confined width */
+    background-color: rgba(0, 0, 0, 0.85);
+    position: absolute;
+    top: 100px; /* Position below the nav bar (50px original + 50px additional) */
+    left: auto; /* Remove left alignment */
+    right: 25px; /* Positioned to the right, aligning with nav-bar padding */
+    padding-bottom: 10px;
+    z-index: 999; 
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    border-radius: 5px; /* Added rounded corners */
+}
+
+.nav-links.active {
+    display: flex; /* Show when active (toggled by JS) */
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 5px; /* Reduced horizontal padding to fit better in 50px */
+    display: block;
+    text-align: center; /* Centered text for dropdown items */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Separator for dropdown items */
+    font-size: 1em; /* Reduced font size */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
+.nav-links a:last-child {
+    border-bottom: none; /* No border for the last item */
+}
+
+.nav-links a:hover {
+    background-color: rgb(196, 97, 35);
+    border-radius: 0; /* Override previous border-radius if any, or keep if desired */
+}
+/* End Top Navigation Bar Styling */
+
+.hero-section {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5); /* Dark overlay for better text readability */
+}
+
+.hero-content h1 {
+    font-size: 3.5em;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+}
+
+.hero-content .hero-subtitle {
+    font-size: 0.6em; /* Roughly 2 sizes smaller than 1em, adjust as needed */
+}
+
+.btn-contact {
+    display: inline-block;
+    padding: 7px 15px;
+    background-color: #c46123; /* A welcoming purple, can be changed */
+    color: white;
+    text-decoration: none;
+    font-size: 1.2em;
+    border-radius: 15px;
+    transition: background-color 0.3s ease, transform 0.3s ease; /* Added transform to transition */
+}
+
+.btn-contact:hover {
+    background-color: #c46123; /* Darker shade on hover */
+    transform: scale(1.25); /* Increase size by 25% */
+}
+
+.btn-contact:active {
+    color: black; /* Black text on click */
+}
+
+main {
+    background-color: rgba(255, 255, 255, 0); 
+    padding-top: 25px;
+    margin-left: auto; /* Center main content */
+    margin-right: auto; /* Center main content */
+    max-width: 1200px; /* Set a max-width for main content area */
+    width: 90%; /* Allow it to be responsive */
+}
+
+section {
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 25px; 
+    border-radius: 25px; 
+    background-color: rgba(0, 0, 0, 0.7); 
+    /* Removed fixed height, section will now size to content */
+}
+
+section:last-of-type {
+    border-bottom: none;
+}
+
+section h2 {    /*Section Names*/
+    font-size: 3em;
+    margin-bottom: 40px;
+    color: #c46123;
+}
+
+section div {   /*Days Container*/
+    background-color: transparent; /* Simplified from #c4238100 */
+    margin: 10px auto;
+    padding: 5px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(196, 97, 35, 0.25);
+    max-width: 1200px; /* Max width for content divs */
+}
+
+section div p {
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+/* Worship Times Styling */
+.worship-day {
+    text-align: center;
+    font-size: 2em; /* Made Sunday a bit larger */
+    margin-bottom: 10px;
+    font-weight: bold; /* Make day names bold */
+}
+
+.service-times-row {
+    display: flex;
+    justify-content: space-around; /* Evenly space the time slots -> Changed to center */
+    align-items: flex-start; /* Align time slots to the top of this container */
+    margin-top: 0px; /* Space below "Sunday" */
+    gap: 1rem; /* Ensures a minimum space between time slots */
+}
+
+.time-slot {    /*Individual times*/
+    font-size: 1.3em; /* Style for the times */
+    color: #ffffff;
+    margin: 0 15px; /* Provides space around each time, allowing more to be added */
+    padding: 2px 5px;
+    background-color: #c4612380;
+    border-radius: 4px;
+    border: 1px solid #bd5f25;
+}
+
+/* Rule to move Thursday ministry times specifically */
+#ministries .thursday-schedule .time-slot {
+    position: relative;
+    left: 33px;
+}
+
+/* End Worship Times Styling */
+
+.days-container {
+    display: flex;
+    justify-content: center; /* Changed from space-around to center */
+    align-items: flex-start; /* Align items to the top */
+    gap: 20px; /* Space between the day blocks */
+}
+
+.day {
+    padding: 15px; /* Internal padding for each day block */
+    background-color: #0000003d; /* Slight background tint for visibility */
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    flex: 1; /* Allows day blocks to grow and shrink equally */
+    max-width: calc(33.333% - 20px); /* Aim for 1/3 width, accounting for gap. Adjust as needed. */
+    /* Ensure content within .day is centered if it doesn't fill the space */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center content horizontally */
+    text-align: center; /* Center text content */
+}
+
+.day .service-times-row,
+.day .side-by-side-divs {
+    width: 100%; /* Ensure these internal flex containers take full width of .day */
+}
+
+/* Styling for side-by-side divs A and B */
+.side-by-side-divs {
+    display: flex;
+    justify-content: center; /* Or space-between, or center, depending on desired spacing -> Changed to center */
+    margin-top: 0px; /* Add some space above these divs */
+}
+
+.side-by-side-divs > div { /* Style for direct children (divA and divB) */
+    flex-basis: 45%; /* Example: each div takes up slightly less than half, allowing for some space between */
+    /* Add other styling for divA and divB as needed, e.g., padding, background */
+    padding: 2px;
+    background-color: #c4612380; /* Light grey background for distinction */
+    border: 1px solid #bd5f25;
+    border-radius: 4px;
+}
+
+/* Pastor Section Styling */
+.pastor-container {
+    position: relative; 
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.025); /* User's preference */
+    overflow: hidden; /* Changed from auto to hidden to remove scrollbar */
+    margin: 0; 
+    max-width: none; 
+    box-shadow: none; 
+}
+
+.pastor-image {
+    width: 900px; /* Adjusted width to help fit */
+    height: auto;
+    border-radius: 10px;
+    float: center;
+    margin-right: 15px;
+    margin-bottom: 10px;
+}
+
+/* FAQ Section Styling */
+.faq-section-wrapper {
+    display: flex;
+    justify-content: space-between; /* Adjust as needed: space-around, center, etc. */
+    align-items: flex-start; /* Align items to the top */
+    gap: 20px; /* Space between FAQ list and image container */
+}
+
+.faq-container {
+    flex: 2; /* FAQ container takes more space */
+    max-width: 70%; /* Adjust as needed */
+    /* margin: 0 auto; /* Centering is now handled by flex wrapper */ */
+    text-align: left;
+}
+
+.faq-image-stack-container {
+    flex: 1; /* Image container takes less space */
+    display: flex;
+    flex-direction: column; /* Stack images vertically */
+    align-items: center; /* Center images horizontally within this container */
+    justify-content: center; /* Center stack vertically if container is taller */
+    gap: 10px; /* Space between the two images */
+    min-width: 200px; /* Minimum width, adjust as needed */
+    max-width: 30%; /* Adjust as needed */
+    padding-top: 50px; /* Add some padding to visually center/adjust if needed */
+    padding-bottom: 20px; /* Add some padding */
+}
+
+.stacked-image {
+    width: 100%; /* Make images responsive to the container's width */
+    max-width: 280px; /* Set a max-width for the images themselves, adjust as needed */
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.faq-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid #c46123;
+}
+
+.faq-question {
+    padding: 15px;
+    margin: 0;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: #ffffff;
+    background-color: rgba(196, 97, 35, 0.5); /* Semi-transparent accent color */
+    border-radius: 8px 8px 0 0; /* Round top corners if answer is hidden initially */
+    transition: background-color 0.3s ease;
+}
+
+.faq-question:hover {
+    background-color: rgba(196, 97, 35, 0.7);
+}
+
+.faq-answer {
+    padding: 0 15px; /* Add padding only to sides initially */
+    margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, padding 0.5s ease-out; /* Smooth transition for height and padding */
+    background-color: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid #c46123; /* Separator line */
+    border-radius: 0 0 8px 8px; /* Round bottom corners */
+}
+
+.faq-answer p {
+    padding: 15px 0; /* Add vertical padding when answer is shown */
+    margin: 0;
+    color: #f0f0f0; /* Lighter text for answer */
+    font-size: 1em;
+    line-height: 1.6;
+}
+
+/* Style for when the FAQ item is active/open */
+.faq-item.active .faq-answer {
+    max-height: 500px; /* Adjust as needed to fit content */
+    padding: 0 15px; /* Ensure side padding is maintained */
+}
+
+.faq-item.active .faq-question {
+    background-color: rgba(196, 97, 35, 0.8);
+    border-radius: 8px 8px 0 0;
+}
+
+footer {
+    background-color: #121212;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    gap: 20px;
+    /* text-align: center; Removed, alignment handled by flex children */
+}
+
+.footer-top-row {
+    display: flex;
+    flex-direction: row; /* Arrange logo and text side-by-side */
+    justify-content: center; /* Center the logo-text pair */
+    align-items: center; /* Vertically align logo and text block */
+    gap: 20px; /* Gap between logo and text block */
+    width: 100%;
+}
+
+.footer-logo {
+    height: 100px;
+    flex-shrink: 0; /* Prevent logo from shrinking */
+}
+
+.footer-text-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align text to the start (left) of its container */
+    text-align: left; /* Align text to the left within its block */
+    max-width: 600px; 
+}
+
+.footer-bottom-row {
+    display: flex;
+    justify-content: space-around; /* Distribute link sections */
+    width: 100%;
+    max-width: 800px; /* Max width for the links area */
+    gap: 20px; /* Space between link sections */
+    padding-top: 20px;
+    /* border-top: 1px solid #444; */ /* Separator line - removed as copyright is now separate */
+}
+
+.footer-links-section {
+    background-color: #ffffff0d; /* Transparent div background */
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center; /* Changed from left to center for h4 */
+    flex: 1; /* Make sections equal width */
+    display: flex; /* Enable flex for vertical alignment of children */
+    flex-direction: column; /* Stack h4 and ul vertically */
+}
+
+.footer-links-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #c46123;
+    border-bottom: 1px solid #c46123;
+    padding-bottom: 5px;
+}
+
+.footer-links-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    flex-grow: 1; /* Allow ul to grow and fill space */
+    justify-content: space-around; /* Distribute li items vertically */
+}
+
+.footer-links-section ul li a {
+    color: #ccc;
+    text-decoration: none;
+    font-size: 0.9em;
+    line-height: 1.8;
+    display: flex; /* Changed to flex for icon and text alignment */
+    align-items: center; /* Vertically align icon and text */
+    padding: 2px 0;
+}
+
+.footer-links-section ul li a .link-icon {
+    margin-right: 8px; /* Space between icon and text */
+    display: inline-block; /* Or inline-flex */
+    width: 16px; /* Adjust as needed */
+    height: 16px; /* Adjust as needed */
+    vertical-align: middle; /* Helps align image with text */
+}
+
+.footer-links-section ul li a .link-text {
+    display: inline-block;
+}
+
+.footer-links-section ul li a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.footer-copyright-row {
+    text-align: center; /* Horizontally center the copyright text */
+    padding: 10px 0;
+    border-top: 1px solid #444; /* Optional: adds a separator line */
+    margin-top: 20px; /* Optional: adds some space above the copyright line */
+}
+
+.footer-copyright-row p {
+    margin: 0; /* Remove default paragraph margins */
+    font-size: 0.9em; /* Adjust font size as needed */
+    color: #ccc; /* Lighter text color for the copyright */
+}
+
+/* Events Section Styles */
+#events {
+    background-color: rgba(0, 0, 0, 0.7); /* Transparent white background */
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+    border-bottom: 1px solid rgb(196, 97, 35);
+}
+
+#events h2 {
+    text-align: center;
+    color: #c46123;
+    margin-bottom: 20px;
+}
+
+.events-container {
+    display: flex;
+    gap: 20px;
+    align-items: center; /* Changed from flex-start to center */
+}
+
+.event-image-container {
+    flex: 1;
+    max-width: 40%; /* Adjust as needed */
+}
+
+.event-image {
+    width: 100%;
+    border-radius: 10px;
+}
+
+/* Modal Styles */
+.modal-hidden {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 2000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #2c2c2c; /* Dark background for modal */
+    color: #f1f1f1;
+    margin: 10% auto; /* 10% from the top and centered */
+    padding: 25px;
+    border: 1px solid #555;
+    width: 60%; /* Could be more or less, depending on screen size */
+    max-width: 700px; /* Max width */
+    border-radius: 10px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.close-modal-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-modal-button:hover,
+.close-modal-button:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Content Pages Styling */
+.content-section {
+    padding: 20px;
+    max-width: 900px;
+    margin: 20px auto;
+    background-color: rgba(0, 0, 0, 0.7); /* Updated for consistency with homepage sections */
+    border-radius: 8px;
+    color: #ffffff; /* Updated for consistency with homepage sections */
+}
+
+.content-section h1, .content-section h2 {
+    color: #c46123; /* Theme color for headers */
+    border-bottom: 2px solid #c46123;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.content-section p, .content-section li {
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.content-section ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+.ministry-category, .leadership-profile {
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #4a4a4a; /* Card background */
+    border-radius: 6px;
+}
+
+.leadership-profile {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #c46123;
+}
+
+.profile-details h2 {
+    border-bottom: none;
+    margin-bottom: 10px;
+}
+
+/* Navigation Menu Styles */
+
+/* Responsive adjustments for navigation */
+@media (max-width: 768px) { 
+    /* .menu-button styling is handled by base styles or specific rules if needed */
+    /* .top-nav justify-content: space-between is handled by base styles */
+
+    /* .nav-links styles are now primarily handled by the base rules above for a consistent dropdown menu. 
+       Any specific overrides for mobile, if different from the new 50px wide right-aligned menu, would go here.
+       For now, we assume the 50px wide menu is for all views when active. */
+}
+
+/* General Responsive Styles */
+
+/* Medium screens (e.g., tablets) */
+@media (max-width: 1024px) {
+    main {
+        margin-left: 100px;
+        margin-right: 100px;
+    }
+
+    .hero-content h1 {
+        font-size: 3em;
+    }
+
+    section h2 {
+        font-size: 2.5em;
+    }
+
+    .pastor-image {
+        max-width: 300px; /* Adjust pastor image size */
+    }
+
+    .faq-section-wrapper {
+        flex-direction: column; /* Stack FAQ items and image */
+        align-items: center;
+    }
+
+    .faq-image-stack-container {
+        margin-top: 20px;
+        padding-top: 0; /* Reset padding as it's stacked now */
+        max-width: 80%;
+    }
+
+    .events-container {
+        flex-direction: column; /* Stack event image and schedule app */
+        align-items: center;
+    }
+
+    .event-image-container,
+    #schedule-app-container {
+        max-width: 100%; /* Allow them to take full width when stacked */
+        width: 100%;
+    }
+
+    .event-image-container {
+        margin-bottom: 20px;
+        max-width: 60%; /* Or a specific max-width for the image */
+    }
+}
+
+/* Smaller screens (e.g., large phones, small tablets) */
+@media (max-width: 768px) {
+    body {
+        padding-top: 50px; /* Ensure this is consistent with nav height */
+    }
+
+    main {
+        margin-left: 20px;
+        margin-right: 20px;
+        padding-top: 15px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.5em;
+    }
+    .hero-content .hero-subtitle {
+        font-size: 0.7em;
+    }
+
+    .btn-contact {
+        font-size: 1em;
+        padding: 8px 12px;
+    }
+
+    section h2 {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+
+    section {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .days-container {
+        flex-direction: column; /* Stack day blocks vertically */
+        align-items: center; /* Center them when stacked */
+        gap: 15px;
+    }
+
+    .day {
+        width: 90%; /* Allow day blocks to take more width */
+        max-width: 400px; /* But not too wide */
+    }
+
+    .service-times-row {
+        flex-direction: column; /* Stack time slots vertically */
+        align-items: center;
+        gap: 5px;
+    }
+
+    .time-slot {
+        font-size: 1.1em;
+        margin: 5px 0; /* Adjust margin for stacked layout */
+    }
+
+    #ministries .thursday-schedule .time-slot {
+        left: 0; /* Reset specific positioning */
+    }
+
+    .side-by-side-divs {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .side-by-side-divs > div {
+        margin-bottom: 10px; /* Add space between stacked divs */
+    }
+
+    .pastor-container {
+        padding: 10px;
+    }
+
+    .pastor-image {
+        float: none; /* Remove float */
+        display: block; /* Make it a block element */
+        margin: 0 auto 15px auto; /* Center and add bottom margin */
+        max-width: 200px; /* Further reduce size */
+        width: 70%;
+    }
+
+    .faq-item {
+        margin-bottom: 8px;
+    }
+
+    .faq-question {
+        font-size: 1em;
+        padding: 8px;
+    }
+
+    .faq-answer p {
+        font-size: 0.9em;
+    }
+
+    .stacked-image {
+        max-width: 200px; /* Adjust FAQ stacked images */
+    }
+
+    /* .schedule-controls input, button styles were for a non-modal version, no longer needed */
+
+    /* #schedule-display max-height for mobile is in schedule_app.css if needed, or here if general */
+}
+
+/* Very small screens (e.g., standard phones) */
+@media (max-width: 480px) {
+    main {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .hero-content h1 {
+        font-size: 2em;
+    }
+
+    section h2 {
+        font-size: 1.8em;
+    }
+
+    .worship-day {
+        font-size: 1.5em;
+    }
+
+    .time-slot {
+        font-size: 1em;
+    }
+
+    section div p {
+        font-size: 1em; /* Adjust general paragraph font size in sections */
+    }
+
+    .pastor-image {
+        max-width: 150px;
+    }
+
+    .faq-question {
+        font-size: 0.9em;
+    }
+
+    /* .event-item and .btn-delete-event responsive styles are in schedule_app.css */
+}
+
+/* Schedule App Modal Styling */
+/* Specifically, #scheduleAppContainer, .schedule-controls, #eventList, etc. 
+   are no longer used as the modal structure is simpler and some styles were moved to style.css or consolidated. */

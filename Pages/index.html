@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../schedule_app.css"> <!-- Added link to schedule_app.css -->
+    <title>Mt. Moriah Missionary Baptist Church</title>
+</head>
+<body>
+    <nav class="top-nav">
+        <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="nav-logo">
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="ministries.html">Ministries</a>
+            <a href="leadership.html">Leadership & Staff</a>
+            <a href="church_history.html">Church History</a>
+            <a href="facility_rental.html">Facility Rental</a>
+            <a href="photo_gallery.html">Photo Gallery</a>
+            <a href="live_praise.html">Live Praise</a>
+            <a href="contact.html">Contact Us</a>
+        </div>
+        <button class="menu-button" id="menuButton">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+    <header class="hero-section">
+        <div class="hero-content">
+            <h1><span class="hero-subtitle">Welcome to</span><br>Mt. Moriah Missionary<br>Baptist Church</h1>
+            <a href="#contact" class="btn-contact">Contact Us</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="worship-times">
+            <h2>Worship Times</h2>
+            <div class="days-container"> <!-- New wrapper for all day blocks -->
+                <div class="day"> <!-- Existing Sunday block -->
+                    <p class="worship-day">Sunday</p>
+                    <div class="service-times-row">
+                        <h3 class="time-slot">9:30am</h3>
+                        <h3 class="time-slot">11:00am</h3>
+                    </div>
+                    <div class="side-by-side-divs">
+                        <div id="divA">
+                            <p>Discipleship Training</p>
+                            <p>(Youth & Adult)</p>
+                        </div>
+                        <div id="divB">
+                            <p><br>Morning Worship</p>
+                        </div>
+                    </div>                        
+                </div>
+
+                <div class="day"> <!-- New Wednesday block (placeholder) -->
+                    <p class="worship-day">Monday</p>
+                    <div class="service-times-row">
+                        <h3 class="time-slot">6:00pm</h3>
+                    </div>
+                    <div class="side-by-side-divs">
+                        <div>
+                            <p>Prayer Meeting</p>
+                        </div>
+                    </div>                        
+                </div>
+
+                <div class="day"> <!-- New Special Event block (placeholder) -->
+                    <p class="worship-day">Wednesday</p>
+                    <div class="service-times-row">
+                        <h3 class="time-slot">6:30pm</h3>
+                    </div>
+                    <div class="side-by-side-divs">
+                        <div>
+                            <p>Bible Study</p>
+                        </div>
+                    </div>                        
+                </div>
+            </div> <!-- days-container closes -->
+        </section>
+
+        <section id="ministries">
+            <h2>Weekly Ministry Times</h2>
+            <div class="days-container">
+
+                <!-- Tuesday -->
+                <div class="day">
+                    <p class="worship-day">Tuesday</p>
+                    <div class="service-times-row">
+                        <h3 class="time-slot">6:00pm</h3>
+                    </div>
+                    <div class="side-by-side-divs">
+                        <div>
+                            <p>Womens Ministry<br>(Every 4th Tuesday)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wednesday -->
+                <div class="day">
+                    <p class="worship-day">Wednesday</p>
+                    <div class="service-times-row">
+                        <h3 class="time-slot">5:30pm</h3>
+                    </div>
+                    <div class="side-by-side-divs">
+                        <div>
+                            <p>Youth Choir Rehearsal</p><p>(Every Wednesday before 3rd Sunday)</p>
+                        </div>
+                        <div>
+                            <p>Usher's Meeting</p><p>(Last Wednesday of the Month: Mar, Jun, Sept, Dec)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thursday -->
+                <div class="day thursday-schedule"> <!-- Added thursday-schedule class -->
+                    <p class="worship-day">Thursday</p>
+                    <div class="service-times-row">
+                        <h3 class="time-slot">6:00pm</h3>
+                        <h3 class="time-slot">6:30pm</h3>
+                    </div>
+                    <div class="side-by-side-divs">
+                        <div>
+                            <p>Mass Choir Rehearsal</p><p>(Thursday before 1st & 5th Sunday)</p> <!--6:00pm-->
+                        </div>
+                        <div>
+                            <p>Women Choir Rehearsal</p><p>(Thursday before 2nd Sunday)</p> <!--6:00pm-->
+                        </div>
+                        <div>
+                            <p>Male Choir Rehearsal</p><p>(Thursday before 4th & 5th Sunday)</p>
+                    </div>
+                </div>
+
+            </div> <!-- days-container closes -->
+        </section>
+
+        <section id="pastor">
+            <h2>Meet Our Pastor</h2>
+            <div class="pastor-container">
+                <img src="../ConImg/SteveHarvey1.png" alt="Pastor Steve Harvey" class="pastor-image">
+            </div>
+        </section>
+
+        <section id="faq">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-section-wrapper"> <!-- Wrapper for flex layout -->
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <h3 class="faq-question">What denomination is Mt. Moriah Baptist Church?</h3>
+                        <div class="faq-answer">
+                            <p>We are a Missionary Baptist Church which means, we are to go out into the world, preaching, teaching and bringing others
+                            to Christ.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <h3 class="faq-question">Where are you located?</h3>
+                        <div class="faq-answer">
+                            <p>Our church is located at 1201 South 8th Street in Paducah, KY. We would love for you to visit us!</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <h3 class="faq-question">How do I contact you?</h3>
+                        <div class="faq-answer">
+                            <p>You can contact us by phone at (270) 443-3714 or by email at mtmoriahmbc@att.net or follow us on social media.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <h3 class="faq-question">What does your worship service look like?</h3>
+                        <div class="faq-answer">
+                            <p>We have an order of service which starts at 11:00 a.m. every Sunday morning including singing, praying and preaching.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <h3 class="faq-question">Are there any services that help me learn more about God?</h3>
+                        <div class="faq-answer">
+                            <p>Yes, we offer several opportunities for spiritual growth, including Sunday Discipleship Training for youth and adults, and weekly Bible Study. Please check our "Worship Times" and "Weekly Ministry Times" sections for more details.</p>
+                        </div>
+                    </div>
+                </div> <!-- End of faq-container -->
+
+                <div class="faq-image-stack-container">
+                    <img src="../ConImg/Mt-Moriah-5.png" alt="Church exterior" class="stacked-image">
+                    <img src="../ConImg/Mt-Moriah-4.png" alt="Church event" class="stacked-image">
+                </div>
+            </div> <!-- End of faq-section-wrapper -->
+        </section>
+
+        <!-- Events Section -->
+        <section id="events">
+            <h2>Upcoming Events</h2>
+            <div class="events-container">
+                <div class="event-image-container">
+                    <img src="../ConImg/Mt-Moriah-1.png" alt="Church Event Image" class="event-image">
+                </div>
+                <div id="schedule-display-area"> <!-- Renamed for clarity -->
+                    <div class="schedule-header">
+                        <h3><span id="current-month"></span></h3>
+                    </div>
+                    <div id="schedule-display">
+                        <!-- Events will be displayed here by schedule_app.js -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Schedule App Modal (Settings/Management Panel) -->
+    <div id="schedule-app-modal" class="modal-hidden">
+        <div class="modal-content">
+            <span class="close-modal-button">&times;</span>
+            <h3>Schedule Manager</h3>
+            <div class="schedule-controls-modal">
+                <h4>Load Events</h4>
+                <input type="file" id="schedule-file-input-modal" accept=".json" style="display: none;">
+                <button id="load-schedule-button-modal">Load Schedule from File</button>
+                
+                <h4>Add New Event</h4>
+                <input type="text" id="event-name-input-modal" placeholder="Event Name">
+                <input type="date" id="event-date-input-modal">
+                <input type="time" id="event-time-input-modal">
+                <button id="add-event-button-modal">Add Event to Manager</button>
+            </div>
+            
+            <h4>Managed Events Preview</h4>
+            <div id="schedule-app-preview-display">
+                <!-- Events managed by the app will be previewed here -->
+            </div>
+            
+            <button id="update-live-page-button">Update Live Page Display</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-top-row">
+            <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="footer-logo">
+            <div class="footer-text-content">
+                <p>Our doors are always open to you. If you are without a church home, we hope you will unite with the Mt. Moriah family. Wherever you go, may you always feel the presence of God and may the blessings of faithful worship bring peace and joy to your heart.</p>
+            </div>
+        </div>
+        <div class="footer-bottom-row">
+            <div class="footer-links-section" id="quick-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="index.html"><img src="../Icons/home.png" alt="Home icon" class="link-icon"><span class="link-text">Home</span></a></li>
+                    <li><a href="ministries.html"><img src="../Icons/leadership.png" alt="Leadership icon" class="link-icon"><span class="link-text">Leadership</span></a></li>
+                    <li><a href="leadership.html"><img src="../Icons/churchhistory.png" alt="Church History icon" class="link-icon"><span class="link-text">Church History</span></a></li>
+                    <li><a href="facility_rental.html"><img src="../Icons/facilityrental.png" alt="Facility Rental icon" class="link-icon"><span class="link-text">Facility Rental</span></a></li>
+                    <li><a href="contact.html"><img src="../Icons/contactus.png" alt="Contact Us icon" class="link-icon"><span class="link-text">Contact Us</span></a></li>
+                </ul>
+            </div>
+            <div class="footer-links-section" id="connect-us">
+                <h4>Connect With Us</h4>
+                <ul>
+                    <li><a href="https://www.google.com/maps/search/?api=1&query=1201+South+8th+Street+Paducah+KY" target="_blank" rel="noopener noreferrer"><img src="../Icons/address.png" alt="Address icon" class="link-icon"><span class="link-text">1201 South 8th Street, Paducah, KY</span></a></li>
+                    <li><a href="tel:2704433714"><img src="../Icons/phone.png" alt="Phone icon" class="link-icon"><span class="link-text">(270) 443-3714</span></a></li>
+                    <li><a href="mailto:mtmoriahmbc@att.net"><img src="../Icons/mailus.png" alt="Email Us icon" class="link-icon"><span class="link-text">Email Us</span></a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-copyright-row">
+            <p>&copy; 2025 Mt. Moriah Missionary Baptist Church. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+    <script src="../schedule_app.js"></script> 
+</body>
+</html>

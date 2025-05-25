@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../schedule_app.css">
+    <title>Photo Gallery - Mt. Moriah Missionary Baptist Church</title>
+    <style>
+        .photo-gallery-section {
+            padding: 20px;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            gap: 15px; /* Space between images */
+            margin-bottom: 20px;
+        }
+        .gallery-item {
+            aspect-ratio: 1 / 1; /* Square items */
+            background-color: #e0e0e0; /* Placeholder background */
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            color: #555;
+            overflow: hidden; /* In case actual images are larger */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover the area, cropping if necessary */
+            border-radius: 8px;
+        }
+        .pagination {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .pagination button, .pagination span {
+            margin: 0 10px;
+            padding: 8px 15px;
+            border: 1px solid #c46123;
+            background-color: transparent;
+            color: #c46123;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .pagination button:hover:not(:disabled) {
+            background-color: #c46123;
+            color: white;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination span {
+            cursor: default;
+            border: none;
+            color: #ffffff; /* Adjusted for dark theme */
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Lightbox Styles */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000; /* Ensure it's on top */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .lightbox-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .lightbox-content {
+            position: relative;
+            background-color: #2c2c2c; /* Match modal style from main site */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            max-width: 90vw; /* Max width */
+            max-height: 90vh; /* Max height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .lightbox-image-container {
+            width: auto;
+            height: auto;
+            max-width: calc(90vw - 100px); /* Account for padding and controls */
+            max-height: calc(90vh - 120px); /* Account for padding and controls */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 5px;
+            object-fit: contain; /* Show whole image, no cropping */
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2.5em;
+            color: #aaa;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+        .lightbox-close:hover {
+            color: #fff;
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        .lightbox-nav:hover {
+            background-color: rgba(196, 97, 35, 0.8); /* Theme color */
+        }
+        .lightbox-prev {
+            left: 15px;
+        }
+        .lightbox-next {
+            right: 15px;
+        }
+        .lightbox-caption {
+            color: #ccc;
+            margin-top: 10px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="nav-logo">
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="ministries.html">Ministries</a>
+            <a href="leadership.html">Leadership & Staff</a>
+            <a href="church_history.html">Church History</a>
+            <a href="facility_rental.html">Facility Rental</a>
+            <a href="photo_gallery.html">Photo Gallery</a>
+            <a href="live_praise.html">Live Praise</a>
+            <a href="contact.html">Contact Us</a>
+        </div>
+        <button class="menu-button" id="menuButton">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+
+    <main>
+        <section class="photo-gallery-section">
+            <h1>Photo Gallery</h1>
+            <div class="photo-grid" id="photoGrid">
+                <!-- Gallery items will be generated by JS -->
+            </div>
+            <div class="pagination">
+                <button id="prevPage" disabled>Previous</button>
+                <span id="pageInfo">Page 1 of 5</span>
+                <button id="nextPage">Next</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Lightbox Structure -->
+    <div class="lightbox-overlay" id="lightboxOverlay">
+        <div class="lightbox-content">
+            <span class="lightbox-close" id="lightboxClose">&times;</span>
+            <button class="lightbox-nav lightbox-prev" id="lightboxPrev">&#10094;</button>
+            <div class="lightbox-image-container">
+                <img src="" alt="Lightbox Image" class="lightbox-image" id="lightboxImage">
+            </div>
+            <button class="lightbox-nav lightbox-next" id="lightboxNext">&#10095;</button>
+            <div class="lightbox-caption" id="lightboxCaption">Image 1 of 100</div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-top-row">
+            <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="footer-logo">
+            <div class="footer-text-content">
+                <p>Our doors are always open to you. If you are without a church home, we hope you will unite with the Mt. Moriah family. Wherever you go, may you always feel the presence of God and may the blessings of faithful worship bring peace and joy to your heart.</p>
+            </div>
+        </div>
+        <div class="footer-bottom-row">
+            <div class="footer-links-section" id="quick-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="index.html"><img src="../Icons/home.png" alt="Home icon" class="link-icon"><span class="link-text">Home</span></a></li>
+                    <li><a href="ministries.html"><img src="../Icons/leadership.png" alt="Leadership icon" class="link-icon"><span class="link-text">Leadership</span></a></li>
+                    <li><a href="leadership.html"><img src="../Icons/churchhistory.png" alt="Church History icon" class="link-icon"><span class="link-text">Church History</span></a></li>
+                    <li><a href="facility_rental.html"><img src="../Icons/facilityrental.png" alt="Facility Rental icon" class="link-icon"><span class="link-text">Facility Rental</span></a></li>
+                    <li><a href="contact.html"><img src="../Icons/contactus.png" alt="Contact Us icon" class="link-icon"><span class="link-text">Contact Us</span></a></li>
+                </ul>
+            </div>
+            <div class="footer-links-section" id="connect-us">
+                <h4>Connect With Us</h4>
+                <ul>
+                    <li><a href="https://www.google.com/maps/search/?api=1&query=1201+South+8th+Street+Paducah+KY" target="_blank" rel="noopener noreferrer"><img src="../Icons/address.png" alt="Address icon" class="link-icon"><span class="link-text">1201 South 8th Street, Paducah, KY</span></a></li>
+                    <li><a href="tel:2704433714"><img src="../Icons/phone.png" alt="Phone icon" class="link-icon"><span class="link-text">(270) 443-3714</span></a></li>
+                    <li><a href="mailto:mtmoriahmbc@att.net"><img src="../Icons/mailus.png" alt="Email Us icon" class="link-icon"><span class="link-text">Email Us</span></a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-copyright-row">
+            <p>&copy; 2025 Mt. Moriah Missionary Baptist Church. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+    <script src="../schedule_app.js"></script> 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const photoGrid = document.getElementById('photoGrid');
+            const prevPageButton = document.getElementById('prevPage');
+            const nextPageButton = document.getElementById('nextPage');
+            const pageInfoSpan = document.getElementById('pageInfo');
+
+            const totalItems = 100; // 5 pages * 20 items/page (4x5 grid)
+            const itemsPerPage = 20; 
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            let currentPage = 1;
+
+            // Array to hold image paths. Replace these with your actual image paths.
+            // For 100 images, you'll need 100 paths.
+            const imagePaths = [];
+            for (let i = 1; i <= totalItems; i++) {
+                imagePaths.push('https://via.placeholder.com/300x300.png?text=Church+Image+' + i); 
+            }
+
+            // Lightbox elements
+            const lightboxOverlay = document.getElementById('lightboxOverlay');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const lightboxClose = document.getElementById('lightboxClose');
+            const lightboxPrev = document.getElementById('lightboxPrev');
+            const lightboxNext = document.getElementById('lightboxNext');
+            const lightboxCaption = document.getElementById('lightboxCaption');
+            let currentLightboxIndex = 0;
+
+            function generateGalleryItems() {
+                photoGrid.innerHTML = ''; // Clear existing items
+                for (let i = 0; i < totalItems; i++) {
+                    const item = document.createElement('div');
+                    item.classList.add('gallery-item');
+                    item.setAttribute('data-item-index', i);
+
+                    if (imagePaths[i]) {
+                        item.innerHTML = '<img src="' + imagePaths[i] + '" alt="Gallery Image ' + (i + 1) + '">';
+                    } else {
+                        // Placeholder if no image path is provided
+                        item.textContent = 'Image ' + (i + 1);
+                    }
+                    item.addEventListener('click', () => {
+                        openLightbox(i);
+                    });
+                    photoGrid.appendChild(item);
+                }
+            }
+
+            function displayPage(page) {
+                const allItems = photoGrid.children;
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+
+                for (let i = 0; i < allItems.length; i++) {
+                    if (i >= startIndex && i < endIndex) {
+                        allItems[i].classList.remove('hidden');
+                    } else {
+                        allItems[i].classList.add('hidden');
+                    }
+                }
+
+                pageInfoSpan.textContent = 'Page ' + page + ' of ' + totalPages;
+                prevPageButton.disabled = page === 1;
+                nextPageButton.disabled = page === totalPages;
+            }
+
+            function openLightbox(index) {
+                currentLightboxIndex = index;
+                showImageInLightbox(currentLightboxIndex);
+                lightboxOverlay.classList.add('visible');
+            }
+
+            function closeLightbox() {
+                lightboxOverlay.classList.remove('visible');
+            }
+
+            function showImageInLightbox(index) {
+                if (index < 0 || index >= totalItems) return;
+                // Use a placeholder or actual image path
+                const imageSrc = imagePaths[index] || 'https://via.placeholder.com/800x600.png?text=Image+' + (index + 1); // Fallback placeholder
+                lightboxImage.src = imageSrc;
+                lightboxImage.alt = 'Image ' + (index + 1);
+                lightboxCaption.textContent = 'Image ' + (index + 1) + ' of ' + totalItems;
+                lightboxPrev.disabled = index === 0;
+                lightboxNext.disabled = index === totalItems - 1;
+            }
+
+            lightboxClose.addEventListener('click', closeLightbox);
+            lightboxOverlay.addEventListener('click', function(event) {
+                if (event.target === lightboxOverlay) { // Click on overlay background
+                    closeLightbox();
+                }
+            });
+
+            lightboxPrev.addEventListener('click', () => {
+                if (currentLightboxIndex > 0) {
+                    currentLightboxIndex--;
+                    showImageInLightbox(currentLightboxIndex);
+                }
+            });
+
+            lightboxNext.addEventListener('click', () => {
+                if (currentLightboxIndex < totalItems - 1) {
+                    currentLightboxIndex++;
+                    showImageInLightbox(currentLightboxIndex);
+                }
+            });
+            
+            // Keyboard navigation for lightbox
+            document.addEventListener('keydown', function(event) {
+                if (!lightboxOverlay.classList.contains('visible')) return;
+                if (event.key === 'Escape') {
+                    closeLightbox();
+                }
+                if (event.key === 'ArrowLeft') {
+                    if (currentLightboxIndex > 0) {
+                        currentLightboxIndex--;
+                        showImageInLightbox(currentLightboxIndex);
+                    }
+                }
+                if (event.key === 'ArrowRight') {
+                    if (currentLightboxIndex < totalItems - 1) {
+                        currentLightboxIndex++;
+                        showImageInLightbox(currentLightboxIndex);
+                    }
+                }
+            });
+
+            // Initial setup
+            generateGalleryItems();
+            displayPage(currentPage);
+
+            // Pagination button event listeners (assuming these are already in your script)
+            prevPageButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayPage(currentPage);
+                }
+            });
+
+            nextPageButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayPage(currentPage);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
