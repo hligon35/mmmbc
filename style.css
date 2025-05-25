@@ -1,3 +1,6 @@
+/********** Global Styles **********/
+/********** Body **********/
+
 body, html {
     margin: 0;
     padding: 0;
@@ -15,9 +18,10 @@ body {
     padding-top: 100px; /* Adjusted to prevent content overlap by 100px fixed navbar */
 }
 
-/* Top Navigation Bar Styling */
+/********** Top Navigation Bar Styling **********/
+
 .top-nav {
-    background-color: #00000070;
+    background-color: rgba(0, 0, 0, 0.3);
     height: 100px;
     padding: 0 25px; /* Handles margins for logo and button */
     display: flex;
@@ -36,6 +40,8 @@ body {
     width: auto;
     margin-right: 20px; /* Add some space between logo and links */
 }
+
+/********** Menu Button Styling **********/
 
 .menu-button {
     background-color: transparent;
@@ -56,6 +62,8 @@ body {
     height: 2px; 
     background-color: #c46123; 
 }
+
+/********* Navigation Links Styling *********/
 
 .nav-links {
     display: none; /* Hidden by default, shown when .active */
@@ -97,17 +105,18 @@ body {
     background-color: rgb(196, 97, 35);
     border-radius: 0; /* Override previous border-radius if any, or keep if desired */
 }
-/* End Top Navigation Bar Styling */
+
+/********** Hero Section **********/
 
 .hero-section {
-    height: 100vh;
+    height: 50vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     color: white;
-    background-color: rgba(0, 0, 0, 0.5); /* Dark overlay for better text readability */
+    background-color: rgba(0, 0, 0, 0.3); /* Dark overlay for better text readability */
 }
 
 .hero-content h1 {
@@ -119,6 +128,8 @@ body {
 .hero-content .hero-subtitle {
     font-size: 0.6em; /* Roughly 2 sizes smaller than 1em, adjust as needed */
 }
+
+/********** Contact Button Styling **********/
 
 .btn-contact {
     display: inline-block;
@@ -140,6 +151,8 @@ body {
     color: black; /* Black text on click */
 }
 
+/********** Main Content Area **********/
+
 main {
     background-color: rgba(255, 255, 255, 0); 
     padding-top: 100px;
@@ -149,12 +162,14 @@ main {
     width: 90%; /* Allow it to be responsive */
 }
 
+/********** Section Styling **********/
+
 section {
     padding: 20px;
     text-align: center;
     margin-bottom: 25px; 
     border-radius: 25px; 
-    background-color: rgba(0, 0, 0, 0.7); 
+    background-color: rgba(0, 0, 0, 0.8); 
     /* Removed fixed height, section will now size to content */
 }
 
@@ -173,7 +188,7 @@ section div {   /*Days Container*/
     margin: 10px auto;
     padding: 5px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(196, 97, 35, 0.25);
+    box-shadow: 0 1px 3px rgba(196, 97, 35, 0.25);
     max-width: 1200px; /* Max width for content divs */
 }
 
@@ -182,7 +197,8 @@ section div p {
     line-height: 1.6;
 }
 
-/* Worship Times Styling */
+/********** Worship Times Styling **********/
+
 .worship-day {
     text-align: center;
     font-size: 2em; /* Made Sunday a bit larger */
@@ -201,20 +217,21 @@ section div p {
 .time-slot {    /*Individual times*/
     font-size: 1.3em; /* Style for the times */
     color: #ffffff;
-    margin: 0 15px; /* Provides space around each time, allowing more to be added */
+    margin: 0 10px; /* Provides space around each time, allowing more to be added */
     padding: 2px 5px;
     background-color: #c4612380;
-    border-radius: 4px;
+    border-radius: 5px;
     border: 1px solid #bd5f25;
 }
 
-/* Rule to move Thursday ministry times specifically */
+/***** Rule to move Thursday ministry times specifically *****/
+
 #ministries .thursday-schedule .time-slot {
     position: relative;
     left: 33px;
 }
 
-/* End Worship Times Styling */
+/********** Day Container Styling **********/
 
 .days-container {
     display: flex;
@@ -224,10 +241,10 @@ section div p {
 }
 
 .day {
-    padding: 15px; /* Internal padding for each day block */
-    background-color: #0000003d; /* Slight background tint for visibility */
+    padding: 5px; /* Internal padding for each day block */
+    background-color: #af2a2a3d; /* Slight background tint for visibility */
     border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+   /* box-shadow: 0 1px 3px rgba(0,0,0,0.7); */
     flex: 1; /* Allows day blocks to grow and shrink equally */
     max-width: calc(33.333% - 20px); /* Aim for 1/3 width, accounting for gap. Adjust as needed. */
     /* Ensure content within .day is centered if it doesn't fill the space */
@@ -242,7 +259,8 @@ section div p {
     width: 100%; /* Ensure these internal flex containers take full width of .day */
 }
 
-/* Styling for side-by-side divs A and B */
+/********** Styling for side-by-side divs A and B **********/
+
 .side-by-side-divs {
     display: flex;
     justify-content: center; /* Or space-between, or center, depending on desired spacing -> Changed to center */
@@ -252,13 +270,14 @@ section div p {
 .side-by-side-divs > div { /* Style for direct children (divA and divB) */
     flex-basis: 45%; /* Example: each div takes up slightly less than half, allowing for some space between */
     /* Add other styling for divA and divB as needed, e.g., padding, background */
-    padding: 2px;
+    padding: 0px;
     background-color: #c4612380; /* Light grey background for distinction */
     border: 1px solid #bd5f25;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
-/* Pastor Section Styling */
+/********** Pastor Section Styling **********/
+
 .pastor-container {
     position: relative; 
     padding: 10px;
@@ -278,7 +297,8 @@ section div p {
     margin-bottom: 10px;
 }
 
-/* FAQ Section Styling */
+/********** FAQ Section Styling **********/
+
 .faq-section-wrapper {
     display: flex;
     justify-content: space-between; /* Adjust as needed: space-around, center, etc. */
@@ -288,7 +308,7 @@ section div p {
 
 .faq-container {
     flex: 2; /* FAQ container takes more space */
-    max-width: 70%; /* Adjust as needed */
+    max-width: 60%; /* Adjust as needed */
     /* margin: 0 auto; /* Centering is now handled by flex wrapper */ */
     text-align: left;
 }
@@ -299,25 +319,25 @@ section div p {
     flex-direction: column; /* Stack images vertically */
     align-items: center; /* Center images horizontally within this container */
     justify-content: center; /* Center stack vertically if container is taller */
-    gap: 10px; /* Space between the two images */
+    gap: 5px; /* Space between the two images */
     min-width: 200px; /* Minimum width, adjust as needed */
-    max-width: 30%; /* Adjust as needed */
-    padding-top: 50px; /* Add some padding to visually center/adjust if needed */
-    padding-bottom: 20px; /* Add some padding */
+    max-width: 50%; /* Adjust as needed */
+    padding-top: 0px; /* Add some padding to visually center/adjust if needed */
+    padding-bottom: 0px; /* Add some padding */
 }
 
 .stacked-image {
     width: 100%; /* Make images responsive to the container's width */
-    max-width: 280px; /* Set a max-width for the images themselves, adjust as needed */
+    max-width: 500px; /* Set a max-width for the images themselves, adjust as needed */
     height: auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    border-radius: 10px;
+   /* box-shadow: 0 1px 3px rgba(0,0,0,0.3); */
 }
 
 .faq-item {
     background-color: rgba(255, 255, 255, 0.1);
-    margin-bottom: 10px;
-    border-radius: 8px;
+    margin-bottom: 15px;
+    border-radius: 10px;
     border: 1px solid #c46123;
 }
 
@@ -328,7 +348,7 @@ section div p {
     font-size: 1.2em;
     color: #ffffff;
     background-color: rgba(196, 97, 35, 0.5); /* Semi-transparent accent color */
-    border-radius: 8px 8px 0 0; /* Round top corners if answer is hidden initially */
+    border-radius: 10px 10px 10px 10px; /* Round top corners if answer is hidden initially */
     transition: background-color 0.3s ease;
 }
 
@@ -343,8 +363,8 @@ section div p {
     overflow: hidden;
     transition: max-height 0.5s ease-out, padding 0.5s ease-out; /* Smooth transition for height and padding */
     background-color: rgba(0, 0, 0, 0.3);
-    border-top: 1px solid #c46123; /* Separator line */
-    border-radius: 0 0 8px 8px; /* Round bottom corners */
+   /* border-top: 1px solid #c46123; /* Separator line */
+    border-radius: 10px 10px 10px 10px; /* Round bottom corners */
 }
 
 .faq-answer p {
@@ -355,7 +375,8 @@ section div p {
     line-height: 1.6;
 }
 
-/* Style for when the FAQ item is active/open */
+/***** Style for when the FAQ item is active/open *****/
+
 .faq-item.active .faq-answer {
     max-height: 500px; /* Adjust as needed to fit content */
     padding: 0 15px; /* Ensure side padding is maintained */
@@ -363,8 +384,10 @@ section div p {
 
 .faq-item.active .faq-question {
     background-color: rgba(196, 97, 35, 0.8);
-    border-radius: 8px 8px 0 0;
+    border-radius: 10px 10px 10px 10px;
 }
+
+/********** Footer Styles **********/
 
 footer {
     background-color: #121212;
@@ -377,7 +400,7 @@ footer {
     /* text-align: center; Removed, alignment handled by flex children */
 }
 
-.footer-top-row {
+.footer-top-row {   /* Top row with logo and text */
     display: flex;
     flex-direction: row; /* Arrange logo and text side-by-side */
     justify-content: center; /* Center the logo-text pair */
@@ -478,12 +501,13 @@ footer {
     color: #ccc; /* Lighter text color for the copyright */
 }
 
-/* Events Section Styles */
+/********** Events Section Styles **********/
+
 #events {
     background-color: rgba(0, 0, 0, 0.7); /* Transparent white background */
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 15px;
+    padding: 0px;
+    margin-bottom: 50px;
+    border-radius: 25px;
     border-bottom: 1px solid rgb(196, 97, 35);
 }
 
@@ -605,7 +629,9 @@ footer {
 
 /* Navigation Menu Styles */
 
-/* Responsive adjustments for navigation */
+/*************** Responsive adjustments for navigation ***************/
+
+
 @media (max-width: 768px) { 
     /* .menu-button styling is handled by base styles or specific rules if needed */
     /* .top-nav justify-content: space-between is handled by base styles */
