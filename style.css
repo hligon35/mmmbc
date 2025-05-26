@@ -1135,6 +1135,11 @@ These should remain to ensure mobile view is correct.
     .hero-content h1 .hero-line3 {
         margin-bottom: 2em; /* Adds two lines of space */
     }
+
+    .hero-section {
+        padding: 60px 20px; /* Adjusted padding for mobile */
+        margin-bottom: 20px; /* Added space below hero section for mobile */
+    }
 }
 
 /********** Contact Page Specific Styles **********/
@@ -1279,158 +1284,21 @@ These should remain to ensure mobile view is correct.
 }
 
 /* Contact Page Specific Styles */
-.contact-section-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    width: 100%;
-}
+/* REMOVED duplicate .content-section rule */
 
-.form-toggle-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px; /* Space between buttons */
-    margin-bottom: 20px;
-}
+/* REMOVED duplicate .form-toggle-buttons rule */
 
-.form-toggle-buttons button {
-    padding: 10px 20px;
-    font-size: 1em;
-    color: white;
-    background-color: #c46123;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
+/* REMOVED duplicate .form-toggle-btn rule */
 
-.form-toggle-buttons button:hover {
-    background-color: #a54f1e; /* Darker shade on hover */
-}
+/* REMOVED duplicate .form-toggle-btn.active rule */
 
-.form-toggle-buttons button.active-form-btn {
-    background-color: #863f17; /* Even darker for active button */
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-}
+/* REMOVED duplicate .form-toggle-btn:not(.active):hover rule */
 
-.contact-form {
-    background-color: rgba(255, 255, 255, 0.05); /* Very subtle background for the form itself */
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid rgba(196, 97, 35, 0.5); /* Themed border */
-    width: 100%;
-    max-width: 600px; /* Max width for the form */
-    box-sizing: border-box;
-    display: none; /* Hidden by default, shown by JS */
-}
+/* REMOVED duplicate .contact-form rule and its child element stylings */
 
-.contact-form.active-form {
-    display: block; /* Show active form */
-}
+/* REMOVED duplicate .submit-btn rule and its pseudo-classes */
 
-.contact-form h3 {
-    color: #c46123;
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #c46123;
-    padding-bottom: 10px;
-}
-
-.contact-form label {
-    display: block;
-    margin-bottom: 5px;
-    color: #f0f0f0; /* Lighter label text */
-    text-align: left;
-}
-
-.contact-form input[type="text"],
-.contact-form input[type="email"],
-.contact-form textarea {
-    width: calc(100% - 22px); /* Full width minus padding and border */
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    border: 1px solid #555; /* Darker border for inputs */
-    background-color: #333; /* Dark input background */
-    color: #fff; /* White text in input */
-    font-size: 1em;
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
-}
-
-.contact-form input[type="text"]:focus,
-.contact-form input[type="email"]:focus,
-.contact-form textarea:focus {
-    outline: none;
-    border-color: #c46123; /* Highlight focus with theme color */
-    box-shadow: 0 0 5px rgba(196, 97, 35, 0.5);
-}
-
-.contact-form textarea {
-    height: 120px; /* Taller textarea */
-    resize: vertical; /* Allow vertical resize */
-}
-
-.submit-btn {
-    display: block; /* Make button block to center it */
-    width: auto; /* Auto width based on content and padding */
-    min-width: 150px; /* Minimum width for the button */
-    padding: 12px 25px;
-    font-size: 1.1em;
-    color: white;
-    background-color: #c46123;
-    border: none;
-    border-radius: 20px; /* Rounded pill shape */
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    margin: 20px auto 0; /* Center the button with margin */
-    text-align: center;
-}
-
-.submit-btn:hover {
-    background-color: #a54f1e; /* Darker shade on hover */
-    transform: translateY(-2px); /* Slight lift on hover */
-}
-
-.submit-btn:active {
-    background-color: #863f17; /* Even darker on click */
-    transform: translateY(0); /* Reset lift on click */
-    color: #e0e0e0; /* Slightly dimmer text on click */
-}
-
-/* Responsive adjustments for forms */
-@media (max-width: 768px) {
-    .contact-form {
-        padding: 15px;
-    }
-
-    .form-toggle-buttons button {
-        padding: 8px 15px;
-        font-size: 0.9em;
-    }
-
-    .contact-form input[type="text"],
-    .contact-form input[type="email"],
-    .contact-form textarea {
-        padding: 8px;
-        font-size: 0.95em;
-    }
-
-    .submit-btn {
-        padding: 10px 20px;
-        font-size: 1em;
-    }
-}
+/* REMOVED duplicate responsive adjustments for forms within @media (max-width: 768px) */
 
 /* Hero title span styling for mobile line spacing */
-@media (max-width: 768px) {
-    .hero-content h1 span {
-        display: block; /* Makes each span take its own line */
-        margin-bottom: 10px; /* Adds space below each line */
-    }
-
-    .hero-content h1 span:last-child {
-        margin-bottom: 0; /* No space after the last line */
-    }
-}
+/* REMOVED duplicate @media (max-width: 768px) block for .hero-content h1 span */
