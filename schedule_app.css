@@ -18,7 +18,6 @@
     display: flex;
     flex-direction: column;
     position: relative; /* Added for positioning context if needed */
-    left: -5px; /* Move left by 5px */
 }
 
 .schedule-header {
@@ -44,11 +43,12 @@
     background-color: rgba(0, 0, 0, 0.3); 
     border: 1px dashed #555;
     border-radius: 5px;
-    padding: 0px; 
+    padding: 10px; /* Added padding for internal spacing */
     color: #fff;
-    display: flex; /* Added */
-    flex-direction: column; /* Added */
-    align-items: center; /* Added - to center child items */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center .event-item blocks */
+    box-sizing: border-box; /* Ensure padding is included in width/height */
 }
 /* END OF MOVED STYLES FROM style.css */
 
@@ -139,11 +139,12 @@
 
 /* Specific override for event items in the live display area */
 #schedule-display .event-item {
-    display: block; /* Override the default flex display for event items in this context */
-    text-align: center; /* Center the text and inline-block children */
-    width: 95%; /* Keep for visual debugging, helps see the block is centered */
+    display: block; 
+    text-align: center; 
+    width: 95%; 
     box-sizing: border-box; 
-    /* justify-content: center; /* No longer needed as it's not a flex container here */
+    margin-top: 5px; /* Add some space between event items */
+    margin-bottom: 5px; /* Add some space between event items */
 }
 
 .event-item p {

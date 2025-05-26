@@ -259,6 +259,23 @@ section div p {
     justify-content: flex-start; /* ADDED: Aligns items to the top of the .day container */
 }
 
+/* New styles for Sunday service blocks */
+.sunday-services .service-block {
+    display: flex;
+    flex-direction: column; /* Stack time and details vertically by default */
+    align-items: center; /* Center items within the block */
+    width: 100%; /* Ensure blocks take full width of their container */
+    margin-bottom: 15px; /* Space between service blocks */
+}
+
+.sunday-services .service-block:last-child {
+    margin-bottom: 0;
+}
+
+.sunday-services .service-details p {
+    margin: 2px 0; /* Adjust spacing around service detail text */
+}
+
 /********** Styling for side-by-side divs A and B **********/
 
 .side-by-side-divs {
@@ -397,7 +414,7 @@ footer {
     flex-direction: column;
     align-items: center; 
     gap: 20px;
-    /* text-align: center; Removed, alignment handled by flex children */
+    text-align: center; /* Removed, alignment handled by flex children */
 }
 
 .footer-top-row {   /* Top row with logo and text */
@@ -699,12 +716,6 @@ footer {
         /* max-width: 60%; /* Removed: Let it be 100% when stacked, or adjust as needed */
         height: auto; /* Allow height to adjust based on content or aspect ratio */
     }
-    .event-image { /* Ensure image is responsive within the stacked container */
-        max-height: 400px; /* Example: constrain image height in stacked view */
-        width: auto;
-        max-width: 100%;
-        object-fit: contain; /* Use contain if you want to see the whole image, or cover if cropping is ok */
-    }
 }
 
 /* Tablet Viewports (e.g., portrait tablets) */
@@ -761,28 +772,49 @@ footer {
         margin-bottom: 20px; /* From older rules, smaller */
     }
 
-    /* Ensure Sunday's internal layout does not stack when .days-container stacks */
-    #worship-times .day:first-child .service-times-row {
-        flex-direction: row; /* Override to keep times in a row for Sunday */
-        justify-content: space-around; /* Or your preferred alignment */
-    }
+    /* Remove old Sunday-specific row overrides as new HTML structure and CSS handles it */
+    /* #worship-times .day:first-child .service-times-row {
+        flex-direction: row; 
+        justify-content: space-around; 
+    } */
 
-    #worship-times .day:first-child .side-by-side-divs {
-        flex-direction: row; /* Override to keep service details in a row for Sunday */
-        justify-content: space-around; /* Or your preferred alignment */
-    }
+    /* #worship-times .day:first-child .side-by-side-divs {
+        flex-direction: row; 
+        justify-content: space-around; 
+    } */
     
-    #worship-times .day:first-child .side-by-side-divs > div {
-      flex-basis: 45%; /* Maintain original flex-basis for Sunday's internal divs */
-      width: auto; /* Reset width if previously set to a percentage for stacking */
-      margin-bottom: 0; /* Remove bottom margin if added for stacking */
+    /* #worship-times .day:first-child .side-by-side-divs > div {
+      flex-basis: 45%; 
+      width: auto; 
+      margin-bottom: 0; 
+    } */
+
+    /* General behavior for .service-times-row and .side-by-side-divs */
+    /* MODIFIED for row/wrap behavior */
+    .service-times-row {
+        flex-direction: row; /* Items in a row */
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: center; /* Center wrapped items */
+        align-items: flex-start; /* Align to top */
+        gap: 10px; /* Space between items */
     }
 
-    /* General stacking for other .service-times-row and .side-by-side-divs */
-    .service-times-row {
-        flex-direction: column;
-        align-items: center;
-        gap: 5px; /* From older rules (was 0.5rem in my previous) */
+    /* MODIFIED for row/wrap behavior */
+    .side-by-side-divs {
+        flex-direction: row; /* Items in a row */
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: space-around; /* Distribute items */
+        align-items: stretch; /* Stretch items if they have different heights */
+        gap: 10px; /* Space between items */
+    }
+
+    /* MODIFIED for row/wrap behavior */
+    .side-by-side-divs > div {
+        flex-grow: 1;
+        flex-shrink: 1;
+        /* Adjust flex-basis for wrapped items. e.g., two items per row considering gap: */
+        flex-basis: calc(50% - 10px); /* Assumes a 10px gap between two items */
+        margin-bottom: 10px; /* Spacing for wrapped items */
     }
 
     .time-slot {
@@ -790,234 +822,27 @@ footer {
         font-size: 1.1em; /* From older rules */
     }
 
-    #ministries .thursday-schedule .time-slot {
-        left: 0; /* Reset for stacked layout */
+    .thursday-schedule .time-slot { /* UPDATED SELECTOR */
+        position: relative; /* Added for positioning */
+        left: -5px; /* Move 5px to the left */
     }
 
     .days-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px; /* From older rules */
+        flex-direction: column; /* Stack days vertically */
+        align-items: stretch; /* Stretch to full width */
     }
 
     .day {
-        max-width: 90%; 
-        width: 90%; 
-        margin-bottom: 15px;
+        flex-basis: 100%; /* Full width for each day */
+        margin-bottom: 10px; /* Space between days */
     }
 
-    /* General stacking for other .side-by-side-divs */
-    .side-by-side-divs {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    /* General stacking for children of .side-by-side-divs */
-    .side-by-side-divs > div {
-        flex-basis: auto; 
-        width: 90%; 
-        margin-bottom: 10px;
-    }
-}
-
-/* Mobile Viewports (e.g., <= 480px) */
-@media (max-width: 480px) {
-    body {
-        padding-top: 60px; 
-    }
-
-    .top-nav {
-        height: 60px;
-        padding: 0 10px;
-    }
-
-    .nav-logo {
-        height: 60px;
-    }
-    
-    .menu-button {
-        height: 30px;
-        width: 30px;
-    }
-
-    .nav-links {
-        top: 60px; 
-        left: 10px; 
-        right: 10px; 
-        width: auto; 
-        border-radius: 0 0 5px 5px; 
-    }
-    
-    .nav-links a {
-        font-size: 0.9em;
-        padding: 8px 5px;
-    }
-
-    .hero-section {
-        height: auto; 
-        min-height: 70vh;
-        padding: 20px 0;
-    }
-
-    .hero-content h1 {
-        font-size: 2em; 
-    }
-
-    .hero-content .hero-subtitle {
-        font-size: 0.8em;
-    }
-
-    .btn-contact {
-        font-size: 1em;
-        padding: 8px 12px;
-    }
-
-    main {
-        width: 98%; 
-        padding-top: 10px;
-    }
-
-    section {
-        padding: 10px;
-        margin-bottom: 15px;
-    }
-
-    section h2 {
-        font-size: 1.8em; 
-        margin-bottom: 20px;
-    }
-    
-    section div p {
-        font-size: 1em; 
-    }
-
-    .worship-day {
-        font-size: 1.5em; 
-    }
-
-    .time-slot {
-        font-size: 1em; /* From older rules */
-        padding: 3px 6px;
-    }
-    
-    .day {
-        max-width: 95%;
-    }
-
-    .side-by-side-divs > div {
-        width: 95%;
-    }
-
-    .pastor-image {
-        max-width: 150px; /* From older rules */
-    }
-
-    .faq-question {
-        font-size: 0.9em; /* From older rules */
-        padding: 12px; 
-    }
-
-    .faq-answer p {
-        font-size: 0.95em;
-    }
-    
-    .faq-image-stack-container {
-        flex-direction: column; 
-        align-items: center;
-    }
-
-    .stacked-image {
-        max-width: 80%; 
-        margin-bottom: 10px;
-    }
-    .stacked-image:last-child {
-        margin-bottom: 0;
-    }
-
-    .footer-logo {
-        height: 80px;
-    }
-    .footer-text-content p, .footer-text-content a {
-        font-size: 0.9em;
-    }
-
-    .footer-links-section {
-        width: 90%;
-    }
-    .footer-links-section h4 {
-        font-size: 1.1em;
-    }
-    .footer-links-section ul li a {
-        font-size: 0.85em;
-    }
-    .footer-copyright-row p {
-        font-size: 0.8em;
-    }
-}
-
-/* Debug Panel Styles */
-#debug-panel-container {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    z-index: 2000; /* Above most other content */
-}
-
-#toggle-debug-panel {
-    background-color: #c46123; /* Theme accent color */
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-}
-
-#toggle-debug-panel:hover {
-    background-color: #a04e1c; /* Darker shade */
-}
-
-#debug-panel {
-    background-color: rgba(0, 0, 0, 0.85); /* Dark, semi-transparent */
-    color: #ffffff;
-    padding: 15px;
-    border-radius: 5px;
-    margin-top: 5px;
-    width: 250px; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    border: 1px solid #c46123;
-}
-
-#debug-panel h4 {
-    color: #c46123;
-    margin-top: 0;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #c46123;
-    padding-bottom: 5px;
-}
-
-#debug-panel p {
-    font-size: 0.85em;
-    line-height: 1.4;
-    margin-bottom: 5px;
-}
-
-#debug-panel.hidden {
-    display: none;
-}
-
-/* Responsive adjustments for debug panel */
-@media (max-width: 480px) {
-    #debug-panel {
-        width: 200px; /* Smaller on mobile */
-        font-size: 0.9em; /* Adjust font size inside panel for mobile */
-    }
-    #debug-panel p {
-        font-size: 0.9em; /* Ensure readability */
-    }
-    #toggle-debug-panel {
-        padding: 6px 10px;
-        font-size: 0.8em;
+    /* ADDED: FAQ spacing adjustments for mobile */
+    .faq-container {
+        max-width: 95%; /* Increase max-width to reduce side gaps */
+        padding-left: 10px;  /* Adjust padding */
+        padding-right: 10px; /* Adjust padding */
+        margin-left: auto; /* Ensure centering */
+        margin-right: auto; /* Ensure centering */
     }
 }
