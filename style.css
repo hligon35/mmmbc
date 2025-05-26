@@ -271,6 +271,7 @@ section div p {
 
 .sunday-services .service-details p {
     margin: 2px 0; /* Adjust spacing around service detail text */
+    text-align: center; /* Center text within Sunday service details paragraphs on mobile */
 }
 
 /********** Styling for side-by-side divs A and B **********/
@@ -782,6 +783,12 @@ footer {
            from the global scope will continue to style the internal content of each block. */
     }
 
+    /* Center text within Sunday service details paragraphs on mobile */
+    .sunday-services .service-details p {
+        text-align: center;
+        margin: 2px 0; /* Copied from global .sunday-services .service-details p */
+    }
+
     /* General behavior for .service-times-row and .side-by-side-divs */
     /* MODIFIED for row/wrap behavior */
     .service-times-row {
@@ -820,8 +827,11 @@ footer {
     }
 
     .thursday-schedule .time-slot { /* UPDATED SELECTOR */
-        position: relative; /* Added for positioning */
-        left: -5px; /* Move 5px to the left */
+        position: static; /* Remove relative positioning */
+        left: auto;       /* Remove left offset */
+        display: inline-block; /* Allows centering via parent\'s align-items: center */
+        margin-bottom: 8px; /* Space between time and the details below it */
+        /* Other general .time-slot styles (background, padding, font-size) will apply */
     }
 
     .days-container {
@@ -918,37 +928,46 @@ footer {
     }
 
     /* Thursday schedule specific adjustments for mobile */
-    .thursday-schedule .service-block {
+    .thursday-schedule .thursday-event-group {
         display: flex;
-        flex-direction: column; /* Stack time-slot and service-details */
-        align-items: center;   /* Center time-slot and service-details horizontally */
-        width: 100%;           /* Take full width to help center content properly */
-        margin-bottom: 20px;   /* Increased space between 6pm and 6:30pm blocks */
-        text-align: center;    /* Ensures text within <p> in details is centered */
+        flex-direction: column;
+        align-items: center; /* Center time-slot and service-block */
+        margin-bottom: 20px; /* Space between event groups */
+        width: 100%; /* Ensure the group takes full width for centering */
+        text-align: center; /* Added to help center inline-block children like time-slot */
+        gap: 10px; /* ADDED: Consistent spacing between children */
     }
 
-    .thursday-schedule .service-block:last-child {
-        margin-bottom: 0;
+    /* UPDATED: Ensured this rule is specific enough and correctly placed for mobile */
+    #ministries .thursday-schedule .time-slot {
+        position: static; 
+        left: auto;       
+        display: inline-block; 
+        /* margin-bottom: 8px; REMOVED: Replaced by gap on parent */
+        /* margin-left and margin-right will be auto if text-align:center on parent doesn't center it, 
+           but for inline-block, text-align:center on parent is the primary method. */
     }
 
-    /* Override the specific left offset for Thursday time slots for centering */
-    /* The parent .service-block with align-items: center will handle the centering of the time-slot itself. */
-    .thursday-schedule .time-slot {
-        position: static; /* Remove relative positioning */
-        left: auto;       /* Remove left offset */
-        /* Vertical margins from general .time-slot rule (margin: 5px 0;) are fine */
-        /* font-size from general .time-slot rule is fine */
-        margin-bottom: 8px; /* Space between time and the details below it */
+    .thursday-schedule .service-block {
+        /* display: flex; /* Not needed if service-details is the only child and handles its own content */
+        /* flex-direction: column; */
+        /* align-items: center; */
+        width: 80%; /* UPDATED: Set fixed width for consistency */
+        /* min-width: 70%; REMOVED: Fixed width is set */
+        max-width: 90%; /* Retained max-width as a safeguard */
+        /* margin-bottom: 10px; REMOVED: Replaced by gap on parent */
+        text-align: center;
+        padding: 8px 15px; /* UPDATED: Reduced top/bottom padding to fit text vertically */
+        background-color: #c4612380;
+        border: 1px solid #bd5f25;
+        border-radius: 8px; 
+        box-sizing: border-box;
     }
 
     .thursday-schedule .service-block .service-details {
         display: flex;
-        flex-direction: column; /* Stack choir names if multiple */
-        align-items: center;   /* Center choir names horizontally */
-    }
-
-    .thursday-schedule .service-block .service-details p {
-        margin: 3px 0; /* Adjust spacing between choir names */
-        line-height: 1.4; /* Adjust line height for choir names if needed */
+        flex-direction: column;
+        align-items: center;
+        width: 100%; /* Ensure details take full width of the block */
     }
 }

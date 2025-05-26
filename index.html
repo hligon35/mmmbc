@@ -115,21 +115,29 @@
                 </div>
 
                 <!-- Thursday -->
-                <div class="day thursday-schedule"> <!-- Added thursday-schedule class -->
+                <div class="day thursday-schedule">
                     <p class="worship-day">Thursday</p>
-                    <div class="service-times-row">
+                    <!-- New structure for Thursday events -->
+                    <div class="thursday-event-group">
                         <h3 class="time-slot">6:00pm</h3>
-                        <h3 class="time-slot">6:30pm</h3>
+                        <div class="service-block"> <!-- Mass Choir Rehearsal Block -->
+                            <div class="service-details">
+                                <p>Mass Choir Rehearsal<br>(Thursday before 1st & 5th Sunday)</p>
+                            </div>
+                        </div>
+                        <div class="service-block"> <!-- Women Choir Rehearsal Block -->
+                            <div class="service-details">
+                                <p>Women Choir Rehearsal<br>(Thursday before 2nd Sunday)</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="side-by-side-divs">
-                        <div>
-                            <p>Mass Choir Rehearsal</p><p>(Thursday before 1st & 5th Sunday)</p> <!--6:00pm-->
+                    <div class="thursday-event-group">
+                        <h3 class="time-slot">6:30pm</h3>
+                        <div class="service-block"> <!-- Contains only service-details -->
+                            <div class="service-details">
+                                <p>Male Choir Rehearsal<br>(Thursday before 4th & 5th Sunday)</p>
+                            </div>
                         </div>
-                        <div>
-                            <p>Women Choir Rehearsal</p><p>(Thursday before 2nd Sunday)</p> <!--6:00pm-->
-                        </div>
-                        <div>
-                            <p>Male Choir Rehearsal</p><p>(Thursday before 4th & 5th Sunday)</p>
                     </div>
                 </div>
 
