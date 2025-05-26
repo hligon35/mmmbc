@@ -28,31 +28,56 @@
     </nav>
 
     <main>
-        <section class="content-section">
+        <section class="content-section" id="contact-form-section">
             <h1>Contact Us</h1>
-            <p>Get in touch with Mt. Moriah Missionary Baptist Church. We would love to hear from you!</p>
-            
-            <h2>Church Address:</h2>
-            <p>
-                [Street Address]<br>
-                [City, State, Zip Code]
-            </p>
-            
-            <h2>Phone Number:</h2>
-            <p>[Phone Number]</p>
-            
-            <h2>Email:</h2>
-            <p><a href="mailto:info@mtmoriahchurch.org">info@mtmoriahchurch.org</a></p>
-            
-            <h2>Service Times:</h2>
-            <p>
-                Sunday School: [Time]<br>
-                Sunday Morning Worship: [Time]<br>
-                Wednesday Bible Study: [Time]
-            </p>
-            
-            <p>For specific inquiries, please use the contact information above, or visit us during our service times.</p>
-            <!-- Page-specific content will go here -->
+            <p>We value your connection. Please select an option below to send us a message or share a prayer request.</p>
+
+            <div class="form-toggle-buttons">
+                <button id="showPrayerFormBtn" class="form-toggle-btn active" onclick="showForm('prayerRequestForm')">Prayer Request</button>
+                <button id="showContactFormBtn" class="form-toggle-btn" onclick="showForm('contactInfoForm')">Contact Information</button>
+            </div>
+
+            <!-- Prayer Request Form -->
+            <form id="prayerRequestForm" class="contact-form" action="mailto:mtmoriahmbc@att.net" method="POST" enctype="text/plain">
+                <h2>Prayer Request</h2>
+                <input type="hidden" name="Subject" value="New Prayer Request">
+                <div>
+                    <label for="prayerName">Name:</label>
+                    <input type="text" id="prayerName" name="Name" required>
+                </div>
+                <div>
+                    <label for="prayerIssue">Brief description of your prayer request (optional):</label>
+                    <textarea id="prayerIssue" name="PrayerRequestDetails" rows="5" placeholder="Please share as much or as little as you feel comfortable."></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Send Prayer Request</button>
+            </form>
+
+            <!-- Contact Info Form -->
+            <form id="contactInfoForm" class="contact-form" action="mailto:mtmoriahmbc@att.net" method="POST" enctype="text/plain" style="display:none;">
+                <h2>Contact Information</h2>
+                <input type="hidden" name="Subject" value="New Contact Information Submission">
+                <div>
+                    <label for="contactName">Name:</label>
+                    <input type="text" id="contactName" name="Name" required>
+                </div>
+                <div>
+                    <label for="contactPhone">Phone Number:</label>
+                    <input type="tel" id="contactPhone" name="PhoneNumber" placeholder="e.g., (555) 123-4567">
+                </div>
+                <div>
+                    <label for="contactAddress">Address (optional):</label>
+                    <input type="text" id="contactAddress" name="Address" placeholder="Street, City, State, Zip">
+                </div>
+                <div>
+                    <label for="contactEmail">Email:</label>
+                    <input type="email" id="contactEmail" name="EmailAddress" placeholder="you@example.com" required>
+                </div>
+                <div>
+                    <label for="contactMessage">Message (optional):</label>
+                    <textarea id="contactMessage" name="Message" rows="5" placeholder="How can we help you?"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Send Contact Info</button>
+            </form>
         </section>
     </main>
 
@@ -90,6 +115,32 @@
     </footer>
 
     <script src="../script.js"></script>
+
+    <script>
+        function showForm(formIdToShow) {
+            const prayerForm = document.getElementById('prayerRequestForm');
+            const contactForm = document.getElementById('contactInfoForm');
+            const prayerBtn = document.getElementById('showPrayerFormBtn');
+            const contactBtn = document.getElementById('showContactFormBtn');
+
+            if (formIdToShow === 'prayerRequestForm') {
+                prayerForm.style.display = 'block';
+                contactForm.style.display = 'none';
+                prayerBtn.classList.add('active');
+                contactBtn.classList.remove('active');
+            } else if (formIdToShow === 'contactInfoForm') {
+                prayerForm.style.display = 'none';
+                contactForm.style.display = 'block';
+                contactBtn.classList.add('active');
+                prayerBtn.classList.remove('active');
+            }
+        }
+
+        // Initialize default view
+        document.addEventListener('DOMContentLoaded', () => {
+            showForm('prayerRequestForm'); // Show prayer form by default
+        });
+    </script>
 
     <!-- Debug Panel HTML -->
     <div id="debug-panel-container">
