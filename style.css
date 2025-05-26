@@ -488,7 +488,7 @@ footer {
 }
 
 .footer-links-section ul li a .link-icon {
-    margin-right: 5px; /* Reduced space between icon and text */
+    margin-right: 5px; /* Restored original space */
     display: inline-block; /* Or inline-flex */
     width: 14px; /* Slightly reduced icon size */
     height: 14px; /* Slightly reduced icon size */
@@ -1020,6 +1020,11 @@ footer {
         flex-direction: column;
         align-items: center;
         width: 100%; /* Ensure details take full width of the block */
+    }
+
+    /* Adjust footer icon spacing for mobile */
+    .footer-links-section ul li a .link-icon {
+        margin-right: 2px; /* Reduced space for mobile */
     }
 }
 
