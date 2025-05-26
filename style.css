@@ -1070,6 +1070,27 @@ These should remain to ensure mobile view is correct.
 @media (min-width: 769px) {
     /* ...other existing desktop styles... */
 
+    /* REMOVED hero title specific styles for .hero-subtitle, .hero-desktop-line, .hero-word */
+    /* .hero-content h1 .hero-subtitle {
+        display: block; 
+        margin-bottom: 1em; 
+    }
+
+    .hero-content h1 .hero-desktop-line {
+        display: block; 
+        margin-bottom: 1em; 
+    }
+
+    .hero-content h1 .hero-desktop-line:last-of-type {
+        margin-bottom: 0; 
+    }
+
+    .hero-content h1 .hero-word {
+        display: inline; 
+        margin-bottom: 0; 
+        line-height: normal; 
+    } */
+
     /* Desktop layout for event groups (time slot + service block/row) */
     .sunday-schedule .sunday-event-group,
     .thursday-schedule .thursday-event-group {
@@ -1127,13 +1148,31 @@ These should remain to ensure mobile view is correct.
 
 /* Spacing adjustments in hero section for mobile view */
 @media (max-width: 768px) {
-    .hero-content h1 .hero-line1,
-    .hero-content h1 .hero-line2 {
-        margin-bottom: 1em; /* Adds one line of space */
+    .hero-content h1 .hero-subtitle { /* This rule remains correct */
+        display: block;
+        margin-bottom: 1em; /* Space after subtitle */
     }
 
-    .hero-content h1 .hero-line3 {
-        margin-bottom: 2em; /* Adds two lines of space */
+    .hero-content h1 .hero-desktop-line {
+        display: block; /* Each group of words on its own line */
+        margin-bottom: 1em; /* Space between lines */
+    }
+
+    .hero-content h1 .hero-desktop-line:last-of-type {
+        margin-bottom: 0; /* No space after the last line */
+    }
+
+    .hero-content h1 .hero-word {
+        display: inline; /* Words within a .hero-desktop-line stay inline */
+        margin-bottom: 0; /* Reset from previous mobile-specific style */
+        line-height: normal; /* Reset from previous mobile-specific style */
+    }
+
+    /* The old rule ".hero-content h1 span:last-child, .hero-content h1 .hero-word:last-of-type" is removed by these changes. */
+    /* The rule for .hero-content h1 .hero-line1, .hero-line2, .hero-line3 is also effectively replaced if it existed here. */
+
+    .hero-content h1 br { /* This rule remains correct */
+        display: none; 
     }
 
     .hero-section {
@@ -1302,3 +1341,15 @@ These should remain to ensure mobile view is correct.
 
 /* Hero title span styling for mobile line spacing */
 /* REMOVED duplicate @media (max-width: 768px) block for .hero-content h1 span */
+
+/* New global styling for hero lines */
+.hero-content h1 .hero-line {
+    display: block;
+    margin-bottom: 0.5em; /* Adjust as needed for "line space" */
+    white-space: nowrap; /* Ensures content of each line stays on a single line */
+    /* line-height: 1.5; /* Optional: if more space is needed than margin-bottom provides */
+}
+
+.hero-content h1 .hero-line:last-child {
+    margin-bottom: 0;
+}
