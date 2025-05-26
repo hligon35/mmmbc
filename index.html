@@ -38,24 +38,28 @@
         <section id="worship-times">
             <h2>Worship Times</h2>
             <div class="days-container"> <!-- New wrapper for all day blocks -->
-                <div class="day"> <!-- Existing Sunday block -->
+                <div class="day sunday-schedule"> <!-- MODIFIED: Added sunday-schedule class -->
                     <p class="worship-day">Sunday</p>
-                    <div class="service-times-row">
+                    <!-- New structure for Sunday events -->
+                    <div class="sunday-event-group">
                         <h3 class="time-slot">9:30am</h3>
-                        <h3 class="time-slot">11:00am</h3>
+                        <div class="service-block">
+                            <div class="service-details">
+                                <p>Discipleship Training<br>(Youth & Adult)</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="side-by-side-divs">
-                        <div id="divA">
-                            <p>Discipleship Training</p>
-                            <p>(Youth & Adult)</p>
+                    <div class="sunday-event-group">
+                        <h3 class="time-slot">11:00am</h3>
+                        <div class="service-block">
+                            <div class="service-details">
+                                <p>Morning Worship</p>
+                            </div>
                         </div>
-                        <div id="divB">
-                            <p><br>Morning Worship</p>
-                        </div>
-                    </div>                        
+                    </div>
                 </div>
 
-                <div class="day"> <!-- New Wednesday block (placeholder) -->
+                <div class="day"> <!-- New Monday block (placeholder) -->
                     <p class="worship-day">Monday</p>
                     <div class="service-times-row">
                         <h3 class="time-slot">6:00pm</h3>

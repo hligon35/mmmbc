@@ -773,20 +773,68 @@ footer {
     }
 
     /* Ensure Sunday service blocks can be side-by-side in mobile view */
-    .sunday-services .service-block {
-        width: auto; /* Override global width: 100% which forces stacking */
-        flex-grow: 1; /* Allow block to grow if space available */
-        flex-shrink: 1; /* Allow block to shrink if needed */
-        /* Aim for two blocks side-by-side, considering 10px gap in parent .service-times-row */
+    /* .sunday-services .service-block { -- Commenting out the old rule as new structure will be used
+        width: auto; 
+        flex-grow: 1; 
+        flex-shrink: 1; 
         flex-basis: calc(50% - 5px);
-        /* The inherited 'display: flex', 'flex-direction: column', 'align-items: center'
-           from the global scope will continue to style the internal content of each block. */
+    } */
+
+    /* Center text within Sunday service details paragraphs on mobile - This might be redundant or need adjustment with new structure */
+    /* .sunday-services .service-details p { -- Commenting out for now
+        text-align: center;
+        margin: 2px 0; 
+    } */
+
+    /* New Styles for Sunday Schedule similar to Thursday */
+    .sunday-schedule .sunday-event-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px; /* Space between event groups */
+        width: 100%;
+        text-align: center;
+        gap: 10px; /* Consistent spacing between children (time-slot and service-block) */
     }
 
-    /* Center text within Sunday service details paragraphs on mobile */
-    .sunday-services .service-details p {
+    .sunday-schedule .sunday-event-group:last-child {
+        margin-bottom: 0;
+    }
+
+    #worship-times .sunday-schedule .time-slot {
+        position: static;
+        left: auto;
+        display: inline-block;
+        /* margin-bottom will be handled by gap on parent .sunday-event-group */
+        /* General .time-slot styles (background, padding, font-size) will apply */
+    }
+
+    .sunday-schedule .service-block {
+        width: 80%; /* Consistent width with Thursday blocks */
+        max-width: 90%;
         text-align: center;
-        margin: 2px 0; /* Copied from global .sunday-services .service-details p */
+        padding: 8px 15px; /* Consistent padding with Thursday blocks */
+        background-color: #c4612380;
+        border: 1px solid #bd5f25;
+        border-radius: 8px;
+        box-sizing: border-box;
+        display: flex; /* Added for vertical centering */
+        flex-direction: column; /* Added for vertical centering */
+        justify-content: center; /* Added for vertical centering */
+        min-height: 50px; /* Ensure a minimum height for visual consistency, adjust as needed */
+    }
+
+    .sunday-schedule .service-block .service-details {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center; /* Vertically center content within service-details */
+        width: 100%;
+        flex-grow: 1; /* Allow service-details to take available space for centering */
+    }
+
+    .sunday-schedule .service-block .service-details p {
+        margin: 0; /* Remove default margins for better centering control */
     }
 
     /* General behavior for .service-times-row and .side-by-side-divs */
