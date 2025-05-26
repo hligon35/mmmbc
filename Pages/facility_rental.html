@@ -73,52 +73,5 @@
     </footer>
 
     <script src="../script.js"></script>
-
-    <!-- Debug Panel HTML -->
-    <div id="debug-panel-container">
-        <button id="toggle-debug-panel">Toggle Debug</button>
-        <div id="debug-panel" class="hidden">
-            <h4>Debug Information</h4>
-            <p><strong>Current Page:</strong> <span id="debug-page-name"></span></p>
-            <p><strong>Viewport Width:</strong> <span id="debug-viewport-width"></span>px</p>
-            <p><strong>Viewport Height:</strong> <span id="debug-viewport-height"></span>px</p>
-            <p><strong>User Agent:</strong> <span id="debug-user-agent"></span></p>
-            <!-- Add more debug info as needed -->
-        </div>
-    </div>
-
-    <script>
-        // Basic Debug Panel Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleButton = document.getElementById('toggle-debug-panel');
-            const debugPanel = document.getElementById('debug-panel');
-
-            const pageNameSpan = document.getElementById('debug-page-name');
-            if (pageNameSpan) {
-                const pathArray = window.location.pathname.split('/');
-                pageNameSpan.textContent = pathArray[pathArray.length - 1] || 'facility_rental.html';
-            }
-
-            const viewportWidthSpan = document.getElementById('debug-viewport-width');
-            const viewportHeightSpan = document.getElementById('debug-viewport-height');
-            function updateViewportInfo() {
-                if (viewportWidthSpan) viewportWidthSpan.textContent = window.innerWidth;
-                if (viewportHeightSpan) viewportHeightSpan.textContent = window.innerHeight;
-            }
-            updateViewportInfo();
-            window.addEventListener('resize', updateViewportInfo);
-
-            const userAgentSpan = document.getElementById('debug-user-agent');
-            if (userAgentSpan) {
-                userAgentSpan.textContent = navigator.userAgent;
-            }
-
-            if (toggleButton && debugPanel) {
-                toggleButton.addEventListener('click', () => {
-                    debugPanel.classList.toggle('hidden');
-                });
-            }
-        });
-    </script>
 </body>
 </html>
