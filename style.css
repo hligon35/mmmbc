@@ -57,7 +57,6 @@ body {
     height: 45px; /* Adjusted for 4 lines (2px each) and 3 spaces (2px each) = 14px, with some extra for visual balance */
     width: 40px; 
     box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
-    /* margin-left: 25px; Removed - positioning handled by flex layout of parent */
 }
 
 .menu-button span {
@@ -227,13 +226,6 @@ section div p {
     border: 1px solid #bd5f25;
 }
 
-/***** Rule to move Thursday ministry times specifically *****/
-
-#ministries .thursday-schedule .time-slot {
-    position: relative;
-    left: 32px;
-}
-
 /********** Day Container Styling **********/
 
 .days-container {
@@ -280,14 +272,24 @@ section div p {
     display: flex;
     justify-content: space-around; /* Or space-between, or center, depending on desired spacing -> Changed to center */
     margin-top: 0px; /* Add some space above these divs */
+    padding: 0; /* ADDED to negate padding from 'section div' */
 }
 
 .side-by-side-divs > div { /* Style for direct children (divA and divB) */
     flex-basis: 45%; /* Example: each div takes up slightly less than half, allowing for some space between */
-    padding: 0px 10px 0px 10px;
+    /* padding: 0px 0px 0px 10px; */
     background-color: #c4612380; /* Light grey background for distinction */
     border: 1px solid #bd5f25;
     border-radius: 5px;
+}
+
+/* Added rule for when a .side-by-side-divs container has only one child div */
+.side-by-side-divs > div:only-child {
+    box-sizing: border-box; /* Ensures padding and border are included in the width */
+    flex-basis: auto;       /* Override the 45% basis */
+    width: calc(100% - 30px); /* Makes the element 15px narrower on each side than its parent .side-by-side-divs. With 15px margins, this results in 25px from .day's border (10px .day padding + 15px item margin). */
+    margin-left: 15px;      /* Adjusted from 10px to 15px */
+    margin-right: 15px;     /* Adjusted from 10px to 15px */
 }
 
 /********** Pastor Section Styling **********/
@@ -442,7 +444,6 @@ footer {
     max-width: 800px; /* Max width for the links area */
     gap: 20px; /* Space between link sections */
     padding-top: 20px;
-    /* Separator line - removed as copyright is now separate */
 }
 
 .footer-links-section {
@@ -494,9 +495,7 @@ footer {
     vertical-align: left; /* Helps align image with text */
 }
 
-/* .footer-links-section ul li a img[src*="youtube.png"] {
-    margin-right: 0px !important; /* Further reduced space for YouTube icon */
-}
+/* Comment related to YouTube icon spacing removed */
 
 .footer-links-section ul li a .link-text {
     display: inline-block;
@@ -683,7 +682,7 @@ footer {
 
     .faq-image-stack-container {
         margin-top: 20px;
-        padding-top: 0; /* Reset padding as it\\\'s stacked now */
+        padding-top: 0; /* Reset padding as it\'s stacked now */
         max-width: 80%;
     }
 
@@ -708,6 +707,11 @@ footer {
 @media (max-width: 768px) {
     body {
         padding-top: 40px; /* Adjusted for new nav height */
+        background-size: contain;
+        background-repeat: repeat-y; /* Repeat background vertically only */
+        background-size: auto 50%;   /* Make the image repeat exactly twice vertically */
+        background-position: top center;
+        background-attachment: scroll;
     }
 
     .top-nav {
@@ -811,7 +815,6 @@ footer {
 
     .sunday-schedule .service-block {
         width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
-        /* max-width: 90%; REMOVED */
         text-align: center;
         padding: 8px 15px; /* Consistent padding with Thursday blocks */
         background-color: #c4612380;
@@ -1260,5 +1263,174 @@ These should remain to ensure mobile view is correct.
 
     .form-toggle-btn:last-child {
         margin-bottom: 0;
+    }
+}
+
+/* Hero title span styling for mobile line spacing */
+@media (max-width: 768px) {
+    .hero-content h1 span {
+        display: block; /* Makes each span take its own line */
+        margin-bottom: 10px; /* Adds space below each line */
+    }
+
+    .hero-content h1 span:last-child {
+        margin-bottom: 0; /* No space after the last line */
+    }
+}
+
+/* Contact Page Specific Styles */
+.contact-section-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.form-toggle-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Space between buttons */
+    margin-bottom: 20px;
+}
+
+.form-toggle-buttons button {
+    padding: 10px 20px;
+    font-size: 1em;
+    color: white;
+    background-color: #c46123;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.form-toggle-buttons button:hover {
+    background-color: #a54f1e; /* Darker shade on hover */
+}
+
+.form-toggle-buttons button.active-form-btn {
+    background-color: #863f17; /* Even darker for active button */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.contact-form {
+    background-color: rgba(255, 255, 255, 0.05); /* Very subtle background for the form itself */
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(196, 97, 35, 0.5); /* Themed border */
+    width: 100%;
+    max-width: 600px; /* Max width for the form */
+    box-sizing: border-box;
+    display: none; /* Hidden by default, shown by JS */
+}
+
+.contact-form.active-form {
+    display: block; /* Show active form */
+}
+
+.contact-form h3 {
+    color: #c46123;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #c46123;
+    padding-bottom: 10px;
+}
+
+.contact-form label {
+    display: block;
+    margin-bottom: 5px;
+    color: #f0f0f0; /* Lighter label text */
+    text-align: left;
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    width: calc(100% - 22px); /* Full width minus padding and border */
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    border: 1px solid #555; /* Darker border for inputs */
+    background-color: #333; /* Dark input background */
+    color: #fff; /* White text in input */
+    font-size: 1em;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.contact-form input[type="text"]:focus,
+.contact-form input[type="email"]:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: #c46123; /* Highlight focus with theme color */
+    box-shadow: 0 0 5px rgba(196, 97, 35, 0.5);
+}
+
+.contact-form textarea {
+    height: 120px; /* Taller textarea */
+    resize: vertical; /* Allow vertical resize */
+}
+
+.submit-btn {
+    display: block; /* Make button block to center it */
+    width: auto; /* Auto width based on content and padding */
+    min-width: 150px; /* Minimum width for the button */
+    padding: 12px 25px;
+    font-size: 1.1em;
+    color: white;
+    background-color: #c46123;
+    border: none;
+    border-radius: 20px; /* Rounded pill shape */
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 20px auto 0; /* Center the button with margin */
+    text-align: center;
+}
+
+.submit-btn:hover {
+    background-color: #a54f1e; /* Darker shade on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+}
+
+.submit-btn:active {
+    background-color: #863f17; /* Even darker on click */
+    transform: translateY(0); /* Reset lift on click */
+    color: #e0e0e0; /* Slightly dimmer text on click */
+}
+
+/* Responsive adjustments for forms */
+@media (max-width: 768px) {
+    .contact-form {
+        padding: 15px;
+    }
+
+    .form-toggle-buttons button {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+
+    .contact-form input[type="text"],
+    .contact-form input[type="email"],
+    .contact-form textarea {
+        padding: 8px;
+        font-size: 0.95em;
+    }
+
+    .submit-btn {
+        padding: 10px 20px;
+        font-size: 1em;
+    }
+}
+
+/* Hero title span styling for mobile line spacing */
+@media (max-width: 768px) {
+    .hero-content h1 span {
+        display: block; /* Makes each span take its own line */
+        margin-bottom: 10px; /* Adds space below each line */
+    }
+
+    .hero-content h1 span:last-child {
+        margin-bottom: 0; /* No space after the last line */
     }
 }
