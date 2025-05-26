@@ -721,9 +721,15 @@ footer {
     }
 
     .menu-button {
-        height: 30px; /* Adjust if necessary */
-        width: 30px; /* Adjust if necessary */
+        height: 25px; /* Shrink button height */
+        width: 25px;  /* Shrink button width */
+        padding: 3px; /* Reduce padding */
+        border-width: 1px; /* Make border thinner */
         margin-right: 0; /* Reset margin, padding on parent handles spacing */
+    }
+
+    .menu-button span {
+        height: 2px; /* Make lines inside button thinner */
     }
 
     .nav-links {
