@@ -810,8 +810,8 @@ footer {
     }
 
     .sunday-schedule .service-block {
-        width: 80%; /* Consistent width with Thursday blocks */
-        max-width: 90%;
+        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
+        /* max-width: 90%; REMOVED */
         text-align: center;
         padding: 8px 15px; /* Consistent padding with Thursday blocks */
         background-color: #c4612380;
@@ -1000,12 +1000,12 @@ footer {
         /* display: flex; /* Not needed if service-details is the only child and handles its own content */
         /* flex-direction: column; */
         /* align-items: center; */
-        width: 80%; /* UPDATED: Set fixed width for consistency */
+        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
         /* min-width: 70%; REMOVED: Fixed width is set */
-        max-width: 90%; /* Retained max-width as a safeguard */
+        /* max-width: 90%; REMOVED: Redundant with width: 90% */
         /* margin-bottom: 10px; REMOVED: Replaced by gap on parent */
         text-align: center;
-        padding: 8px 15px; /* UPDATED: Reduced top/bottom padding to fit text vertically */
+        padding: 8px 15px; /* Consistent padding with Thursday blocks */
         background-color: #c4612380;
         border: 1px solid #bd5f25;
         border-radius: 8px; 
@@ -1017,5 +1017,119 @@ footer {
         flex-direction: column;
         align-items: center;
         width: 100%; /* Ensure details take full width of the block */
+    }
+}
+
+/* ==========================================================================
+   Service Blocks (Worship Times, Ministry Times)
+   ========================================================================== */
+
+/* Base style for service blocks - applies to both mobile and desktop */
+.service-block {
+    background-color: #c4612380; /* orange-brown, semi-transparent */
+    border: 1px solid #bd5f25;   /* darker orange-brown border */
+    border-radius: 8px;
+    padding: 15px; /* Base padding, can be adjusted in media queries */
+    color: #fff; /* Assuming light text on this background */
+    text-align: center; /* Center text within the block by default */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.service-block .service-details p {
+    margin: 0; /* Remove default paragraph margins */
+    line-height: 1.6; /* Improve readability */
+}
+
+.service-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;     /* Horizontally centers child elements (like the <p> block) */
+    justify-content: center; /* Vertically centers child elements if .service-details has intrinsic height or min-height */
+    width: 100%;             /* Ensures .service-details spans the .service-block width */
+}
+
+/* Ensure mobile styles for service-block width and specific padding are maintained if they were in a media query */
+/* For example, if you had:
+@media (max-width: 768px) {
+    .sunday-schedule .service-block, 
+    .thursday-schedule .service-block {
+        width: 80%;
+        padding: 8px 15px; // This would override the base 15px padding
+    }
+    // Other mobile specific styles for .service-block or .service-details
+}
+These should remain to ensure mobile view is correct.
+*/
+
+/* ...existing code... */
+/* Make sure the new media query is placed appropriately, typically after other media queries or at the end */
+
+@media (min-width: 769px) {
+    /* ...other existing desktop styles... */
+
+    /* Desktop layout for event groups (time slot + service block/row) */
+    .sunday-schedule .sunday-event-group,
+    .thursday-schedule .thursday-event-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Centers flex items (e.g., time-slot, service-block, event-service-blocks-row) */
+        text-align: center;  /* Centers inline-block children (e.g., time-slot if it's display: inline-block) and text within the group if not overridden */
+        margin-bottom: 40px; /* Increased spacing between event groups on desktop */
+        width: 100%; /* ADDED: Make event groups take full width of their .day parent's content area */
+    }
+
+    #worship-times .sunday-schedule .time-slot,
+    #ministries .thursday-schedule .time-slot {
+        font-size: 1.8em; /* Larger font for time slots on desktop */
+        margin-bottom: 15px; /* More space between time and service block */
+    }
+
+    /* Desktop styling for Thursday 6:00 PM services (side-by-side) */
+    #ministries .thursday-schedule .thursday-event-group .event-service-blocks-row {
+        display: flex;
+        justify-content: space-evenly; /* Distribute blocks evenly */
+        gap: 20px; /* Space between blocks */
+        align-items: stretch; /* Make blocks equal height */
+        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
+    }
+
+    #ministries .thursday-schedule .thursday-event-group .event-service-blocks-row .service-block {
+        flex: 1 1 auto; /* Allow blocks to grow/shrink, basis from content */
+        width: auto; /* Override mobile width; flex properties will manage width */
+        /* Base padding, background, border from global .service-block will apply */
+    }
+
+    /* Desktop styling for individual service blocks */
+    /* (Sunday services, and Thursday 6:30 PM service) */
+    #worship-times .sunday-schedule .sunday-event-group .service-block,
+    #ministries .thursday-schedule .thursday-event-group > .service-block { /* Targets service-block directly under group */
+        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
+        max-width: none; /* Override any previous max-width */
+        margin-left: auto;  /* Ensure centering if parent doesn't handle it */
+        margin-right: auto; /* Parent .sunday-event-group/.thursday-event-group has align-items: center */
+    }
+
+    /* If Sunday service blocks had specific height/centering for mobile, review if needed for desktop */
+    /* For example, .sunday-schedule .service-block { min-height: auto; } to reset mobile min-height */
+    /* And .sunday-schedule .service-block .service-details { align-items: center; } if vertical centering is still desired */
+
+    /* Optional: Adjust overall .day container if needed */
+    /*
+    .days-container .day {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    */
+}
+
+/* Spacing adjustments in hero section for mobile view */
+@media (max-width: 768px) {
+    .hero-content h1 .hero-line1,
+    .hero-content h1 .hero-line2 {
+        margin-bottom: 1em; /* Adds one line of space */
+    }
+
+    .hero-content h1 .hero-line3 {
+        margin-bottom: 2em; /* Adds two lines of space */
     }
 }
