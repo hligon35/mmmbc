@@ -323,7 +323,7 @@ section div p {
     flex: 2; /* FAQ container takes more space */
     max-width: 60%; /* Adjust as needed */
     /* margin: 0 auto; Centering is now handled by flex wrapper */
-    text-align: left;
+    text-align: center;
 }
 
 .faq-image-stack-container {
@@ -446,7 +446,7 @@ footer {
 
 .footer-links-section {
     background-color: #ffffff0d; /* Transparent div background */
-    padding: 15px;
+    padding: 10px; /* Reduced padding */
     border-radius: 8px;
     text-align: center; /* Changed from left to center for h4 */
     flex: 1; /* Make sections equal width */
@@ -456,10 +456,11 @@ footer {
 
 .footer-links-section h4 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 8px; /* Reduced margin */
     color: #c46123;
     border-bottom: 1px solid #c46123;
-    padding-bottom: 5px;
+    padding-bottom: 4px; /* Reduced padding */
+    font-size: 1.1em; /* Slightly adjust font size if needed */
 }
 
 .footer-links-section ul {
@@ -470,25 +471,30 @@ footer {
     flex-direction: column; 
     align-items: center; 
     flex-grow: 1; /* Allow ul to grow and fill space */
-    justify-content: space-around; /* Distribute li items vertically */
+    justify-content: center; /* Center items if not enough to space-around */
+    gap: 4px; /* Added gap between li items */
 }
 
 .footer-links-section ul li a {
     color: #ccc;
     text-decoration: none;
-    font-size: 0.9em;
-    line-height: 1.8;
+    font-size: 0.85em; /* Slightly reduced font size */
+    line-height: 1.6; /* Adjusted line height */
     display: flex; /* Changed to flex for icon and text alignment */
     align-items: center; /* Vertically align icon and text */
-    padding: 2px 0;
+    padding: 1px 0; /* Reduced padding */
 }
 
 .footer-links-section ul li a .link-icon {
-    margin-right: 8px; /* Space between icon and text */
+    margin-right: 5px; /* Reduced space between icon and text */
     display: inline-block; /* Or inline-flex */
-    width: 16px; /* Adjust as needed */
-    height: 16px; /* Adjust as needed */
-    vertical-align: middle; /* Helps align image with text */
+    width: 14px; /* Slightly reduced icon size */
+    height: 14px; /* Slightly reduced icon size */
+    vertical-align: left; /* Helps align image with text */
+}
+
+/* .footer-links-section ul li a img[src*="youtube.png"] {
+    margin-right: 0px !important; /* Further reduced space for YouTube icon */
 }
 
 .footer-links-section ul li a .link-text {
@@ -759,8 +765,17 @@ footer {
         margin-bottom: 25px; /* Specific margin for contact section on mobile */
     }
 
-    /* Remove old Sunday-specific row overrides as new HTML structure and CSS handles it */
-    
+    /* Ensure Sunday service blocks can be side-by-side in mobile view */
+    .sunday-services .service-block {
+        width: auto; /* Override global width: 100% which forces stacking */
+        flex-grow: 1; /* Allow block to grow if space available */
+        flex-shrink: 1; /* Allow block to shrink if needed */
+        /* Aim for two blocks side-by-side, considering 10px gap in parent .service-times-row */
+        flex-basis: calc(50% - 5px);
+        /* The inherited 'display: flex', 'flex-direction: column', 'align-items: center'
+           from the global scope will continue to style the internal content of each block. */
+    }
+
     /* General behavior for .service-times-row and .side-by-side-divs */
     /* MODIFIED for row/wrap behavior */
     .service-times-row {
@@ -769,6 +784,8 @@ footer {
         justify-content: center; /* Center wrapped items */
         align-items: flex-start; /* Align to top */
         gap: 10px; /* Space between items */
+        width: 100%; /* ADDED: Ensure full width for content alignment */
+        box-sizing: border-box; /* ADDED: Include padding/border in width calculation */
     }
 
     /* MODIFIED for row/wrap behavior */
@@ -778,6 +795,8 @@ footer {
         justify-content: space-around; /* Distribute items */
         align-items: stretch; /* Stretch items if they have different heights */
         gap: 10px; /* Space between items */
+        width: 100%; /* ADDED: Ensure full width for content alignment */
+        box-sizing: border-box; /* ADDED: Include padding/border in width calculation */
     }
 
     /* MODIFIED for row/wrap behavior */
@@ -795,56 +814,8 @@ footer {
     }
 
     .thursday-schedule .time-slot { /* UPDATED SELECTOR */
-        display: block;       /* Make it a block element to stack above description */
-        text-align: center;   /* Center the time text */
-        margin-left: auto;    /* Center the block itself */
-        margin-right: auto;
-        position: relative; 
-        left: 0;                /* Reset horizontal shift, rely on block centering */
-    }
-
-    /* Thursday schedule: Ensure 6pm/6:30pm event blocks stack vertically */
-    .thursday-schedule .service-times-row,
-    .thursday-schedule .side-by-side-divs {
-        flex-direction: column;
-        align-items: center; /* Center the stacked blocks */
-    }
-
-    /* Thursday schedule: Ensure each event block (direct child of the above) takes full width */
-    .thursday-schedule .service-times-row > div,
-    .thursday-schedule .side-by-side-divs > div {
-        flex-basis: 100%; /* Take full width */
-        width: 100%;      /* Explicit width */
-        margin-bottom: 15px; /* Space between stacked items */
-    }
-
-    .thursday-schedule .service-times-row > div:last-child,
-    .thursday-schedule .side-by-side-divs > div:last-child {
-        margin-bottom: 0;
-    }
-    
-    /* Thursday schedule: Styles for .service-block if used (similar to Sunday) */
-    .thursday-schedule .service-block {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%; /* Ensure it takes full width of its parent */
-        margin-bottom: 15px; 
-    }
-
-    .thursday-schedule .service-block:last-child {
-        margin-bottom: 0;
-    }
-
-    .thursday-schedule .service-block {
-        display: flex;
-        flex-direction: row; /* Keep time and details side-by-side */
-        justify-content: center; /* Center the time/details pair */
-        align-items: baseline; /* Align text by baseline; 'center' is an alternative */
-        flex-wrap: wrap; /* Allow wrapping if content is too wide */
-        gap: 10px; /* Space between time and details */
-        width: 100%;
-        margin-bottom: 15px; /* Retain bottom margin */
+        position: relative; /* Added for positioning */
+        left: -5px; /* Move 5px to the left */
     }
 
     .days-container {
@@ -855,16 +826,54 @@ footer {
     .day {
         flex-basis: 100%; /* Full width for each day */
         margin-bottom: 10px; /* Space between days */
+        /* align-items: stretch; REMOVED to inherit align-items: center from global .day style */
     }
 
-    /* ADDED: FAQ spacing adjustments for mobile */
+    /* ADDED: FAQ spacing adjustments for mobile - REVISED */
     .faq-container {
-        max-width: 95%; /* Increase max-width to reduce side gaps */
-        padding-left: 10px;  /* Adjust padding */
-        padding-right: 10px; /* Adjust padding */
-        margin-left: auto; /* Ensure centering */
-        margin-right: auto; /* Ensure centering */
+        order: 2; 
+        max-width: 95%; 
+        padding-left: 10px; 
+        padding-right: 10px;
+        margin-left: auto; 
+        margin-right: auto; 
+        margin-top: 0; /* Image container will be above with margin-bottom */
+        margin-bottom: 20px; /* Keep some space below FAQ text */
     }
+
+    /* REVERTED: Use the original image stack container */
+    .faq-image-stack-container {
+        display: flex; /* Re-enable display, it's flex by default for internal stacking */
+        /* flex-direction, align-items, gap are inherited from general styles */
+        order: 1; /* Place image stack before FAQ items */
+        width: auto; /* Let content or max-width define it */
+        /* max-width: 80%; is inherited from 1024px styles, which is good for mobile */
+        margin: 0 auto 10px auto; /* Center the container and add space below it */
+        /* padding-top: 0; is inherited from 1024px styles */
+    }
+
+    /* REMOVED: Pseudo-elements for FAQ images */
+    /* .faq-section-wrapper::before {
+        content: url('ConImg/Mt-Moriah-5.png');
+        order: 1;
+        display: block;
+        width: 80%;
+        max-width: 500px;
+        height: auto;
+        border-radius: 10px;
+        margin: 0 auto 20px auto; 
+    } */
+
+    /* .faq-section-wrapper::after {
+        content: url('ConImg/Mt-Moriah-4.png');
+        order: 3;
+        display: block;
+        width: 80%;
+        max-width: 500px;
+        height: auto;
+        border-radius: 10px;
+        margin: 20px auto 20px auto; 
+    } */
 
     /* ADDED: Footer logo and text wrapping for mobile */
     .footer-top-row {
@@ -876,15 +885,64 @@ footer {
     .footer-logo {
         height: 100px; /* Double logo size from 50px to 100px */
         width: auto;
-        float: none; /* Remove float */
-        margin: 0 0 0px 0; /* Reduced bottom margin to 5px */
+        /* float: none; Removed as flex handles layout */
+        margin: 0 0 -15px 0; /* Adjusted bottom margin */
     }
 
     .footer-text-content {
-        overflow: visible; /* Reset overflow */
-        display: block; /* Or flex if needed for internal alignment */
+        /* overflow: visible; Removed, not strictly necessary here */
+        /* display: block; Flex child, block is default for non-replaced */
         text-align: center; /* Center the text */
         margin-left: 10px; /* Add 10px margin from left */
         margin-right: 10px; /* Add 10px margin from right */
+        max-width: 100%; /* Ensure it doesn\'t overflow small screens */
+    }
+
+    .pastor-image {
+        width: 125%;         /* Image is 125% of its container's content-box width */
+        max-width: none;     /* Remove 100% max-width constraint from previous rules */
+        height: auto;        /* Maintain aspect ratio */
+        display: block;      /* Standard for this type of image display */
+        margin-left: -12.5%; /* Shifts the image left by (125%-100%)/2 = 12.5% of container width, centering it */
+        margin-right: auto;  /* Standard practice, though margin-left handles centering here */
+        margin-top: 0;       /* Reset top margin */
+        margin-bottom: -15px; /* Consistent bottom margin */
+        float: none;         /* Ensure no float is applied */
+        border-radius: 15px; /* Keep rounded corners */
+    }
+
+    /* Thursday schedule specific adjustments for mobile */
+    .thursday-schedule .service-block {
+        display: flex;
+        flex-direction: column; /* Stack time-slot and service-details */
+        align-items: center;   /* Center time-slot and service-details horizontally */
+        width: 100%;           /* Take full width to help center content properly */
+        margin-bottom: 20px;   /* Increased space between 6pm and 6:30pm blocks */
+        text-align: center;    /* Ensures text within <p> in details is centered */
+    }
+
+    .thursday-schedule .service-block:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Override the specific left offset for Thursday time slots for centering */
+    /* The parent .service-block with align-items: center will handle the centering of the time-slot itself. */
+    .thursday-schedule .time-slot {
+        position: static; /* Remove relative positioning */
+        left: auto;       /* Remove left offset */
+        /* Vertical margins from general .time-slot rule (margin: 5px 0;) are fine */
+        /* font-size from general .time-slot rule is fine */
+        margin-bottom: 8px; /* Space between time and the details below it */
+    }
+
+    .thursday-schedule .service-block .service-details {
+        display: flex;
+        flex-direction: column; /* Stack choir names if multiple */
+        align-items: center;   /* Center choir names horizontally */
+    }
+
+    .thursday-schedule .service-block .service-details p {
+        margin: 3px 0; /* Adjust spacing between choir names */
+        line-height: 1.4; /* Adjust line height for choir names if needed */
     }
 }
