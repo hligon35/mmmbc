@@ -42,7 +42,6 @@ body {
 .nav-logo {
     height: 100px; /* Adjust as needed to fit well */
     width: auto;
-  /*  margin-left: 10px; /* Add some space between logo and links */
 }
 
 /********** Menu Button Styling **********/
@@ -193,7 +192,6 @@ section div {   /*Days Container*/
     margin: 0;
     padding: 5px 5px 5px 5px;
     border-radius: 15px;
-   /* box-shadow: 0 1px 3px rgb(208, 255, 0);*/
     max-width: 1200px; /* Max width for content divs */
 }
 
@@ -251,7 +249,6 @@ section div p {
     background-color: rgba(0, 0, 0, 0); 
     border-radius: 15px;
     flex: 1; /* Allows day blocks to grow and shrink equally to fill space */
-    /* min-width: calc(33.333% - 20px); */ /* Consider re-adding if you want a strict 3-per-row on larger screens */
     display: flex;
     flex-direction: column;
     align-items: center; 
@@ -286,7 +283,6 @@ section div p {
 
 .side-by-side-divs > div { /* Style for direct children (divA and divB) */
     flex-basis: 45%; /* Example: each div takes up slightly less than half, allowing for some space between */
-    /* Add other styling for divA and divB as needed, e.g., padding, background */
     padding: 0px 10px 0px 10px;
     background-color: #c4612380; /* Light grey background for distinction */
     border: 1px solid #bd5f25;
@@ -326,7 +322,7 @@ section div p {
 .faq-container {
     flex: 2; /* FAQ container takes more space */
     max-width: 60%; /* Adjust as needed */
-    /* margin: 0 auto; /* Centering is now handled by flex wrapper */ */
+    /* margin: 0 auto; Centering is now handled by flex wrapper */
     text-align: left;
 }
 
@@ -344,7 +340,7 @@ section div p {
 }
 
 .stacked-image {
-    width: 100%; /* Make images responsive to the container's width */
+    width: 100%; /* Make images responsive to the container\'s width */
     max-width: 500px; /* Set a max-width for the images themselves, adjust as needed */
     height: auto;
     border-radius: 10px;
@@ -380,7 +376,6 @@ section div p {
     overflow: hidden;
     transition: max-height 0.5s ease-out, padding 0.5s ease-out; /* Smooth transition for height and padding */
     background-color: rgba(0, 0, 0, 0.3);
-   /* border-top: 1px solid #c46123; /* Separator line */
     border-radius: 10px 10px 10px 10px; /* Round bottom corners */
 }
 
@@ -446,7 +441,7 @@ footer {
     max-width: 800px; /* Max width for the links area */
     gap: 20px; /* Space between link sections */
     padding-top: 20px;
-    /* border-top: 1px solid #444; */ /* Separator line - removed as copyright is now separate */
+    /* Separator line - removed as copyright is now separate */
 }
 
 .footer-links-section {
@@ -523,9 +518,7 @@ footer {
 #events {
     background-color: rgba(0, 0, 0, 0.7); /* Transparent white background */
     padding: 10px 10px 10px 10px; /* Padding around the section */
-    /*margin-bottom: 0px; */
     border-radius: 15px;
-   /* border-bottom: 1px solid rgb(196, 97, 35); */
 }
 
 #events h2 {
@@ -558,7 +551,6 @@ footer {
     flex: 1; /* Takes up 1 part of the available space */
     display: flex; /* Added to allow its content to be flex-managed if needed */
     flex-direction: column; /* Align content within this area */
-    /* border: 1px dashed lime; /* For debugging layout */
 }
 
 /* Modal Styles */
@@ -657,18 +649,6 @@ footer {
 
 /* Navigation Menu Styles */
 
-/*************** Responsive adjustments for navigation ***************/
-
-
-@media (max-width: 768px) { 
-    /* .menu-button styling is handled by base styles or specific rules if needed */
-    /* .top-nav justify-content: space-between is handled by base styles */
-
-    /* .nav-links styles are now primarily handled by the base rules above for a consistent dropdown menu. 
-       Any specific overrides for mobile, if different from the new 50px wide right-aligned menu, would go here.
-       For now, we assume the 50px wide menu is for all views when active. */
-}
-
 /* General Responsive Styles */
 
 /* Medium screens (e.g., tablets) */
@@ -696,7 +676,7 @@ footer {
 
     .faq-image-stack-container {
         margin-top: 20px;
-        padding-top: 0; /* Reset padding as it\'s stacked now */
+        padding-top: 0; /* Reset padding as it\\\'s stacked now */
         max-width: 80%;
     }
 
@@ -713,7 +693,6 @@ footer {
 
     .event-image-container {
         margin-bottom: 20px; /* Add space when stacked */
-        /* max-width: 60%; /* Removed: Let it be 100% when stacked, or adjust as needed */
         height: auto; /* Allow height to adjust based on content or aspect ratio */
     }
 }
@@ -721,26 +700,29 @@ footer {
 /* Tablet Viewports (e.g., portrait tablets) */
 @media (max-width: 768px) {
     body {
-        padding-top: 80px; /* Consistent with nav height */
+        padding-top: 40px; /* Adjusted for new nav height */
     }
 
     .top-nav {
-        height: 80px;
-        padding: 0 15px;
+        height: 40px; /* Shrink nav height by 50% */
+        padding: 0 10px; /* Set padding for logo and menu button spacing */
+        justify-content: space-between; /* Ensure logo and menu button are at opposite ends */
     }
 
     .nav-logo {
-        height: 80px;
+        height: 40px; /* Shrink nav logo by 50% */
+        margin-left: 0; /* Reset margin, padding on parent handles spacing */
     }
 
     .menu-button {
-        height: 35px;
-        width: 35px;
+        height: 30px; /* Adjust if necessary */
+        width: 30px; /* Adjust if necessary */
+        margin-right: 0; /* Reset margin, padding on parent handles spacing */
     }
 
     .nav-links {
-        top: 80px; /* Position below the adjusted nav bar */
-        right: 15px;
+        top: 40px; /* Position below the adjusted nav bar */
+        right: 10px; /* Align with new padding */
         width: 200px; /* Slightly wider for tablet */
     }
 
@@ -772,23 +754,13 @@ footer {
         margin-bottom: 20px; /* From older rules, smaller */
     }
 
+    /* Assuming 'contact' is the ID for your contact section */
+    section#contact {
+        margin-bottom: 25px; /* Specific margin for contact section on mobile */
+    }
+
     /* Remove old Sunday-specific row overrides as new HTML structure and CSS handles it */
-    /* #worship-times .day:first-child .service-times-row {
-        flex-direction: row; 
-        justify-content: space-around; 
-    } */
-
-    /* #worship-times .day:first-child .side-by-side-divs {
-        flex-direction: row; 
-        justify-content: space-around; 
-    } */
     
-    /* #worship-times .day:first-child .side-by-side-divs > div {
-      flex-basis: 45%; 
-      width: auto; 
-      margin-bottom: 0; 
-    } */
-
     /* General behavior for .service-times-row and .side-by-side-divs */
     /* MODIFIED for row/wrap behavior */
     .service-times-row {
@@ -823,8 +795,56 @@ footer {
     }
 
     .thursday-schedule .time-slot { /* UPDATED SELECTOR */
-        position: relative; /* Added for positioning */
-        left: -5px; /* Move 5px to the left */
+        display: block;       /* Make it a block element to stack above description */
+        text-align: center;   /* Center the time text */
+        margin-left: auto;    /* Center the block itself */
+        margin-right: auto;
+        position: relative; 
+        left: 0;                /* Reset horizontal shift, rely on block centering */
+    }
+
+    /* Thursday schedule: Ensure 6pm/6:30pm event blocks stack vertically */
+    .thursday-schedule .service-times-row,
+    .thursday-schedule .side-by-side-divs {
+        flex-direction: column;
+        align-items: center; /* Center the stacked blocks */
+    }
+
+    /* Thursday schedule: Ensure each event block (direct child of the above) takes full width */
+    .thursday-schedule .service-times-row > div,
+    .thursday-schedule .side-by-side-divs > div {
+        flex-basis: 100%; /* Take full width */
+        width: 100%;      /* Explicit width */
+        margin-bottom: 15px; /* Space between stacked items */
+    }
+
+    .thursday-schedule .service-times-row > div:last-child,
+    .thursday-schedule .side-by-side-divs > div:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Thursday schedule: Styles for .service-block if used (similar to Sunday) */
+    .thursday-schedule .service-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%; /* Ensure it takes full width of its parent */
+        margin-bottom: 15px; 
+    }
+
+    .thursday-schedule .service-block:last-child {
+        margin-bottom: 0;
+    }
+
+    .thursday-schedule .service-block {
+        display: flex;
+        flex-direction: row; /* Keep time and details side-by-side */
+        justify-content: center; /* Center the time/details pair */
+        align-items: baseline; /* Align text by baseline; 'center' is an alternative */
+        flex-wrap: wrap; /* Allow wrapping if content is too wide */
+        gap: 10px; /* Space between time and details */
+        width: 100%;
+        margin-bottom: 15px; /* Retain bottom margin */
     }
 
     .days-container {
@@ -844,5 +864,27 @@ footer {
         padding-right: 10px; /* Adjust padding */
         margin-left: auto; /* Ensure centering */
         margin-right: auto; /* Ensure centering */
+    }
+
+    /* ADDED: Footer logo and text wrapping for mobile */
+    .footer-top-row {
+        display: flex; /* Use flex for centering logo */
+        flex-direction: column; /* Stack logo and text vertically */
+        align-items: center; /* Center items horizontally */
+    }
+
+    .footer-logo {
+        height: 100px; /* Double logo size from 50px to 100px */
+        width: auto;
+        float: none; /* Remove float */
+        margin: 0 0 0px 0; /* Reduced bottom margin to 5px */
+    }
+
+    .footer-text-content {
+        overflow: visible; /* Reset overflow */
+        display: block; /* Or flex if needed for internal alignment */
+        text-align: center; /* Center the text */
+        margin-left: 10px; /* Add 10px margin from left */
+        margin-right: 10px; /* Add 10px margin from right */
     }
 }
