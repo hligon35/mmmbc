@@ -128,6 +128,17 @@ body {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
 }
 
+/* Hero title styling */
+.hero-content h1 .hero-line {
+    display: block;
+    margin-bottom: 0.5em; /* Space between lines */
+    white-space: nowrap; /* Ensures content of each line stays on a single line */
+}
+
+.hero-content h1 .hero-line:last-child {
+    margin-bottom: 0;
+}
+
 .hero-content .hero-subtitle {
     font-size: 0.6em; /* Roughly 2 sizes smaller than 1em, adjust as needed */
 }
@@ -219,7 +230,7 @@ section div p {
 .time-slot {    /*Individual times*/
     font-size: 1.3em; /* Style for the times */
     color: #ffffff;
-    margin: 0; /* Provides space around each time, allowing more to be added */
+    margin: 0 0 5px; /* Provides space around each time, allowing more to be added */
     padding: 2px 5px;
     background-color: #c4612380;
     border-radius: 5px;
@@ -774,21 +785,9 @@ footer {
     /* Assuming 'contact' is the ID for your contact section */
     section#contact {
         margin-bottom: 25px; /* Specific margin for contact section on mobile */
-    }
-
-    /* Ensure Sunday service blocks can be side-by-side in mobile view */
-    /* .sunday-services .service-block { -- Commenting out the old rule as new structure will be used
-        width: auto; 
-        flex-grow: 1; 
-        flex-shrink: 1; 
-        flex-basis: calc(50% - 5px);
-    } */
-
-    /* Center text within Sunday service details paragraphs on mobile - This might be redundant or need adjustment with new structure */
-    /* .sunday-services .service-details p { -- Commenting out for now
-        text-align: center;
-        margin: 2px 0; 
-    } */
+    }    /* Ensure Sunday service blocks can be side-by-side in mobile view */
+    
+    /* Center text within Sunday service details paragraphs on mobile */
 
     /* New Styles for Sunday Schedule similar to Thursday */
     .sunday-schedule .sunday-event-group {
@@ -906,9 +905,7 @@ footer {
         margin-right: auto; 
         margin-top: 0; /* Image container will be above with margin-bottom */
         margin-bottom: 20px; /* Keep some space below FAQ text */
-    }
-
-    /* REVERTED: Use the original image stack container */
+    }    /* REVERTED: Use the original image stack container */
     .faq-image-stack-container {
         display: flex; /* Re-enable display, it's flex by default for internal stacking */
         /* flex-direction, align-items, gap are inherited from general styles */
@@ -918,29 +915,6 @@ footer {
         margin: 0 auto 10px auto; /* Center the container and add space below it */
         /* padding-top: 0; is inherited from 1024px styles */
     }
-
-    /* REMOVED: Pseudo-elements for FAQ images */
-    /* .faq-section-wrapper::before {
-        content: url('ConImg/Mt-Moriah-5.png');
-        order: 1;
-        display: block;
-        width: 80%;
-        max-width: 500px;
-        height: auto;
-        border-radius: 10px;
-        margin: 0 auto 20px auto; 
-    } */
-
-    /* .faq-section-wrapper::after {
-        content: url('ConImg/Mt-Moriah-4.png');
-        order: 3;
-        display: block;
-        width: 80%;
-        max-width: 500px;
-        height: auto;
-        border-radius: 10px;
-        margin: 20px auto 20px auto; 
-    } */
 
     /* ADDED: Footer logo and text wrapping for mobile */
     .footer-top-row {
@@ -970,7 +944,7 @@ footer {
         max-width: none;     /* Remove 100% max-width constraint from previous rules */
         height: auto;        /* Maintain aspect ratio */
         display: block;      /* Standard for this type of image display */
-        margin-left: -12.5%; /* Shifts the image left by (125%-100%)/2 = 12.5% of container width, centering it */
+        margin-left: -14%; /* Shifts the image left by (125%-100%)/2 = 12.5% of container width, centering it */
         margin-right: auto;  /* Standard practice, though margin-left handles centering here */
         margin-top: 0;       /* Reset top margin */
         margin-bottom: -15px; /* Consistent bottom margin */
@@ -996,17 +970,8 @@ footer {
         display: inline-block; 
         /* margin-bottom: 8px; REMOVED: Replaced by gap on parent */
         /* margin-left and margin-right will be auto if text-align:center on parent doesn't center it, 
-           but for inline-block, text-align:center on parent is the primary method. */
-    }
-
-    .thursday-schedule .service-block {
-        /* display: flex; /* Not needed if service-details is the only child and handles its own content */
-        /* flex-direction: column; */
-        /* align-items: center; */
-        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
-        /* min-width: 70%; REMOVED: Fixed width is set */
-        /* max-width: 90%; REMOVED: Redundant with width: 90% */
-        /* margin-bottom: 10px; REMOVED: Replaced by gap on parent */
+           but for inline-block, text-align:center on parent is the primary method. */    }    .thursday-schedule .service-block {
+        width: 100%; /* Full width to match other containers */
         text-align: center;
         padding: 8px 15px; /* Consistent padding with Thursday blocks */
         background-color: #c4612380;
@@ -1056,305 +1021,16 @@ footer {
     width: 100%;             /* Ensures .service-details spans the .service-block width */
 }
 
-/* Ensure mobile styles for service-block width and specific padding are maintained if they were in a media query */
-/* For example, if you had:
-@media (max-width: 768px) {
-    .sunday-schedule .service-block, 
-    .thursday-schedule .service-block {
-        width: 80%;
-        padding: 8px 15px; // This would override the base 15px padding
-    }
-    // Other mobile specific styles for .service-block or .service-details
-}
-These should remain to ensure mobile view is correct.
-*/
-
-/* ...existing code... */
-/* Make sure the new media query is placed appropriately, typically after other media queries or at the end */
-
-@media (min-width: 769px) {
-    /* ...other existing desktop styles... */
-
-    /* REMOVED hero title specific styles for .hero-subtitle, .hero-desktop-line, .hero-word */
-    /* .hero-content h1 .hero-subtitle {
-        display: block; 
-        margin-bottom: 1em; 
-    }
-
-    .hero-content h1 .hero-desktop-line {
-        display: block; 
-        margin-bottom: 1em; 
-    }
-
-    .hero-content h1 .hero-desktop-line:last-of-type {
-        margin-bottom: 0; 
-    }
-
-    .hero-content h1 .hero-word {
-        display: inline; 
-        margin-bottom: 0; 
-        line-height: normal; 
-    } */
-
-    /* Desktop layout for event groups (time slot + service block/row) */
-    .sunday-schedule .sunday-event-group,
-    .thursday-schedule .thursday-event-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Centers flex items (e.g., time-slot, service-block, event-service-blocks-row) */
-        text-align: center;  /* Centers inline-block children (e.g., time-slot if it's display: inline-block) and text within the group if not overridden */
-        margin-bottom: 40px; /* Increased spacing between event groups on desktop */
-        width: 100%; /* ADDED: Make event groups take full width of their .day parent's content area */
-    }
-
-    #worship-times .sunday-schedule .time-slot,
-    #ministries .thursday-schedule .time-slot {
-        font-size: 1.8em; /* Larger font for time slots on desktop */
-        margin-bottom: 15px; /* More space between time and service block */
-    }
-
-    /* Desktop styling for Thursday 6:00 PM services (side-by-side) */
-    #ministries .thursday-schedule .thursday-event-group .event-service-blocks-row {
-        display: flex;
-        justify-content: space-evenly; /* Distribute blocks evenly */
-        gap: 20px; /* Space between blocks */
-        align-items: stretch; /* Make blocks equal height */
-        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
-    }
-
-    #ministries .thursday-schedule .thursday-event-group .event-service-blocks-row .service-block {
-        flex: 1 1 auto; /* Allow blocks to grow/shrink, basis from content */
-        width: auto; /* Override mobile width; flex properties will manage width */
-        /* Base padding, background, border from global .service-block will apply */
-    }
-
-    /* Desktop styling for individual service blocks */
-    /* (Sunday services, and Thursday 6:30 PM service) */
-    #worship-times .sunday-schedule .sunday-event-group .service-block,
-    #ministries .thursday-schedule .thursday-event-group > .service-block { /* Targets service-block directly under group */
-        width: calc(100% - 30px); /* Corrected for 25px margin from .day edge (10px day padding + 15px here) */
-        max-width: none; /* Override any previous max-width */
-        margin-left: auto;  /* Ensure centering if parent doesn't handle it */
-        margin-right: auto; /* Parent .sunday-event-group/.thursday-event-group has align-items: center */
-    }
-
-    /* If Sunday service blocks had specific height/centering for mobile, review if needed for desktop */
-    /* For example, .sunday-schedule .service-block { min-height: auto; } to reset mobile min-height */
-    /* And .sunday-schedule .service-block .service-details { align-items: center; } if vertical centering is still desired */
-
-    /* Optional: Adjust overall .day container if needed */
-    /*
-    .days-container .day {
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    */
-}
-
-/* Spacing adjustments in hero section for mobile view */
-@media (max-width: 768px) {
-    .hero-content h1 .hero-subtitle { /* This rule remains correct */
-        display: block;
-        margin-bottom: 1em; /* Space after subtitle */
-    }
-
-    .hero-content h1 .hero-desktop-line {
-        display: block; /* Each group of words on its own line */
-        margin-bottom: 1em; /* Space between lines */
-    }
-
-    .hero-content h1 .hero-desktop-line:last-of-type {
-        margin-bottom: 0; /* No space after the last line */
-    }
-
-    .hero-content h1 .hero-word {
-        display: inline; /* Words within a .hero-desktop-line stay inline */
-        margin-bottom: 0; /* Reset from previous mobile-specific style */
-        line-height: normal; /* Reset from previous mobile-specific style */
-    }
-
-    /* The old rule ".hero-content h1 span:last-child, .hero-content h1 .hero-word:last-of-type" is removed by these changes. */
-    /* The rule for .hero-content h1 .hero-line1, .hero-line2, .hero-line3 is also effectively replaced if it existed here. */
-
-    .hero-content h1 br { /* This rule remains correct */
-        display: none; 
-    }
-
-    .hero-section {
-        padding: 60px 20px; /* Adjusted padding for mobile */
-        margin-bottom: 20px; /* Added space below hero section for mobile */
-    }
-}
-
-/********** Contact Page Specific Styles **********/
-.content-section {
-    padding: 20px;
-    text-align: center;
-}
-
-.form-toggle-buttons {
-    margin-bottom: 30px;
+.thursday-schedule .thursday-event-group .event-service-blocks-row {
     display: flex;
-    justify-content: center;
-    gap: 10px; /* Space between buttons */
-}
-
-.form-toggle-btn {
-    padding: 10px 20px;
-    font-size: 1em;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.form-toggle-btn.active {
-    background-color: var(--primary-color); /* Assuming --primary-color is defined */
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.form-toggle-btn:not(.active):hover {
-    background-color: #c46123;
-}
-
-.contact-form {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
-    margin: 0 auto; /* Center the form */
-    text-align: left;
-}
-
-.contact-form h2 {
-    text-align: center;
-    margin-bottom: 25px;
-    color: #333;
-}
-
-.contact-form div {
-    margin-bottom: 20px;
-}
-
-.contact-form label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #555;
-}
-
-.contact-form input[type="text"],
-.contact-form input[type="email"],
-.contact-form input[type="tel"],
-.contact-form textarea {
+    flex-wrap: wrap;
+    justify-content: space-between;
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box; /* Important for padding and width */
-    font-size: 1em;
+    gap: 10px;
 }
 
-.contact-form textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.contact-form input:focus,
-.contact-form textarea:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.25); /* Adjust color to match --primary-color */
-}
-
-.submit-btn {
-    background-color: #c46123; /* Mt. Moriah orange */
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.1em;
-    font-weight: bold;
-    display: block;
-    width: 100%;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-.submit-btn:hover {
-    background-color: rgba(196, 97, 35, 0.8); /* Mt. Moriah orange, 80% opacity */
-    color: white;
-}
-
-.submit-btn:active {
-    background-color: #ffffff; /* White */
-    color: #c46123; /* Mt. Moriah orange for text */
-    border: 1px solid #c46123; /* Mt. Moriah orange border */
-}
-
-/* Responsive adjustments for forms */
-@media (max-width: 768px) {
-    .contact-form {
-        padding: 20px;
-    }
-
-    .form-toggle-buttons {
-        flex-direction: column;
-    }
-
-    .form-toggle-btn {
-        width: 100%;
-        margin-bottom: 5px; /* Add some space when stacked */
-    }
-
-    .form-toggle-btn:last-child {
-        margin-bottom: 0;
-    }
-}
-
-/* Hero title span styling for mobile line spacing */
-@media (max-width: 768px) {
-    .hero-content h1 span {
-        display: block; /* Makes each span take its own line */
-        margin-bottom: 10px; /* Adds space below each line */
-    }
-
-    .hero-content h1 span:last-child {
-        margin-bottom: 0; /* No space after the last line */
-    }
-}
-
-/* Contact Page Specific Styles */
-/* REMOVED duplicate .content-section rule */
-
-/* REMOVED duplicate .form-toggle-buttons rule */
-
-/* REMOVED duplicate .form-toggle-btn rule */
-
-/* REMOVED duplicate .form-toggle-btn.active rule */
-
-/* REMOVED duplicate .form-toggle-btn:not(.active):hover rule */
-
-/* REMOVED duplicate .contact-form rule and its child element stylings */
-
-/* REMOVED duplicate .submit-btn rule and its pseudo-classes */
-
-/* REMOVED duplicate responsive adjustments for forms within @media (max-width: 768px) */
-
-/* Hero title span styling for mobile line spacing */
-/* REMOVED duplicate @media (max-width: 768px) block for .hero-content h1 span */
-
-/* New global styling for hero lines */
-.hero-content h1 .hero-line {
-    display: block;
-    margin-bottom: 0.5em; /* Adjust as needed for "line space" */
-    white-space: nowrap; /* Ensures content of each line stays on a single line */
-    /* line-height: 1.5; /* Optional: if more space is needed than margin-bottom provides */
-}
-
-.hero-content h1 .hero-line:last-child {
-    margin-bottom: 0;
+.thursday-schedule .event-service-blocks-row .service-block {
+    flex: 1;
+    min-width: 45%; /* Ensure two blocks can fit side by side */
+    margin: 0;
 }
