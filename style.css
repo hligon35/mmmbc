@@ -123,7 +123,7 @@ body {
 }
 
 .hero-content h1 {
-    font-size: 3.5em;
+    font-size: 6em;
     margin-bottom: 0px;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
 }
@@ -136,7 +136,7 @@ body {
 }
 
 .hero-content h1 .hero-line:last-child {
-    margin-bottom: 0;
+    margin-bottom: 50px;
 }
 
 .hero-content .hero-subtitle {
@@ -169,10 +169,10 @@ body {
 
 main {  /***** Center area behind containers *****/
     background-color: rgba(0, 0, 0, 0); 
-    padding-top: 100px;
+    padding-top: 75px;
     margin-left: auto; /* Center main content */
     margin-right: auto; /* Center main content */
-    max-width: 1200px; /* Set a max-width for main content area */
+    max-width: 1350px; /* Set a max-width for main content area */
     width: 90%; /* Allow it to be responsive */
 }
 
@@ -183,7 +183,7 @@ section {
     text-align: center;
     margin-bottom: 50px; 
     border-radius: 15px; 
-    background-color: rgba(18, 18, 18, 0.7); 
+    background-color: rgba(18, 18, 18); 
     /* Removed fixed height, section will now size to content */
 }
 
@@ -194,7 +194,34 @@ section:last-of-type {
 section h2 {    /*Section Names*/
     font-size: 3em;
     margin-bottom: 5px;
-    color: #c46123;
+    color: #ffffff;
+}
+
+/* ======================================================================
+   Combined Times container (Worship left, Ministries right)
+   ====================================================================== */
+
+#times {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+#times .times-column {
+    background-color: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+#times .times-column > h2 {
+    margin-top: 0;
+}
+
+/* Reduce event block padding inside the combined Times container */
+#times .service-block {
+    padding: 4px;
 }
 
 section div {   /*Days Container*/
@@ -259,6 +286,107 @@ section div p {
     justify-content: flex-start; /* ADDED: Aligns items to the top of the .day container */
 }
 
+/* ======================================================================
+   Schedule layout (Worship Times + Weekly Ministry Times)
+   Days down the left, events on the right
+   ====================================================================== */
+
+#worship-times .days-container,
+#ministries .days-container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+}
+
+#worship-times .day,
+#ministries .day {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(196, 97, 35, 0.35);
+}
+
+#worship-times .day-label,
+#ministries .day-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#worship-times .day-label .worship-day,
+#ministries .day-label .worship-day {
+    text-align: center;
+    margin: 2px 0 0;
+    font-size: 1.8em;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.65);
+}
+
+#worship-times .day-events,
+#ministries .day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Generic time + event row */
+.simple-event-row,
+#worship-times .sunday-event-group,
+#ministries .thursday-event-group {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.simple-event-row .time-slot,
+#worship-times .sunday-event-group .time-slot,
+#ministries .thursday-event-group .time-slot {
+    margin: 0;
+    justify-self: center;
+}
+
+/* When an event has multiple blocks (e.g., Wednesday ministries, Thursday 6pm) */
+.event-service-blocks-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+}
+
+.event-service-blocks-row .service-block {
+    flex: 1;
+    min-width: 240px;
+}
+
+@media (max-width: 768px) {
+    #times {
+        grid-template-columns: 1fr;
+    }
+
+    #worship-times .day,
+    #ministries .day {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .simple-event-row,
+    #worship-times .sunday-event-group,
+    #ministries .thursday-event-group {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .event-service-blocks-row .service-block {
+        min-width: 0;
+    }
+}
+
 /* New styles for Sunday service blocks */
 .sunday-services .service-block {
     display: flex;
@@ -316,12 +444,13 @@ section div p {
 }
 
 .pastor-image {
-    width: 1200px; /* Adjusted width to help fit */
+    width: 100%;
+    max-width: 100%;
     height: auto;
+    display: block;
+    margin: 0;
+    float: none;
     border-radius: 15px;
-    float: center;
-    margin-right: 5px;
-    margin-bottom: 5px;
 }
 
 /********** FAQ Section Styling **********/
@@ -330,34 +459,37 @@ section div p {
     display: flex;
     justify-content: space-between; /* Adjust as needed: space-around, center, etc. */
     align-items: center; /* Align items to the top */
-    gap: 10px; /* Space between FAQ list and image container */
+    gap: 200px; /* Space between FAQ list and image container */
 }
 
 .faq-container {
-    flex: 2; /* FAQ container takes more space */
-    max-width: 60%; /* Adjust as needed */
-    /* margin: 0 auto; Centering is now handled by flex wrapper */
+    flex: 1; /* FAQ container takes more space */
+    max-width: 50%; /* Adjust as needed */
+    margin-left: 100px; /* Centering is now handled by flex wrapper */
     text-align: center;
 }
 
 .faq-image-stack-container {
-    flex: 1; /* Image container takes less space */
+    flex: 2; /* Image container takes less space */
     display: flex;
     flex-direction: column; /* Stack images vertically */
     align-items: center; /* Center images horizontally within this container */
-    justify-content: center; /* Center stack vertically if container is taller */
-    gap: 5px; /* Space between the two images */
+    justify-content: space-around; /* Center stack vertically if container is taller */
+    gap: 10px; /* Space between the two images */
     min-width: 200px; /* Minimum width, adjust as needed */
-    max-width: 50%; /* Adjust as needed */
+    max-width: 100%; /* Adjust as needed */
     padding-top: 0px; /* Add some padding to visually center/adjust if needed */
     padding-bottom: 0px; /* Add some padding */
 }
 
 .stacked-image {
-    width: 100%; /* Make images responsive to the container\'s width */
-    max-width: 500px; /* Set a max-width for the images themselves, adjust as needed */
+    width: 100%;
+    max-width: 600px;
     height: auto;
-    border-radius: 10px;
+    border-radius: 15px;
+    padding-left: 0;
+    display: block;
+    margin: 0 auto;
    /* box-shadow: 0 1px 3px rgba(0,0,0,0.3); */
 }
 
@@ -369,7 +501,7 @@ section div p {
 }
 
 .faq-question {
-    padding: 15px;
+    padding: 16px;
     margin: 0;
     cursor: pointer;
     font-size: 1.2em;
@@ -384,7 +516,7 @@ section div p {
 }
 
 .faq-answer {
-    padding: 0 15px; /* Add padding only to sides initially */
+    padding: 0 4px; /* Add padding only to sides initially */
     margin: 0;
     max-height: 0;
     overflow: hidden;
@@ -445,14 +577,15 @@ footer {
     flex-direction: column;
     align-items: flex-start; /* Align text to the start (left) of its container */
     text-align: left; /* Align text to the left within its block */
-    max-width: 600px; 
+    max-width: none;
+    flex: 1;
 }
 
 .footer-bottom-row {
     display: flex;
     justify-content: space-around; /* Distribute link sections */
     width: 100%;
-    max-width: 800px; /* Max width for the links area */
+    max-width: 1200px; /* Match main content width */
     gap: 20px; /* Space between link sections */
     padding-top: 20px;
 }
@@ -524,6 +657,18 @@ footer {
     margin-top: 20px; /* Optional: adds some space above the copyright line */
 }
 
+/* Desktop: align footer content to main/body margins */
+@media (min-width: 1025px) {
+    .footer-top-row,
+    .footer-bottom-row,
+    .footer-copyright-row {
+        width: 90%;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
 .footer-copyright-row p {
     margin: 0; /* Remove default paragraph margins */
     font-size: 0.9em; /* Adjust font size as needed */
@@ -533,14 +678,14 @@ footer {
 /********** Events Section Styles **********/
 
 #events {
-    background-color: rgba(0, 0, 0, 0.7); /* Transparent white background */
+    background-color: rgba(0, 0, 0); /* Transparent white background */
     padding: 10px 10px 10px 10px; /* Padding around the section */
     border-radius: 15px;
 }
 
 #events h2 {
     text-align: center;
-    color: #c46123;
+    color: #ffffff;
     margin-bottom: 20px;
 }
 
@@ -548,13 +693,19 @@ footer {
     display: flex;
     gap: 20px;
     align-items: stretch; /* Ensures children are of equal height */
+    width: 100%;
+    max-width: none; /* Override global section div max-width */
+    padding: 4px; /* Override global section div padding */
 }
 
 .event-image-container {
-    flex: 1; /* Takes up 1 part of the available space */
+    flex: 1 1 0; /* Equal width columns; allow shrinking */
+    min-width: 0; /* Prevent overflow from long content */
     display: flex; /* To allow image to fill height */
     flex-direction: column; /* Stack content vertically if any */
     /* Removed max-width to allow flex to control width */
+    max-width: none; /* Override global section div max-width */
+    padding: 4px; /* Override global section div padding */
 }
 
 .event-image {
@@ -565,9 +716,11 @@ footer {
 }
 
 #schedule-display-area {
-    flex: 1; /* Takes up 1 part of the available space */
+    flex: 1 1 0; /* Equal width columns; allow shrinking */
+    min-width: 0; /* Prevent overflow from long content */
     display: flex; /* Added to allow its content to be flex-managed if needed */
     flex-direction: column; /* Align content within this area */
+    max-width: none; /* Override global section div max-width */
 }
 
 /* Modal Styles */
@@ -615,7 +768,7 @@ footer {
     padding: 20px;
     max-width: 900px;
     margin: 20px auto;
-    background-color: rgba(0, 0, 0, 0.7); /* Updated for consistency with homepage sections */
+    background-color: rgba(0, 0, 0, 0.5); /* Updated for consistency with homepage sections */
     border-radius: 8px;
     color: #ffffff; /* Updated for consistency with homepage sections */
 }
@@ -709,7 +862,7 @@ footer {
     margin: 0 0 50px;
     padding: 5px;
     border-radius: 15px;
-    background-color: rgba(18, 18, 18, 0.7);
+    background-color: rgba(18, 18, 18, 0.5);
     box-sizing: border-box;
 }
 
@@ -724,6 +877,8 @@ footer {
     align-items: flex-start;
     padding: 20px;
 }
+
+/* SMALLER WINDOW VIEWS */
 
 @media (max-width: 768px) {
     .content-section--wide .leadership-profile {
@@ -753,7 +908,7 @@ footer {
     }
 
     .hero-content h1 {
-        font-size: 3em;
+        font-size: 5em;
     }
 
     section h2 {
@@ -761,7 +916,8 @@ footer {
     }
 
     .pastor-image {
-        max-width: 300px; /* Adjust pastor image size */
+        width: 100%;
+        max-width: 100%;
     }
 
     .faq-section-wrapper {
@@ -777,7 +933,7 @@ footer {
 
     .events-container {
         flex-direction: column; /* Stack event image and schedule app */
-        align-items: center; /* Center items when stacked */
+        align-items: stretch; /* Fill the container width when stacked */
     }
 
     .event-image-container,
@@ -1018,16 +1174,13 @@ footer {
     }
 
     .pastor-image {
-        width: 125%;         /* Image is 125% of its container's content-box width */
-        max-width: none;     /* Remove 100% max-width constraint from previous rules */
-        height: auto;        /* Maintain aspect ratio */
-        display: block;      /* Standard for this type of image display */
-        margin-left: -14%; /* Shifts the image left by (125%-100%)/2 = 12.5% of container width, centering it */
-        margin-right: auto;  /* Standard practice, though margin-left handles centering here */
-        margin-top: 0;       /* Reset top margin */
-        margin-bottom: -15px; /* Consistent bottom margin */
-        float: none;         /* Ensure no float is applied */
-        border-radius: 15px; /* Keep rounded corners */
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0;
+        float: none;
+        border-radius: 15px;
     }
 
     /* Thursday schedule specific adjustments for mobile */

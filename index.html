@@ -40,119 +40,147 @@
     </header>
 
     <main>
-        <section id="worship-times">
-            <h2>Worship Times</h2>
-            <div class="days-container"> <!-- New wrapper for all day blocks -->
-                <div class="day sunday-schedule"> <!-- MODIFIED: Added sunday-schedule class -->
-                    <p class="worship-day">Sunday</p>
-                    <!-- New structure for Sunday events -->
-                    <div class="sunday-event-group">
-                        <h3 class="time-slot">9:30am</h3>
-                        <div class="service-block">
-                            <div class="service-details">
-                                <p>Discipleship Training<br>(Youth & Adult)</p>
+        <section id="times">
+            <div id="worship-times" class="times-column">
+                <h2>Worship Times</h2>
+                <div class="days-container"> <!-- New wrapper for all day blocks -->
+                    <div class="day sunday-schedule"> <!-- MODIFIED: Added sunday-schedule class -->
+                        <div class="day-label">
+                            <p class="worship-day">Sunday</p>
+                        </div>
+                        <div class="day-events">
+                            <div class="sunday-event-group">
+                                <h3 class="time-slot">9:30am</h3>
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Discipleship Training<br>(Youth & Adult)</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sunday-event-group">
+                                <h3 class="time-slot">11:00am</h3>
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Morning Worship</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="sunday-event-group">
-                        <h3 class="time-slot">11:00am</h3>
-                        <div class="service-block">
-                            <div class="service-details">
-                                <p>Morning Worship</p>
+
+                    <div class="day"> <!-- New Monday block (placeholder) -->
+                        <div class="day-label">
+                            <p class="worship-day">Monday</p>
+                        </div>
+                        <div class="day-events">
+                            <div class="simple-event-row">
+                                <h3 class="time-slot">6:00pm</h3>
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Prayer Meeting</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="day"> <!-- New Monday block (placeholder) -->
-                    <p class="worship-day">Monday</p>
-                    <div class="service-times-row">
-                        <h3 class="time-slot">6:00pm</h3>
-                    </div>
-                    <div class="side-by-side-divs">
-                        <div>
-                            <p>Prayer Meeting</p>
+                    <div class="day"> <!-- New Special Event block (placeholder) -->
+                        <div class="day-label">
+                            <p class="worship-day">Wednesday</p>
                         </div>
-                    </div>                        
-                </div>
-
-                <div class="day"> <!-- New Special Event block (placeholder) -->
-                    <p class="worship-day">Wednesday</p>
-                    <div class="service-times-row">
-                        <h3 class="time-slot">6:30pm</h3>
-                    </div>
-                    <div class="side-by-side-divs">
-                        <div>
-                            <p>Bible Study</p>
+                        <div class="day-events">
+                            <div class="simple-event-row">
+                                <h3 class="time-slot">6:30pm</h3>
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Bible Study</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>                        
-                </div>
-            </div> <!-- days-container closes -->
-        </section>
+                    </div>
+                </div> <!-- days-container closes -->
+            </div>
 
-        <section id="ministries">
-            <h2>Weekly Ministry Times</h2>
-            <div class="days-container">
+            <div id="ministries" class="times-column">
+                <h2>Weekly Ministry Times</h2>
+                <div class="days-container">
 
                 <!-- Tuesday -->
                 <div class="day">
-                    <p class="worship-day">Tuesday</p>
-                    <div class="service-times-row">
-                        <h3 class="time-slot">6:00pm</h3>
+                    <div class="day-label">
+                        <p class="worship-day">Tuesday</p>
                     </div>
-                    <div class="side-by-side-divs">
-                        <div>
-                            <p>Womens Ministry<br>(Every 4th Tuesday)</p>
+                    <div class="day-events">
+                        <div class="simple-event-row">
+                            <h3 class="time-slot">6:00pm</h3>
+                            <div class="service-block">
+                                <div class="service-details">
+                                    <p>Womens Ministry<br>(Every 4th Tuesday)</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Wednesday -->
                 <div class="day">
-                    <p class="worship-day">Wednesday</p>
-                    <div class="service-times-row">
-                        <h3 class="time-slot">5:30pm</h3>
+                    <div class="day-label">
+                        <p class="worship-day">Wednesday</p>
                     </div>
-                    <div class="side-by-side-divs">
-                        <div>
-                            <p>Youth Choir Rehearsal</p><p>(Every Wednesday before 3rd Sunday)</p>
-                        </div>
-                        <div>
-                            <p>Usher's Meeting</p><p>(Last Wednesday of the Month: Mar, Jun, Sept, Dec)</p>
+                    <div class="day-events">
+                        <div class="simple-event-row">
+                            <h3 class="time-slot">5:30pm</h3>
+                            <div class="event-service-blocks-row">
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Youth Choir Rehearsal<br>(Every Wednesday before 3rd Sunday)</p>
+                                    </div>
+                                </div>
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Usher's Meeting<br>(Last Wednesday of the Month: Mar, Jun, Sept, Dec)</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Thursday -->
                 <div class="day thursday-schedule">
-                    <p class="worship-day">Thursday</p>
-                    <!-- New structure for Thursday events -->
-                    <div class="thursday-event-group">
-                        <h3 class="time-slot">6:00pm</h3>
-                        <div class="event-service-blocks-row"> <!-- ADDED WRAPPER -->
-                            <div class="service-block"> <!-- Mass Choir Rehearsal Block -->
-                                <div class="service-details">
-                                    <p>Mass Choir Rehearsal<br>(Thursday before 1st & 5th Sunday)</p>
-                                </div>
-                            </div>
-                            <div class="service-block"> <!-- Women Choir Rehearsal Block -->
-                                <div class="service-details">
-                                    <p>Women Choir Rehearsal<br>(Thursday before 2nd Sunday)</p>
-                                </div>
-                            </div>
-                        </div> <!-- END ADDED WRAPPER -->
+                    <div class="day-label">
+                        <p class="worship-day">Thursday</p>
                     </div>
-                    <div class="thursday-event-group">
-                        <h3 class="time-slot">6:30pm</h3>
-                        <div class="service-block"> <!-- Contains only service-details -->
-                            <div class="service-details">
-                                <p>Male Choir Rehearsal<br>(Thursday before 4th & 5th Sunday)</p>
+                    <div class="day-events">
+                        <div class="thursday-event-group">
+                            <h3 class="time-slot">6:00pm</h3>
+                            <div class="event-service-blocks-row">
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Mass Choir Rehearsal<br>(Thursday before 1st & 5th Sunday)</p>
+                                    </div>
+                                </div>
+                                <div class="service-block">
+                                    <div class="service-details">
+                                        <p>Women Choir Rehearsal<br>(Thursday before 2nd Sunday)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thursday-event-group">
+                            <h3 class="time-slot">6:30pm</h3>
+                            <div class="service-block">
+                                <div class="service-details">
+                                    <p>Male Choir Rehearsal<br>(Thursday before 4th & 5th Sunday)</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-            </div> <!-- days-container closes -->
+                </div> <!-- days-container closes -->
+            </div>
         </section>
 
         <section id="pastor">
