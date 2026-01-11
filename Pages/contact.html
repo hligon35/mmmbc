@@ -1,125 +1,129 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../style.css">
-    <title>Contact Us - Mt. Moriah Missionary Baptist Church</title>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="../style.css" rel="stylesheet"/>
+<title>Contact Us - Mt. Moriah Missionary Baptist Church</title>
 </head>
 <body>
-    <nav class="top-nav">
-        <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="nav-logo">
-        <div class="nav-links" id="navLinks">
-            <a href="../index.html">Home</a>
-            <a href="ministries.html">Ministries</a>
-            <a href="leadership.html">Leadership & Staff</a>
-            <a href="church_history.html">Church History</a>
-            <a href="facility_rental.html">Facility Rental</a>
-            <a href="photo_gallery.html">Photo Gallery</a>
-            <a href="live_praise.html">Live Praise</a>
-            <a href="contact.html">Contact Us</a>
-        </div>
-        <button class="menu-button" id="menuButton">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-    </nav>
+<nav class="top-nav">
+<img alt="Mt. Moriah Logo" class="nav-logo" src="../ConImg/MtMoriahLogo-1.png"/>
+<div class="nav-links" id="navLinks">
+<a href="../index.html">Home</a>
+<a href="ministries.html">Ministries</a>
+<a href="leadership.html">Leadership &amp; Staff</a>
+<a href="church_history.html">Church History</a>
+<a href="facility_rental.html">Facility Rental</a>
+<a href="photo_gallery.html">Photo Gallery</a>
+<a href="live_praise.html">Live Praise</a>
+<a href="contact.html">Contact Us</a>
+</div>
+<button aria-label="Toggle navigation menu" class="menu-button" id="menuButton" title="Menu" type="button">
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+</button>
+</nav>
+<main>
+<section class="content-section" id="contact-form-section"><h1>Contact Us</h1>
+<p>Have questions? Need more information about our church or an upcoming event? Please feel free to reach out to us!</p>
+<h2>Get In Touch</h2>
+<ul>
+<li><strong>Visit Us:</strong> 1201 S 8th St, Paducah, KY 42003</li>
+<li><strong>Call Us:</strong> <a href="tel:2704433714">(270) 443-3714</a></li>
+<li><strong>Email Us:</strong> <a href="mailto:mtmoriahmbc1201@gmail.com">mtmoriahmbc1201@gmail.com</a></li>
+<li><strong>Fax:</strong> (270) 443-7125</li>
+</ul>
+<p>We value your connection. Please select an option below to send us a message or share a prayer request.</p>
 
-    <main>
-        <section class="content-section" id="contact-form-section">
-            <h1>Contact Us</h1>
-            <p>We value your connection. Please select an option below to send us a message or share a prayer request.</p>
+<div class="form-toggle-buttons">
+<button class="form-toggle-btn active" id="showPrayerFormBtn" onclick="showForm('prayerRequestForm')" type="button">Prayer Request</button>
+<button class="form-toggle-btn" id="showContactFormBtn" onclick="showForm('contactInfoForm')" type="button">Contact Information</button>
+</div>
 
-            <div class="form-toggle-buttons">
-                <button id="showPrayerFormBtn" class="form-toggle-btn active" onclick="showForm('prayerRequestForm')">Prayer Request</button>
-                <button id="showContactFormBtn" class="form-toggle-btn" onclick="showForm('contactInfoForm')">Contact Information</button>
-            </div>
+<!-- Prayer Request Form -->
+<form action="mailto:mtmoriahmbc1201@gmail.com" class="contact-form" enctype="text/plain" id="prayerRequestForm" method="POST">
+<h2>Prayer Request</h2>
+<input name="Subject" type="hidden" value="New Prayer Request"/>
+<div>
+<label for="prayerName">Name:</label>
+<input id="prayerName" name="Name" required="" type="text"/>
+</div>
+<div>
+<label for="prayerIssue">Brief description of your prayer request (optional):</label>
+<textarea id="prayerIssue" name="PrayerRequestDetails" placeholder="Please share as much or as little as you feel comfortable." rows="5"></textarea>
+</div>
+<button class="submit-btn" type="submit">Send Prayer Request</button>
+</form>
 
-            <!-- Prayer Request Form -->
-            <form id="prayerRequestForm" class="contact-form" action="mailto:mtmoriahmbc@att.net" method="POST" enctype="text/plain">
-                <h2>Prayer Request</h2>
-                <input type="hidden" name="Subject" value="New Prayer Request">
-                <div>
-                    <label for="prayerName">Name:</label>
-                    <input type="text" id="prayerName" name="Name" required>
-                </div>
-                <div>
-                    <label for="prayerIssue">Brief description of your prayer request (optional):</label>
-                    <textarea id="prayerIssue" name="PrayerRequestDetails" rows="5" placeholder="Please share as much or as little as you feel comfortable."></textarea>
-                </div>
-                <button type="submit" class="submit-btn">Send Prayer Request</button>
-            </form>
-
-            <!-- Contact Info Form -->
-            <form id="contactInfoForm" class="contact-form" action="mailto:mtmoriahmbc@att.net" method="POST" enctype="text/plain" style="display:none;">
-                <h2>Contact Information</h2>
-                <input type="hidden" name="Subject" value="New Contact Information Submission">
-                <div>
-                    <label for="contactName">Name:</label>
-                    <input type="text" id="contactName" name="Name" required>
-                </div>
-                <div>
-                    <label for="contactPhone">Phone Number:</label>
-                    <input type="tel" id="contactPhone" name="PhoneNumber" placeholder="e.g., (555) 123-4567">
-                </div>
-                <div>
-                    <label for="contactAddress">Address (optional):</label>
-                    <input type="text" id="contactAddress" name="Address" placeholder="Street, City, State, Zip">
-                </div>
-                <div>
-                    <label for="contactEmail">Email:</label>
-                    <input type="email" id="contactEmail" name="EmailAddress" placeholder="you@example.com" required>
-                </div>
-                <div>
-                    <label for="contactMessage">Message (optional):</label>
-                    <textarea id="contactMessage" name="Message" rows="5" placeholder="How can we help you?"></textarea>
-                </div>
-                <button type="submit" class="submit-btn">Send Contact Info</button>
-            </form>
-        </section>
-    </main>
-
-    <footer>
-        <div class="footer-top-row">
-            <img src="../ConImg/MtMoriahLogo-1.png" alt="Mt. Moriah Logo" class="footer-logo">
-            <div class="footer-text-content">
-                <p>Our doors are always open to you. If you are without a church home, we hope you will unite with the Mt. Moriah family. Wherever you go, may you always feel the presence of God and may the blessings of faithful worship bring peace and joy to your heart.</p>
-            </div>
-        </div>
-        <div class="footer-bottom-row">
-            <div class="footer-links-section" id="quick-links">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="../index.html"><img src="../Icons/home.png" alt="Home icon" class="link-icon"><span class="link-text">Home</span></a></li>
-                    <li><a href="ministries.html"><img src="../Icons/ministries.png" alt="Ministries icon" class="link-icon"><span class="link-text">Ministries</span></a></li>
-                    <li><a href="leadership.html"><img src="../Icons/leadership.png" alt="Leadership icon" class="link-icon"><span class="link-text">Leadership</span></a></li>
-                    <li><a href="church_history.html"><img src="../Icons/churchhistory.png" alt="Church History icon" class="link-icon"><span class="link-text">Church History</span></a></li>
-                    <li><a href="facility_rental.html"><img src="../Icons/facilityrental.png" alt="Facility Rental icon" class="link-icon"><span class="link-text">Facility Rental</span></a></li>
-                    <li><a href="contact.html"><img src="../Icons/contactus.png" alt="Contact Us icon" class="link-icon"><span class="link-text">Contact Us</span></a></li>
-                </ul>
-            </div>
-            <div class="footer-links-section" id="connect-us">
-                <h4>Connect With Us</h4>
-                <ul>
-                    <li><a href="https://www.google.com/maps/search/?api=1&query=1201+South+8th+Street+Paducah+KY" target="_blank" rel="noopener noreferrer"><img src="../Icons/address.png" alt="Address icon" class="link-icon"><span class="link-text">1201 South 8th Street, Paducah, KY</span></a></li>
-                    <li><a href="tel:2704433714"><img src="../Icons/phone.png" alt="Phone icon" class="link-icon"><span class="link-text">(270) 443-3714</span></a></li>
-                    <li><a href="mailto:mtmoriahmbc@att.net"><img src="../Icons/mailus.png" alt="Email Us icon" class="link-icon"><span class="link-text">Email Us</span></a></li>
-                    <li><a href="https://www.facebook.com/MtMoriahPaducah"><img src="../Icons/facebook.png" alt="Facebook icon" class="link-icon"><span class="link-text">Like us on Facebook</span></a></li>
-                    <li><a href="https://www.youtube.com/@MMMBC-Paducah"><img src="../Icons/youtube.png" alt="YouTube icon" class="link-icon"><span class="link-text">Subscribe on YouTube</span></a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-copyright-row">
-            <p>Designed by &copy; 2025 Iconiq Dreamscapes</p>
-            <p>&copy; 2025 Mt. Moriah Missionary Baptist Church. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <script src="../script.js"></script>
-
-    <script>
+<!-- Contact Info Form -->
+<form action="mailto:mtmoriahmbc1201@gmail.com" class="contact-form hidden" enctype="text/plain" id="contactInfoForm" method="POST">
+<h2>Contact Information</h2>
+<input name="Subject" type="hidden" value="New Contact Information Submission"/>
+<div>
+<label for="contactName">Name:</label>
+<input id="contactName" name="Name" required="" type="text"/>
+</div>
+<div>
+<label for="contactPhone">Phone Number:</label>
+<input id="contactPhone" name="PhoneNumber" placeholder="e.g., (555) 123-4567" type="tel"/>
+</div>
+<div>
+<label for="contactAddress">Address (optional):</label>
+<input id="contactAddress" name="Address" placeholder="Street, City, State, Zip" type="text"/>
+</div>
+<div>
+<label for="contactEmail">Email:</label>
+<input id="contactEmail" name="EmailAddress" placeholder="you@example.com" required="" type="email"/>
+</div>
+<div>
+<label for="contactMessage">Message (optional):</label>
+<textarea id="contactMessage" name="Message" placeholder="How can we help you?" rows="5"></textarea>
+</div>
+<button class="submit-btn" type="submit">Send Contact Info</button>
+</form>
+</section>
+</main>
+<footer>
+<div class="footer-top-row">
+<img alt="Mt. Moriah Logo" class="footer-logo" src="../ConImg/MtMoriahLogo-1.png"/>
+<div class="footer-text-content">
+<p>Our doors are always open to you. If you are without a church home, we hope you will unite with the Mt. Moriah family. Wherever you go, may you always feel the presence of God and may the blessings of faithful worship bring peace and joy to your heart.</p>
+</div>
+</div>
+<div class="footer-bottom-row">
+<div class="footer-links-section" id="quick-links">
+<h4>Quick Links</h4>
+<ul>
+<li><a href="../index.html"><img alt="Home icon" class="link-icon" src="../Icons/home.png"/><span class="link-text">Home</span></a></li>
+<li><a href="ministries.html"><img alt="Ministries icon" class="link-icon" src="../Icons/ministries.png"/><span class="link-text">Ministries</span></a></li>
+<li><a href="leadership.html"><img alt="Leadership icon" class="link-icon" src="../Icons/leadership.png"/><span class="link-text">Leadership</span></a></li>
+<li><a href="church_history.html"><img alt="Church History icon" class="link-icon" src="../Icons/churchhistory.png"/><span class="link-text">Church History</span></a></li>
+<li><a href="facility_rental.html"><img alt="Facility Rental icon" class="link-icon" src="../Icons/facilityrental.png"/><span class="link-text">Facility Rental</span></a></li>
+<li><a href="contact.html"><img alt="Contact Us icon" class="link-icon" src="../Icons/contactus.png"/><span class="link-text">Contact Us</span></a></li>
+</ul>
+</div>
+<div class="footer-links-section" id="connect-us">
+<h4>Connect With Us</h4>
+<ul>
+<li><a href="https://www.google.com/maps/search/?api=1&amp;query=1201+South+8th+Street+Paducah+KY" rel="noopener noreferrer" target="_blank"><img alt="Address icon" class="link-icon" src="../Icons/address.png"/><span class="link-text">1201 South 8th Street, Paducah, KY</span></a></li>
+<li><a href="tel:2704433714"><img alt="Phone icon" class="link-icon" src="../Icons/phone.png"/><span class="link-text">(270) 443-3714</span></a></li>
+<li><a href="mailto:mtmoriahmbc1201@gmail.com"><img alt="Email Us icon" class="link-icon" src="../Icons/mailus.png"/><span class="link-text">Email Us</span></a></li>
+<li><a href="https://www.facebook.com/MtMoriahPaducah"><img alt="Facebook icon" class="link-icon" src="../Icons/facebook.png"/><span class="link-text">Like us on Facebook</span></a></li>
+<li><a href="https://www.youtube.com/@MMMBC-Paducah"><img alt="YouTube icon" class="link-icon" src="../Icons/youtube.png"/><span class="link-text">Subscribe on YouTube</span></a></li>
+</ul>
+</div>
+</div>
+<div class="footer-copyright-row">
+<p>Designed by © 2025 Iconiq Dreamscapes</p>
+<p>© 2025 Mt. Moriah Missionary Baptist Church. All rights reserved.</p>
+</div>
+</footer>
+<script src="../script.js"></script>
+<script>
         function showForm(formIdToShow) {
             const prayerForm = document.getElementById('prayerRequestForm');
             const contactForm = document.getElementById('contactInfoForm');
@@ -127,13 +131,13 @@
             const contactBtn = document.getElementById('showContactFormBtn');
 
             if (formIdToShow === 'prayerRequestForm') {
-                prayerForm.style.display = 'block';
-                contactForm.style.display = 'none';
+                prayerForm.classList.remove('hidden');
+                contactForm.classList.add('hidden');
                 prayerBtn.classList.add('active');
                 contactBtn.classList.remove('active');
             } else if (formIdToShow === 'contactInfoForm') {
-                prayerForm.style.display = 'none';
-                contactForm.style.display = 'block';
+                prayerForm.classList.add('hidden');
+                contactForm.classList.remove('hidden');
                 contactBtn.classList.add('active');
                 prayerBtn.classList.remove('active');
             }

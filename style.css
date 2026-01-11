@@ -638,6 +638,49 @@ footer {
     margin-bottom: 20px;
 }
 
+.content-subnav {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.content-subnav a {
+    display: inline-block;
+    padding: 8px 12px;
+    border: 1px solid #c46123;
+    border-radius: 20px;
+    text-decoration: none;
+    color: #ffffff;
+    background-color: rgba(196, 97, 35, 0.2);
+}
+
+.content-subnav a:hover {
+    background-color: #c46123;
+}
+
+.content-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin: 10px 0 25px;
+}
+
+.content-image-grid img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid rgba(196, 97, 35, 0.6);
+}
+
+.hidden {
+    display: none;
+}
+
 .ministry-category, .leadership-profile {
     margin-bottom: 30px;
     padding: 15px;
@@ -657,6 +700,41 @@ footer {
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #c46123;
+}
+
+/* Optional: Make content pages match homepage section sizing */
+.content-section--wide {
+    max-width: none;
+    width: 100%;
+    margin: 0 0 50px;
+    padding: 5px;
+    border-radius: 15px;
+    background-color: rgba(18, 18, 18, 0.7);
+    box-sizing: border-box;
+}
+
+/* Make profile images larger to use the extra horizontal space */
+.content-section--wide .profile-image {
+    width: clamp(220px, 22vw, 320px);
+    height: clamp(220px, 22vw, 320px);
+}
+
+.content-section--wide .leadership-profile {
+    gap: 30px;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .content-section--wide .leadership-profile {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .content-section--wide .profile-image {
+        width: 220px;
+        height: 220px;
+    }
 }
 
 .profile-details h2 {
