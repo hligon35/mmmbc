@@ -125,7 +125,7 @@ body {
 .hero-content h1 {
     font-size: 6em;
     margin-bottom: 0px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+    text-shadow: 2px 2px 4px rgba(0,0,0);
 }
 
 /* Hero title styling */
@@ -183,7 +183,7 @@ section {
     text-align: center;
     margin-bottom: 50px; 
     border-radius: 15px; 
-    background-color: rgba(18, 18, 18); 
+    background-color: #000;
     /* Removed fixed height, section will now size to content */
 }
 
@@ -229,7 +229,7 @@ section div {   /*Days Container*/
     margin: 0;
     padding: 5px 5px 5px 5px;
     border-radius: 15px;
-    max-width: 1200px; /* Max width for content divs */
+    max-width: 1350px; /* Match main content width */
 }
 
 section div p {
@@ -364,6 +364,46 @@ section div p {
     min-width: 240px;
 }
 
+/* Stack Day → Time → Events earlier to prevent overflow while resizing */
+@media (max-width: 980px) {
+    #worship-times .day,
+    #ministries .day {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        align-items: start;
+    }
+
+    #worship-times .day-label,
+    #ministries .day-label {
+        justify-content: center;
+    }
+
+    .simple-event-row,
+    #worship-times .sunday-event-group,
+    #ministries .thursday-event-group {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        align-items: start;
+        min-width: 0;
+    }
+
+    .simple-event-row .time-slot,
+    #worship-times .sunday-event-group .time-slot,
+    #ministries .thursday-event-group .time-slot {
+        justify-self: start;
+        width: fit-content;
+    }
+
+    .event-service-blocks-row {
+        flex-direction: column;
+    }
+
+    .event-service-blocks-row .service-block {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
     #times {
         grid-template-columns: 1fr;
@@ -472,7 +512,7 @@ section div p {
 .faq-image-stack-container {
     flex: 2; /* Image container takes less space */
     display: flex;
-    flex-direction: column; /* Stack images vertically */
+    flex-direction: column; /* Default: stack vertically */
     align-items: center; /* Center images horizontally within this container */
     justify-content: space-around; /* Center stack vertically if container is taller */
     gap: 10px; /* Space between the two images */
@@ -480,6 +520,69 @@ section div p {
     max-width: 100%; /* Adjust as needed */
     padding-top: 0px; /* Add some padding to visually center/adjust if needed */
     padding-bottom: 0px; /* Add some padding */
+}
+
+/* ======================================================================
+   Homepage FAQ collage (main image + overlapping thumbnail)
+   ====================================================================== */
+
+.faq-image-collage {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 10px;
+    padding-bottom: 120px; /* space for the overlapping thumbnail */
+    overflow: visible;
+}
+
+.faq-image-collage .faq-collage-main {
+    width: 100%;
+    max-width: 980px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.faq-image-collage .faq-collage-thumb {
+    position: absolute;
+    left: 15%;
+    bottom: 46px; /* anchors to the bottom edge, slightly overlapping */
+    transform: translateX(-50%);
+    width: min(64%, 520px); /* a little bigger than before */
+    height: auto;
+    border-radius: 14px;
+    border: 6px solid #ffffff;
+    background: #ffffff;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 820px) {
+    .faq-image-collage {
+        padding-bottom: 100px;
+    }
+
+    .faq-image-collage .faq-collage-thumb {
+        width: min(64%, 520px);
+        bottom: 46px;
+    }
+}
+
+@media (max-width: 600px) {
+    .faq-image-collage {
+        padding-bottom: 10px;
+    }
+
+    .faq-image-collage .faq-collage-thumb {
+        position: static;
+        transform: none;
+        width: min(92%, 520px);
+        margin: 14px auto 0;
+        border-width: 4px;
+    }
 }
 
 .stacked-image {
@@ -585,7 +688,7 @@ footer {
     display: flex;
     justify-content: space-around; /* Distribute link sections */
     width: 100%;
-    max-width: 1200px; /* Match main content width */
+    max-width: 1350px; /* Match main content width */
     gap: 20px; /* Space between link sections */
     padding-top: 20px;
 }
@@ -663,7 +766,7 @@ footer {
     .footer-bottom-row,
     .footer-copyright-row {
         width: 90%;
-        max-width: 1200px;
+        max-width: 1350px;
         margin-left: auto;
         margin-right: auto;
     }
@@ -678,7 +781,7 @@ footer {
 /********** Events Section Styles **********/
 
 #events {
-    background-color: rgba(0, 0, 0); /* Transparent white background */
+    background-color: #000;
     padding: 10px 10px 10px 10px; /* Padding around the section */
     border-radius: 15px;
 }
@@ -689,30 +792,32 @@ footer {
     margin-bottom: 20px;
 }
 
-.events-container {
+#events .events-container {
     display: flex;
-    gap: 20px;
+    gap: 10px;
     align-items: stretch; /* Ensures children are of equal height */
     width: 100%;
     max-width: none; /* Override global section div max-width */
     padding: 4px; /* Override global section div padding */
 }
 
-.event-image-container {
+#events .event-image-container {
     flex: 1 1 0; /* Equal width columns; allow shrinking */
     min-width: 0; /* Prevent overflow from long content */
     display: flex; /* To allow image to fill height */
     flex-direction: column; /* Stack content vertically if any */
     /* Removed max-width to allow flex to control width */
     max-width: none; /* Override global section div max-width */
-    padding: 4px; /* Override global section div padding */
+    padding: 0;
+    border-radius: 15px;
+    overflow: hidden; /* Clip image to match schedule panel shape */
 }
 
-.event-image {
+#events .event-image {
     width: 100%;
     height: 100%; /* Makes the image take the full height of its container */
     object-fit: cover; /* Ensures the image covers the area, maintaining aspect ratio */
-    border-radius: 15px;
+    border-radius: 0;
 }
 
 #schedule-display-area {
@@ -721,6 +826,7 @@ footer {
     display: flex; /* Added to allow its content to be flex-managed if needed */
     flex-direction: column; /* Align content within this area */
     max-width: none; /* Override global section div max-width */
+    padding: 0;
 }
 
 /* Modal Styles */
@@ -765,11 +871,12 @@ footer {
 
 /* Content Pages Styling */
 .content-section {
-    padding: 20px;
-    max-width: 900px;
-    margin: 20px auto;
-    background-color: rgba(0, 0, 0, 0.5); /* Updated for consistency with homepage sections */
-    border-radius: 8px;
+    padding: 5px;
+    max-width: none;
+    width: 100%;
+    margin: 0 0 50px;
+    background-color: #000;
+    border-radius: 15px;
     color: #ffffff; /* Updated for consistency with homepage sections */
 }
 
@@ -830,8 +937,702 @@ footer {
     border: 2px solid rgba(196, 97, 35, 0.6);
 }
 
+.content-image-grid img.content-image-grid__hero {
+    height: clamp(280px, 38vw, 520px);
+}
+
+/* =====================================================================
+   Facility Rental: Image-first gallery
+   ===================================================================== */
+
+.rental-gallery {
+    width: 100%;
+    margin: 12px 0 22px;
+}
+
+.rental-gallery img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 2px solid rgba(196, 97, 35, 0.55);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.55);
+    transform: translateZ(0);
+    transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.rental-gallery img:hover {
+    transform: scale(1.02);
+    filter: saturate(1.05) contrast(1.02);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.65);
+}
+
+.rental-gallery__hero {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    margin: 0 0 12px;
+}
+
+.rental-gallery__hero img:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    min-height: clamp(300px, 32vw, 520px);
+}
+
+.rental-gallery__hero img:nth-child(2),
+.rental-gallery__hero img:nth-child(3) {
+    min-height: clamp(144px, 16vw, 254px);
+}
+
+.rental-gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.rental-gallery__grid img {
+    aspect-ratio: 4 / 3;
+}
+
+@media (max-width: 820px) {
+    .rental-gallery__hero {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .rental-gallery__hero img:nth-child(1) {
+        grid-column: auto;
+        grid-row: auto;
+        min-height: clamp(240px, 52vw, 420px);
+    }
+
+    .rental-gallery__hero img:nth-child(2),
+    .rental-gallery__hero img:nth-child(3) {
+        min-height: clamp(180px, 42vw, 320px);
+    }
+}
+
+.content-media-right {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+    margin: 10px 0 15px;
+}
+
+/* Float-right image that allows surrounding text to flow down the photo */
+.content-float-right {
+    float: right;
+    width: min(42%, 420px);
+    max-width: 420px;
+    height: auto;
+    margin: 4px 0 10px 18px;
+    border-radius: 15px;
+    border: 2px solid rgba(196, 97, 35, 0.6);
+    object-fit: cover;
+}
+
+.content-media-right > p {
+    flex: 1 1 620px;
+    margin: 0;
+}
+
+.content-media-right__image {
+    flex: 0 1 420px;
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    border: 2px solid rgba(196, 97, 35, 0.6);
+    object-fit: cover;
+}
+
+.content-figure {
+    margin: 20px auto;
+    max-width: 1350px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+}
+
+/* Caption overlay (top-right) variant used on Church History */
+.content-figure--caption-overlay {
+    position: relative;
+    max-width: 935px;
+    display: block;
+    margin: 18px auto;
+}
+
+.content-figure--caption-overlay .content-figure-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 15px;
+    border: 2px solid rgba(196, 97, 35, 0.6);
+    object-fit: cover;
+}
+
+.content-figure--caption-overlay figcaption {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    max-width: min(62%, 520px);
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 0.78em; /* subscript-like */
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.96);
+    text-align: left;
+}
+
+.content-figure-image {
+    flex: 1 1 720px;
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 15px;
+    justify-self: center;
+    border: 2px solid rgba(196, 97, 35, 0.6);
+}
+
+.content-figure figcaption {
+    flex: 0 1 420px;
+    margin-top: 0;
+    font-size: clamp(0.85em, 1.4vw, 0.95em);
+    font-style: italic;
+    line-height: 1.5;
+    color: #ffffff;
+    text-align: left;
+}
+
+@media (max-width: 768px) {
+    .content-media-right {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .content-float-right {
+        float: none;
+        width: 100%;
+        max-width: 100%;
+        margin: 10px 0 12px;
+        display: block;
+    }
+
+    .content-media-right > p {
+        margin: 0;
+    }
+
+    .content-media-right__image {
+        max-width: 100%;
+    }
+
+    .content-figure {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .content-figure figcaption {
+        text-align: center;
+    }
+
+    .content-figure--caption-overlay figcaption {
+        position: static;
+        max-width: 100%;
+        margin-top: 10px;
+        font-size: 0.88em;
+        text-align: left;
+    }
+}
+
 .hidden {
     display: none;
+}
+
+/* =====================================================================
+   Basic form styles (Contact + Facility Rental)
+   ===================================================================== */
+
+.contact-form {
+    max-width: 900px;
+    margin: 18px auto 0;
+    text-align: left;
+    padding: 14px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.contact-form h2 {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.form-note {
+    max-width: 900px;
+    margin: 10px auto;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+/* =====================================================================
+   Contact: Get In Touch cards
+   ===================================================================== */
+
+.contact-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 12px 0 14px;
+}
+
+.contact-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.contact-card__icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.55));
+}
+
+.contact-card__body {
+    min-width: 0;
+}
+
+.contact-card__label {
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.contact-card__value {
+    color: #ffffff;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.contact-card__value a {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Contact page: never show bullet markers in the main content area */
+#contact-form-section ul {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+/* =====================================================================
+   Contact: YouTube showcase
+   ===================================================================== */
+
+.youtube-live-placeholder {
+    margin: 10px 0 16px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px dashed rgba(255, 255, 255, 0.28);
+    background: rgba(0, 0, 0, 0.25);
+    text-align: center;
+}
+
+.youtube-live-placeholder__inner {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.youtube-live-placeholder__title {
+    font-size: clamp(1.05em, 2.1vw, 1.35em);
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.youtube-live-placeholder__text {
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.45;
+    margin-bottom: 10px;
+}
+
+.youtube-live-placeholder__button,
+.youtube-section__button {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(196, 97, 35, 0.65);
+    background: rgba(196, 97, 35, 0.22);
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.youtube-live-placeholder__button:hover,
+.youtube-section__button:hover {
+    background: rgba(196, 97, 35, 0.35);
+}
+
+.youtube-section {
+    margin: 8px 0 18px;
+}
+
+.content-section .youtube-section__title {
+    color: #c46123;
+    border-bottom: 2px solid #c46123;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
+.youtube-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.youtube-card {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid rgba(196, 97, 35, 0.35);
+    background: rgba(0, 0, 0, 0.20);
+    box-shadow: 0 12px 26px rgba(0,0,0,0.55);
+}
+
+.youtube-embed {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 */
+}
+
+.youtube-embed iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.youtube-section__cta {
+    text-align: center;
+    margin-top: 12px;
+}
+
+/* =====================================================================
+   Facility Rental: Non-member hero (pricing + rules)
+   ===================================================================== */
+
+.rental-hero {
+    width: 100%;
+    max-width: none;
+    margin: 12px 0 16px;
+    padding: 18px 14px;
+    text-align: left;
+    border-radius: 14px;
+    border: 1px solid rgba(196, 97, 35, 0.35);
+    background: rgba(196, 97, 35, 0.10);
+}
+
+.rental-hero__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.content-section .rental-hero__title,
+.content-section .rental-hero__subtitle {
+    color: #ffffff;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin: 0 0 10px;
+}
+
+.rental-hero__title {
+    font-size: clamp(1.15em, 2.2vw, 1.55em);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.rental-hero__subtitle {
+    font-size: clamp(1.0em, 1.8vw, 1.2em);
+    margin-top: 14px;
+}
+
+.rental-hero__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
+.rental-hero__card {
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.rental-hero__rates {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.rental-hero__rates li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.rental-hero__rates li:last-child {
+    border-bottom: none;
+}
+
+.rental-hero__rates li span:last-child {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.rental-hero__rules {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.rental-hero__rules p {
+    margin: 0 0 10px;
+    font-style: normal;
+}
+
+.rental-hero__bullets {
+    margin: 6px 0 0;
+    padding-left: 22px;
+}
+
+.rental-hero__bullets li {
+    margin-bottom: 8px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+    margin: 10px 0 14px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-field--full {
+    grid-column: 1 / -1;
+}
+
+.form-field--right {
+    align-items: flex-end;
+}
+
+.form-field--right > label {
+    text-align: right;
+}
+
+.form-field--right > label.form-label--center {
+    align-self: stretch;
+    text-align: center;
+}
+
+.form-field--center {
+    align-items: center;
+}
+
+.form-field--center .form-checklist {
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.form-field label {
+    font-weight: 600;
+}
+
+.form-field input:not([type="checkbox"]):not([type="radio"]),
+.form-field select,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    box-sizing: border-box;
+}
+
+/* Prevent checkbox/radio inputs from inheriting text-input sizing */
+.form-check input[type="checkbox"],
+.form-check input[type="radio"] {
+    width: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.contact-form textarea {
+    resize: vertical;
+}
+
+.form-checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: rgba(0, 0, 0, 0.20);
+}
+
+/* Reduce whitespace inside option boxes */
+.form-checklist--tight {
+    gap: 5px 10px;
+    padding: 8px 10px;
+}
+
+/* Shrink bordered option box to its content (still responsive) */
+.form-checklist--fit {
+    display: inline-grid;
+    width: fit-content;
+    max-width: 100%;
+    justify-self: start;
+    justify-content: start;
+    justify-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(180px, max-content));
+}
+
+/* For short option sets (e.g., Yes/No): keep items packed to the left */
+.form-checklist--compact {
+    grid-template-columns: repeat(auto-fit, minmax(90px, max-content));
+    justify-content: start;
+    justify-items: start;
+}
+
+.form-check {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-weight: 500;
+    text-align: left;
+}
+
+.form-checklist--tight .form-check {
+    gap: 4px;
+}
+
+/* Extra-tight checkbox/radio to text spacing (per option) */
+.form-check.form-check--tight {
+    gap: 2px;
+}
+
+.form-check input {
+    margin: 0;
+}
+
+/* One-row options that wrap to the next row on overflow */
+.form-checklist.form-checklist--rowwrap {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+}
+
+.form-checklist--rowwrap .form-check {
+    white-space: nowrap;
+    gap: 4px;
+}
+
+.form-checklist--rowwrap .form-check.form-check--nextrow {
+    flex: 0 0 100%;
+    width: 100%;
+    order: 999;
+}
+
+/* Hard override: Members form #9 must wrap, and Dressing Room must be on row 2 */
+#facilityRentalMembersForm .form-checklist[aria-label="Facility selection"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 6px 14px;
+}
+
+#facilityRentalMembersForm .form-checklist[aria-label="Facility selection"] .form-check {
+    white-space: nowrap;
+    gap: 4px !important;
+}
+
+#facilityRentalMembersForm .form-checklist[aria-label="Facility selection"] .form-check.form-check--nextrow,
+#facilityRentalMembersForm .form-checklist[aria-label="Facility selection"] > label:nth-child(4) {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    order: 999 !important;
+}
+
+/* Force 3 items on first row, remaining wraps to next row */
+.form-checklist--three-up {
+    grid-template-columns: repeat(3, max-content);
+}
+
+@media (max-width: 768px) {
+    .form-checklist--three-up {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 14px;
+}
+
+.submit-btn {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    background-color: #c46123;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.submit-btn.secondary {
+    background-color: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.submit-btn:hover {
+    filter: brightness(1.05);
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .ministry-category, .leadership-profile {
@@ -857,12 +1658,6 @@ footer {
 
 /* Optional: Make content pages match homepage section sizing */
 .content-section--wide {
-    max-width: none;
-    width: 100%;
-    margin: 0 0 50px;
-    padding: 5px;
-    border-radius: 15px;
-    background-color: rgba(18, 18, 18, 0.5);
     box-sizing: border-box;
 }
 
@@ -931,18 +1726,18 @@ footer {
         max-width: 80%;
     }
 
-    .events-container {
+    #events .events-container {
         flex-direction: column; /* Stack event image and schedule app */
         align-items: stretch; /* Fill the container width when stacked */
     }
 
-    .event-image-container,
-    #schedule-display-area {
+    #events .event-image-container,
+    #events #schedule-display-area {
         max-width: 100%; /* Allow them to take full width when stacked */
         width: 100%; /* Ensure they take full width */
     }
 
-    .event-image-container {
+    #events .event-image-container {
         margin-bottom: 20px; /* Add space when stacked */
         height: auto; /* Allow height to adjust based on content or aspect ratio */
     }
