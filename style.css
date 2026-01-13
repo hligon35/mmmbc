@@ -22,6 +22,19 @@ body {
     box-sizing: border-box; /* Include padding in height calculation */
 }
 
+/* Accessibility utility: visually hidden but still available to screen readers */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /********** Top Navigation Bar Styling **********/
 
 .top-nav {
@@ -203,7 +216,26 @@ body {
 .hero-content h1 {
     font-size: 6em;
     margin-bottom: 0px;
-    text-shadow: 2px 2px 4px rgba(0,0,0);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.75);
+}
+
+/* Accessibility: honor reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto;
+    }
+
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Keep the schedule manager file input hidden without inline styles */
+#schedule-file-input-modal {
+    display: none;
 }
 
 /* Hero title styling */
@@ -232,6 +264,11 @@ body {
     font-size: 1.2em;
     border-radius: 20px;
     transition: background-color 0.3s ease, transform 0.3s ease; /* Added transform to transition */
+}
+
+/* Utility modifier: adds top spacing when a button is used inline in text */
+.btn-contact.btn-contact--spaced {
+    margin-top: 10px;
 }
 
 .btn-contact:hover {

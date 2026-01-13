@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Official website for Mt. Moriah Missionary Baptist Church in Paducah, KY. Worship times, events, ministries, and contact information.">
+    <link rel="icon" type="image/png" href="Icons/favicon.png">
+    <link rel="apple-touch-icon" href="Icons/favicon.png">
     <link rel="stylesheet" href="style.css"> <!-- Corrected path -->
     <link rel="stylesheet" href="schedule_app.css"> <!-- Corrected path -->
     <title>Mt. Moriah Missionary Baptist Church</title>
@@ -20,7 +23,7 @@
             <a href="Pages/live_praise.html">Live Praise</a> <!-- Corrected path -->
             <a href="Pages/contact.html">Contact Us</a> <!-- Corrected path -->
         </div>
-        <button aria-label="Toggle navigation menu" class="menu-button" id="menuButton" title="Menu" type="button">
+        <button aria-label="Toggle navigation menu" aria-controls="navLinks" aria-expanded="false" class="menu-button" id="menuButton" title="Menu" type="button">
             <span></span>
             <span></span>
             <span></span>
@@ -260,12 +263,15 @@
             <h3>Schedule Manager</h3>
             <div class="schedule-controls-modal">
                 <h4>Load Events</h4>
-                <input type="file" id="schedule-file-input-modal" accept=".json" style="display: none;">
+                <label class="sr-only" for="schedule-file-input-modal">Load schedule JSON file</label>
+                <input type="file" id="schedule-file-input-modal" accept=".json">
                 <button id="load-schedule-button-modal">Load Schedule from File</button>
                 
                 <h4>Add New Event</h4>
                 <input type="text" id="event-name-input-modal" placeholder="Event Name">
+                <label class="sr-only" for="event-date-input-modal">Event date</label>
                 <input type="date" id="event-date-input-modal">
+                <label class="sr-only" for="event-time-input-modal">Event time</label>
                 <input type="time" id="event-time-input-modal">
                 <button id="add-event-button-modal">Add Event to Manager</button>
             </div>

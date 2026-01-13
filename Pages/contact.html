@@ -4,6 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta name="description" content="Contact Mt. Moriah Missionary Baptist Church in Paducah, KY. Send a message, submit a prayer request, or find our address, phone, and email."/>
+<link rel="icon" type="image/png" href="../Icons/favicon.png"/>
+<link rel="apple-touch-icon" href="../Icons/favicon.png"/>
 <link href="../style.css" rel="stylesheet"/>
 <title>Contact Us - Mt. Moriah Missionary Baptist Church</title>
 </head>
@@ -20,7 +23,7 @@
 <a href="live_praise.html">Live Praise</a>
 <a href="contact.html">Contact Us</a>
 </div>
-<button aria-label="Toggle navigation menu" class="menu-button" id="menuButton" title="Menu" type="button">
+<button aria-label="Toggle navigation menu" aria-controls="navLinks" aria-expanded="false" class="menu-button" id="menuButton" title="Menu" type="button">
 <span></span>
 <span></span>
 <span></span>
@@ -67,8 +70,8 @@
 <p>We value your connection. Please select an option below to send us a message or share a prayer request.</p>
 
 <div class="form-toggle-buttons">
-<button class="form-toggle-btn active" id="showPrayerFormBtn" onclick="showForm('prayerRequestForm')" type="button">Prayer Request</button>
-<button class="form-toggle-btn" id="showContactFormBtn" onclick="showForm('contactInfoForm')" type="button">Contact Information</button>
+<button class="form-toggle-btn active" id="showPrayerFormBtn" type="button">Prayer Request</button>
+<button class="form-toggle-btn" id="showContactFormBtn" type="button">Contact Information</button>
 </div>
 
 <!-- Prayer Request Form -->
@@ -150,30 +153,5 @@
 </div>
 </footer>
 <script src="../script.js"></script>
-<script>
-        function showForm(formIdToShow) {
-            const prayerForm = document.getElementById('prayerRequestForm');
-            const contactForm = document.getElementById('contactInfoForm');
-            const prayerBtn = document.getElementById('showPrayerFormBtn');
-            const contactBtn = document.getElementById('showContactFormBtn');
-
-            if (formIdToShow === 'prayerRequestForm') {
-                prayerForm.classList.remove('hidden');
-                contactForm.classList.add('hidden');
-                prayerBtn.classList.add('active');
-                contactBtn.classList.remove('active');
-            } else if (formIdToShow === 'contactInfoForm') {
-                prayerForm.classList.add('hidden');
-                contactForm.classList.remove('hidden');
-                contactBtn.classList.add('active');
-                prayerBtn.classList.remove('active');
-            }
-        }
-
-        // Initialize default view
-        document.addEventListener('DOMContentLoaded', () => {
-            showForm('prayerRequestForm'); // Show prayer form by default
-        });
-    </script>
 </body>
 </html>
