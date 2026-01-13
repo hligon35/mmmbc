@@ -1,5 +1,5 @@
 // Schedule application JavaScript
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // MODAL ELEMENTS
     const scheduleAppModal = document.getElementById('schedule-app-modal');
     const closeModalButton = document.querySelector('.close-modal-button');
@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let managedEvents = []; // Events in the modal manager
     let liveEvents = [];    // Events on the live page
+
+    function normalizeAndSortEvents(events) {
+        return (events || [])
+            .filter((ev) => ev && ev.title && ev.date)
+            .map((ev) => ({
+                title: String(ev.title).trim(),
+                date: String(ev.date).trim(),
+                time: ev.time ? String(ev.time).trim() : "",
+            }))
+            .sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
+    }
 
     // MODAL VISIBILITY
     if (closeModalButton) {
@@ -173,6 +184,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // INITIAL RENDERS
+    async function loadDefaultSchedule() {
+        try {
+            const response = await fetch('schedule.json', { cache: 'no-store' });
+            if (!response.ok) return;
+
+            const loaded = await response.json();
+            if (!Array.isArray(loaded)) return;
+
+            liveEvents = normalizeAndSortEvents(loaded);
+            managedEvents = JSON.parse(JSON.stringify(liveEvents));
+        } catch (e) {
+            // Ignore: schedule.json is optional
+        }
+    }
+
+    await loadDefaultSchedule();
+
     renderEvents(liveScheduleDisplay, liveEvents, false);
+    renderEvents(scheduleAppPreviewDisplay, managedEvents, true);
     updateMonthHeaderBasedOnScroll(); // Set initial month header based on current live events (if any)
 });

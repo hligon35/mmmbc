@@ -109,6 +109,84 @@ body {
     border-radius: 0; /* Override previous border-radius if any, or keep if desired */
 }
 
+/* Desktop navigation: show links as horizontal tabs with centered, stacked text */
+@media (min-width: 981px) {
+    .top-nav {
+        /* Use a 2-column grid so the logo stays left and the tab bar starts after it */
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: 1fr 56px; /* bottom row is the "piano key" tab bar */
+        align-items: center;
+        column-gap: 150px;
+    }
+
+    .nav-logo {
+        justify-self: start;
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        margin-left: 0;
+    }
+
+    .menu-button {
+        display: none;
+    }
+
+    .nav-links {
+        /* Piano-key tab bar along the bottom, starting AFTER the logo */
+        grid-column: 2;
+        grid-row: 2;
+
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: flex-start;
+
+        position: static;
+        width: 100%;
+        height: 56px;
+        padding: 0 50px 6px 350px;
+        background-color: transparent;
+        border-top: none;
+        border-radius: 0;
+        box-sizing: border-box;
+    }
+
+    .nav-links a {
+        /* Each link behaves like a "key" */
+        flex: 1 1 0;
+        min-width: 0;
+        height: 100%;
+        padding: 2px; /* 2px padding around text */
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background-color: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+
+        text-align: center;
+        white-space: normal; /* allow multi-line */
+        overflow: hidden;
+        text-overflow: clip;
+        line-height: 1.1;
+        font-size: 0.9em;
+        font-weight: 700;
+    }
+
+    .nav-links a + a {
+        margin-left: 2px; /* small gap between keys */
+    }
+
+    .nav-links a:hover {
+        background-color: rgba(196, 97, 35, 0.9);
+        border-color: rgba(255, 255, 255, 0.22);
+        border-radius: 10px 10px 0 0;
+    }
+}
+
 /********** Hero Section **********/
 
 .hero-section {
@@ -197,6 +275,26 @@ section h2 {    /*Section Names*/
     color: #ffffff;
 }
 
+/* Home page: orange section label headings */
+.home section h2 {
+    color: rgb(196, 97, 35);
+}
+
+/* Home page: orange labels inside the Times section */
+.home #times .worship-day {
+    color: rgb(196, 97, 35);
+}
+
+/* Home page: keep actual time values white */
+.home #times .time-slot {
+    color: #ffffff;
+}
+
+/* Home page: Upcoming Events label in orange */
+.home #events > h2 {
+    color: rgb(196, 97, 35);
+}
+
 /* ======================================================================
    Combined Times container (Worship left, Ministries right)
    ====================================================================== */
@@ -217,6 +315,7 @@ section h2 {    /*Section Names*/
 
 #times .times-column > h2 {
     margin-top: 0;
+    color: rgb(196, 97, 35);
 }
 
 /* Reduce event block padding inside the combined Times container */
@@ -811,6 +910,13 @@ footer {
     padding: 0;
     border-radius: 15px;
     overflow: hidden; /* Clip image to match schedule panel shape */
+}
+
+/* Homepage: match the schedule panel height on desktop */
+@media (min-width: 981px) {
+    .home #events .event-image-container {
+        height: 420px;
+    }
 }
 
 #events .event-image {
