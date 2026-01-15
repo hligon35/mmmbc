@@ -60,6 +60,15 @@
     align-items: stretch;
     box-sizing: border-box; /* Ensure padding is included in width/height */
 }
+
+/* Mobile/tablet: keep the schedule panel a reasonable size and scroll the list */
+@media (max-width: 980px) {
+    #schedule-display {
+        height: auto;
+        max-height: 55vh;
+        -webkit-overflow-scrolling: touch;
+    }
+}
 /* END OF MOVED STYLES FROM style.css */
 
 /* Styles for the Schedule Management Modal */
