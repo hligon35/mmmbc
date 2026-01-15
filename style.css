@@ -504,6 +504,18 @@ section div p {
     min-width: 240px;
 }
 
+/* Tablet-ish widths (e.g., Surface Pro): stack multi-block rows to avoid overflow */
+@media (max-width: 1400px) and (min-width: 981px) {
+    #times .event-service-blocks-row {
+        flex-direction: column;
+    }
+
+    #times .event-service-blocks-row .service-block {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
 /* Stack Day → Time → Events earlier to prevent overflow while resizing */
 @media (max-width: 980px) {
     #worship-times .day,
@@ -1865,6 +1877,7 @@ footer {
     .faq-section-wrapper {
         flex-direction: column; /* Stack FAQ items and image */
         align-items: center;
+        gap: 25px; /* Reduce space between FAQ questions and images */
     }
 
     .faq-image-stack-container {
@@ -2088,7 +2101,7 @@ footer {
         order: 1; /* Place image stack before FAQ items */
         width: auto; /* Let content or max-width define it */
         /* max-width: 80%; is inherited from 1024px styles, which is good for mobile */
-        margin: 0 auto 10px auto; /* Center the container and add space below it */
+        margin: 0 auto; /* Let .faq-section-wrapper gap control spacing */
         /* padding-top: 0; is inherited from 1024px styles */
     }
 
