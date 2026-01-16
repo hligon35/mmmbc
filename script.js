@@ -94,4 +94,102 @@ document.addEventListener('DOMContentLoaded', () => {
         contactBtn.addEventListener('click', () => showForm('contactInfoForm'));
         showForm('prayerRequestForm');
     }
+
+    // Site settings: update social/contact links from exported site-settings.json
+    const normalizePhoneDigits = (value) => String(value || '').replace(/\D/g, '');
+    const buildMapsUrl = (address) => {
+        const q = encodeURIComponent(String(address || '').trim());
+        return q ? `https://www.google.com/maps/search/?api=1&query=${q}` : '';
+    };
+
+    const tryFetchJson = async (urls) => {
+        for (const url of urls) {
+            try {
+                const res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) continue;
+                return await res.json();
+            } catch {
+                // try next
+            }
+        }
+        return null;
+    };
+
+    const applySiteSettings = (settings) => {
+        if (!settings || typeof settings !== 'object') return;
+
+        // Footer "Connect With Us" section
+        const connect = document.getElementById('connect-us');
+        if (connect) {
+            const anchors = Array.from(connect.querySelectorAll('a'));
+            for (const a of anchors) {
+                const href = String(a.getAttribute('href') || '');
+                const span = a.querySelector('.link-text');
+
+                if (href.startsWith('tel:') && settings.phone) {
+                    const digits = normalizePhoneDigits(settings.phone);
+                    if (digits) a.setAttribute('href', `tel:${digits}`);
+                    if (span) span.textContent = String(settings.phone);
+                }
+
+                if (href.startsWith('mailto:') && settings.email) {
+                    a.setAttribute('href', `mailto:${String(settings.email).trim()}`);
+                    // Keep "Email Us" label unless it's showing an actual address.
+                    if (span && span.textContent.includes('@')) span.textContent = String(settings.email).trim();
+                }
+
+                if (href.includes('facebook.com') && settings.facebook) {
+                    a.setAttribute('href', String(settings.facebook).trim());
+                }
+
+                if (href.includes('youtube.com') && settings.youtube) {
+                    a.setAttribute('href', String(settings.youtube).trim());
+                }
+
+                if ((href.includes('google.com/maps') || href.includes('maps/search')) && settings.address) {
+                    const url = buildMapsUrl(settings.address);
+                    if (url) a.setAttribute('href', url);
+                    if (span) span.textContent = String(settings.address);
+                }
+            }
+        }
+
+        // Contact page cards + forms (only touch generic tel/mailto)
+        if (settings.phone) {
+            const digits = normalizePhoneDigits(settings.phone);
+            if (digits) {
+                document.querySelectorAll('a[href^="tel:"]').forEach((a) => {
+                    // Avoid overwriting other non-footer numbers; only update the church office default.
+                    const href = String(a.getAttribute('href') || '');
+                    if (href.includes('2704433714')) {
+                        a.setAttribute('href', `tel:${digits}`);
+                        if (a.textContent && a.textContent.includes('270')) a.textContent = String(settings.phone);
+                    }
+                });
+            }
+        }
+
+        if (settings.email) {
+            const email = String(settings.email).trim();
+            document.querySelectorAll('a[href^="mailto:"]').forEach((a) => {
+                const href = String(a.getAttribute('href') || '');
+                if (href.includes('mtmoriahmbc1201@gmail.com')) {
+                    a.setAttribute('href', `mailto:${email}`);
+                    if (a.textContent && a.textContent.includes('@')) a.textContent = email;
+                }
+            });
+
+            document.querySelectorAll('form[action^="mailto:"]').forEach((f) => {
+                const action = String(f.getAttribute('action') || '');
+                if (action.includes('mtmoriahmbc1201@gmail.com')) {
+                    f.setAttribute('action', `mailto:${email}`);
+                }
+            });
+        }
+    };
+
+    (async () => {
+        const settings = await tryFetchJson(['site-settings.json', '../site-settings.json', '/site-settings.json']);
+        if (settings) applySiteSettings(settings);
+    })();
 });

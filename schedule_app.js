@@ -21,14 +21,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     let managedEvents = []; // Events in the modal manager
     let liveEvents = [];    // Events on the live page
 
+    function normalizeTimeValue(value) {
+        const t = String(value || '').trim();
+        if (!t) return '';
+        const m = t.match(/^([0-2]\d):([0-5]\d)/);
+        return m ? `${m[1]}:${m[2]}` : '';
+    }
+
+    function isUpcomingOrToday(ev, now) {
+        // If no time is provided, treat it as an all-day event that lasts until end-of-day.
+        const endTime = ev.time ? ev.time : '23:59';
+        const dt = new Date(`${ev.date}T${endTime}`);
+        if (Number.isNaN(dt.getTime())) return false;
+        return dt.getTime() >= now.getTime();
+    }
+
     function normalizeAndSortEvents(events) {
+        const now = new Date();
         return (events || [])
             .filter((ev) => ev && ev.title && ev.date)
             .map((ev) => ({
                 title: String(ev.title).trim(),
                 date: String(ev.date).trim(),
-                time: ev.time ? String(ev.time).trim() : "",
+                time: normalizeTimeValue(ev.time),
             }))
+            .filter((ev) => isUpcomingOrToday(ev, now))
             .sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
     }
 

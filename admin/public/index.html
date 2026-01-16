@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMMBC Admin Dashboard</title>
+  <meta name="description" content="Admin dashboard for Mt. Moriah Missionary Baptist Church website." />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <header class="header">
+    <div class="header__left">
+      <img class="header__logo" src="/Icons/favicon.png" alt="MMMBC" />
+    </div>
+    <div class="header__center" aria-label="Admin Dashboard">
+      <div class="header__title">Admin Dashboard</div>
+    </div>
+    <div class="header__right">
+      <span class="status" id="authStatus" aria-live="polite">Checking login…</span>
+      <button class="avatarBtn" id="accountBtn" type="button" aria-label="Account" hidden>
+        <span class="avatarBtn__text" id="avatarText">A</span>
+      </button>
+      <button class="btn" id="logoutBtn" type="button" hidden>Log out</button>
+    </div>
+  </header>
+
+  <main id="app" class="app" role="main">
+    <section class="card loginCard" id="loginCard" aria-label="Login">
+      <h1 class="card__title">Sign in</h1>
+      <p class="muted">Use your admin email and password.</p>
+      <form id="loginForm" class="form">
+        <label class="label">
+          Email
+          <input class="input" name="email" type="email" autocomplete="username" required />
+        </label>
+        <label class="label">
+          Password
+          <div class="inputGroup">
+            <input class="input" id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+            <button class="peekBtn" type="button" data-peek-target="loginPassword" aria-label="Show password" aria-pressed="false">
+              <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+              </svg>
+            </button>
+          </div>
+        </label>
+        <label class="label">
+          2FA code (if enabled)
+          <input class="input" name="twoFactorCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" />
+        </label>
+        <button class="btn btn--primary" type="submit">Sign in</button>
+        <button class="linkBtn" id="forgotToggle" type="button">Forgot login?</button>
+        <div class="error" id="loginError" role="alert" hidden></div>
+      </form>
+
+      <div class="collapse" id="forgotPanel" hidden>
+        <div class="divider"></div>
+        <h2 class="card__subtitle">Recover account</h2>
+        <p class="muted">If you have the recovery code, you can reset your password here.</p>
+        <form id="recoverForm" class="form">
+          <label class="label">
+            Email
+            <input class="input" name="email" type="email" autocomplete="username" required />
+          </label>
+          <label class="label">
+            Recovery code
+            <input class="input" name="recoveryCode" type="text" autocomplete="one-time-code" required />
+          </label>
+          <label class="label">
+            New password
+            <div class="inputGroup">
+              <input class="input" id="recoverNewPassword" name="newPassword" type="password" autocomplete="new-password" required />
+              <button class="peekBtn" type="button" data-peek-target="recoverNewPassword" aria-label="Show password" aria-pressed="false">
+                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="pwHelp" id="recoverPwHelp">
+              <div class="pwHelp__row"><meter class="pwMeter" id="recoverPwMeter" min="0" max="4" value="0"></meter><span class="pwMeter__text" id="recoverPwText">Password strength</span></div>
+              <ul class="pwRules" aria-label="Password requirements">
+                <li>At least 8 characters</li>
+                <li>At least 1 capital letter</li>
+                <li>At least 1 special character</li>
+              </ul>
+            </div>
+          </label>
+          <label class="label">
+            Confirm new password
+            <div class="inputGroup">
+              <input class="input" id="recoverConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+              <button class="peekBtn" type="button" data-peek-target="recoverConfirmPassword" aria-label="Show password" aria-pressed="false">
+                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+          <button class="btn btn--primary" type="submit">Reset password</button>
+          <div class="hint" id="recoverHint" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card loginCard" id="inviteCard" aria-label="Account setup" hidden>
+      <h1 class="card__title">Finish account setup</h1>
+      <p class="muted" id="inviteEmail">Loading invite…</p>
+
+      <div class="card invite2fa" aria-label="Two-factor authentication">
+        <div class="invite2fa__title">Set up 2FA (required)</div>
+        <div class="muted">Scan the QR code with Google Authenticator / Microsoft Authenticator, then enter the 6-digit code below.</div>
+        <div class="invite2fa__grid">
+          <div class="invite2fa__qrWrap">
+            <img id="inviteQr" class="invite2fa__qr" alt="2FA QR code" />
+          </div>
+          <div class="invite2fa__meta">
+            <div class="label">Manual setup key</div>
+            <div class="monoBox" id="inviteSecret" aria-label="2FA secret"></div>
+            <button class="btn" id="copySecretBtn" type="button">Copy key</button>
+          </div>
+        </div>
+      </div>
+
+      <form id="inviteForm" class="form">
+        <label class="label">
+          Your name
+          <input class="input" name="name" type="text" autocomplete="name" required />
+        </label>
+
+        <label class="label">
+          New password
+          <div class="inputGroup">
+            <input class="input" id="inviteNewPassword" name="newPassword" type="password" autocomplete="new-password" required />
+            <button class="peekBtn" type="button" data-peek-target="inviteNewPassword" aria-label="Show password" aria-pressed="false">
+              <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="pwHelp">
+            <div class="pwHelp__row"><meter class="pwMeter" id="invitePwMeter" min="0" max="4" value="0"></meter><span class="pwMeter__text" id="invitePwText">Password strength</span></div>
+            <ul class="pwRules" aria-label="Password requirements">
+              <li>At least 8 characters</li>
+              <li>At least 1 capital letter</li>
+              <li>At least 1 special character</li>
+            </ul>
+          </div>
+        </label>
+
+        <label class="label">
+          Confirm new password
+          <div class="inputGroup">
+            <input class="input" id="inviteConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+            <button class="peekBtn" type="button" data-peek-target="inviteConfirmPassword" aria-label="Show password" aria-pressed="false">
+              <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+              </svg>
+            </button>
+          </div>
+        </label>
+
+        <label class="label">
+          2FA code (6 digits)
+          <input class="input" name="twoFactorCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required />
+        </label>
+
+        <button class="btn btn--primary" type="submit">Complete setup</button>
+        <div class="error" id="inviteError" role="alert" hidden></div>
+        <div class="hint" id="inviteHint" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section class="card" id="dashboardCard" aria-label="Admin dashboard" hidden>
+      <div class="salutation" id="salutation" aria-live="polite"></div>
+
+      <div class="adminLayout">
+        <nav class="sideNav" role="tablist" aria-label="Admin sections">
+          <button class="tab tab--nav" role="tab" aria-selected="true" aria-controls="tab-photos" id="tabBtn-photos">Photo Gallery</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-stream" id="tabBtn-stream">Live Stream</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-events" id="tabBtn-events">Events</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-content" id="tabBtn-content">Content</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-settings" id="tabBtn-settings">Settings</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-account" id="tabBtn-account">Account</button>
+        </nav>
+
+        <div class="adminMain">
+
+      <!-- Photo Gallery -->
+      <section class="tabPanel" role="tabpanel" id="tab-photos" aria-labelledby="tabBtn-photos">
+        <h2>Photo Gallery</h2>
+        <p class="muted">Upload photos and organize them by album. Tags help sorting and searching.</p>
+
+        <form id="photoUploadForm" class="form form--row" enctype="multipart/form-data">
+          <label class="label">
+            Album (Events, Choir, Youth Ministry)
+            <input class="input" name="album" type="text" placeholder="Events" />
+          </label>
+          <label class="label">
+            Label (shown as text)
+            <input class="input" name="label" type="text" placeholder="Youth Ministry" />
+          </label>
+          <label class="label">
+            Tags (comma-separated)
+            <input class="input" name="tags" type="text" placeholder="revival, 2026, sunday" />
+          </label>
+          <label class="label">
+            Select photos
+            <input class="input" name="images" type="file" accept="image/*" multiple required />
+          </label>
+          <button class="btn btn--primary" type="submit">Upload</button>
+          <div class="hint" id="photoUploadHint" aria-live="polite"></div>
+        </form>
+
+        <div class="toolbar">
+          <label class="label label--inline">
+            Sort
+            <select class="select" id="photoSort">
+              <option value="date-desc">Date (newest)</option>
+              <option value="date-asc">Date (oldest)</option>
+              <option value="name-asc">Name (A–Z)</option>
+              <option value="name-desc">Name (Z–A)</option>
+            </select>
+          </label>
+          <label class="label label--inline">
+            Filter album
+            <input class="input" id="photoAlbumFilter" type="text" placeholder="Events" />
+          </label>
+          <label class="label label--inline">
+            Search tags
+            <input class="input" id="photoTagFilter" type="text" placeholder="youth" />
+          </label>
+          <button class="btn" id="exportBtn" type="button">Export to Website</button>
+        </div>
+
+        <div class="grid" id="photoGrid" aria-live="polite"></div>
+      </section>
+
+      <!-- Live Stream -->
+      <section class="tabPanel" role="tabpanel" id="tab-stream" aria-labelledby="tabBtn-stream" hidden>
+        <h2>Live Stream</h2>
+        <p class="muted">This controls which embed the website shows and whether the site displays Live/Offline. Starting the stream itself still happens on YouTube/Facebook.</p>
+
+        <div class="form form--row">
+          <label class="label">
+            YouTube embed URL (or iframe src)
+            <input class="input" id="ytEmbed" type="url" placeholder="https://www.youtube.com/embed/..." />
+          </label>
+          <label class="label">
+            Facebook embed URL
+            <input class="input" id="fbEmbed" type="url" placeholder="https://www.facebook.com/plugins/video.php?..." />
+          </label>
+          <label class="label">
+            Website player embed URL
+            <input class="input" id="siteEmbed" type="url" placeholder="https://..." />
+          </label>
+        </div>
+
+        <div class="toolbar">
+          <label class="label label--inline">
+            Active platform
+            <select class="select" id="activePlatform">
+              <option value="website">Website</option>
+              <option value="youtube">YouTube</option>
+              <option value="facebook">Facebook</option>
+            </select>
+          </label>
+          <button class="btn btn--primary" id="goLiveBtn" type="button">Go Live</button>
+          <button class="btn" id="goOfflineBtn" type="button">Set Offline</button>
+          <span class="statusChip" id="liveStatus" aria-live="polite">Offline</span>
+          <button class="btn" id="saveLivestreamBtn" type="button">Save</button>
+        </div>
+
+        <h3>Recurring streams</h3>
+        <form id="recurringForm" class="form form--row">
+          <label class="label">
+            Day
+            <select class="select" name="day">
+              <option>Sunday</option>
+              <option>Monday</option>
+              <option>Tuesday</option>
+              <option>Wednesday</option>
+              <option>Thursday</option>
+              <option>Friday</option>
+              <option>Saturday</option>
+            </select>
+          </label>
+          <label class="label">
+            Time
+            <input class="input" name="time" type="time" required />
+          </label>
+          <label class="label">
+            Label
+            <input class="input" name="label" type="text" placeholder="Sunday Service" required />
+          </label>
+          <button class="btn btn--primary" type="submit">Add</button>
+        </form>
+
+        <div class="list" id="recurringList"></div>
+      </section>
+
+      <!-- Content -->
+      <section class="tabPanel" role="tabpanel" id="tab-content" aria-labelledby="tabBtn-content" hidden>
+        <h2>Content Management</h2>
+
+        <h3 id="announcements">Announcements</h3>
+        <form id="announceForm" class="form">
+          <label class="label">
+            Title
+            <input class="input" name="title" type="text" maxlength="120" required />
+          </label>
+          <label class="label">
+            Message
+            <textarea class="textarea" name="body" rows="4" maxlength="5000" required></textarea>
+          </label>
+          <label class="label">
+            Expires in (days)
+            <input class="input" name="expiresInDays" type="number" min="1" max="365" value="30" />
+            <div class="hint">Leave blank to use the default (30 days). Set "Never expires" to keep it permanently.</div>
+          </label>
+          <label class="label label--inline">
+            <input class="checkbox" name="neverExpires" type="checkbox" />
+            Never expires
+          </label>
+          <button class="btn btn--primary" type="submit">Post Announcement</button>
+          <div class="hint" id="announceHint" aria-live="polite"></div>
+        </form>
+        <div class="list" id="announceList"></div>
+
+        <h3 id="bulletins">Bulletins</h3>
+        <form id="bulletinForm" class="form" enctype="multipart/form-data">
+          <div class="formRow">
+            <label class="label">
+              Title
+              <input class="input" name="title" type="text" maxlength="120" placeholder="Sunday Bulletin" required />
+            </label>
+            <label class="label">
+              Show from
+              <input class="input" name="startsAt" type="datetime-local" required />
+            </label>
+            <label class="label">
+              Show until
+              <input class="input" name="endsAt" type="datetime-local" required />
+            </label>
+          </div>
+
+          <div class="formRow">
+            <label class="label">
+              File (PDF or image)
+              <input class="input" name="file" type="file" accept="application/pdf,image/*" required />
+              <div class="hint">This will display on the homepage below the announcement ticker during the scheduled window.</div>
+            </label>
+          </div>
+
+          <label class="label label--inline">
+            <input class="checkbox" name="createAnnouncement" type="checkbox" />
+            Create a coordinated announcement for this bulletin
+          </label>
+
+          <div class="formRow">
+            <label class="label">
+              Announcement title (optional)
+              <input class="input" name="announcementTitle" type="text" maxlength="120" placeholder="New Bulletin Available" />
+            </label>
+            <label class="label">
+              Announcement message (optional)
+              <input class="input" name="announcementBody" type="text" maxlength="5000" placeholder="Click the bulletin frame on the homepage to view." />
+            </label>
+          </div>
+
+          <button class="btn btn--primary" type="submit">Schedule Bulletin</button>
+          <div class="hint" id="bulletinHint" aria-live="polite"></div>
+        </form>
+        <div class="list" id="bulletinList"></div>
+      </section>
+
+      <!-- Events -->
+      <section class="tabPanel" role="tabpanel" id="tab-events" aria-labelledby="tabBtn-events" hidden>
+        <h2>Events</h2>
+        <p class="muted">Add, edit, and delete events. This exports to the website's existing schedule format when exports are enabled.</p>
+
+        <form id="eventForm" class="form form--row">
+          <label class="label">
+            Title
+            <input class="input" name="title" type="text" required />
+          </label>
+          <label class="label">
+            Date
+            <input class="input" name="date" type="date" required />
+          </label>
+          <label class="label">
+            Time
+            <input class="input" name="time" type="time" />
+          </label>
+          <button class="btn btn--primary" type="submit">Add Event</button>
+          <div class="hint" id="eventHint" aria-live="polite"></div>
+        </form>
+
+        <div class="list" id="eventList"></div>
+      </section>
+
+      <!-- Settings -->
+      <section class="tabPanel" role="tabpanel" id="tab-settings" aria-labelledby="tabBtn-settings" hidden>
+        <h2>Settings</h2>
+
+        <h3>User accounts</h3>
+        <form id="userForm" class="form form--row">
+          <label class="label">
+            New admin email
+            <input class="input" name="email" type="email" required />
+          </label>
+          <button class="btn btn--primary" type="submit">Create Invite Link</button>
+          <div class="hint" id="userHint" aria-live="polite"></div>
+        </form>
+        <div class="list" id="userList"></div>
+
+        <h3>Social links</h3>
+        <form id="socialForm" class="form form--row">
+          <label class="label">Facebook URL <input class="input" name="facebook" type="url" /></label>
+          <label class="label">YouTube URL <input class="input" name="youtube" type="url" /></label>
+          <label class="label">Email <input class="input" name="email" type="email" /></label>
+          <label class="label">Phone <input class="input" name="phone" type="tel" /></label>
+          <label class="label">Address <input class="input" name="address" type="text" /></label>
+          <button class="btn btn--primary" type="submit">Save Social Links</button>
+          <div class="hint" id="socialHint" aria-live="polite"></div>
+        </form>
+
+        <h3>Theme</h3>
+        <form id="themeForm" class="form">
+          <div class="themeGrid">
+            <div class="themeRow">
+              <label class="label" for="themeAccent">Accent color</label>
+              <div class="colorRow">
+                <input class="colorPicker" id="themeAccent" name="accent" type="color" value="#c46123" />
+                <input class="input colorHex" id="themeAccentHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#c46123" />
+              </div>
+            </div>
+
+            <div class="themeRow">
+              <label class="label" for="themeText">Text color</label>
+              <div class="colorRow">
+                <input class="colorPicker" id="themeText" name="text" type="color" value="#ffffff" />
+                <input class="input colorHex" id="themeTextHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#ffffff" />
+              </div>
+            </div>
+
+            <div class="themeRow">
+              <label class="label" for="themeBackground">Background color</label>
+              <div class="colorRow">
+                <input class="colorPicker" id="themeBackground" name="background" type="color" value="#000000" />
+                <input class="input colorHex" id="themeBackgroundHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#000000" />
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <button class="btn" id="previewThemeBtn" type="button">Preview Theme</button>
+            <button class="btn" id="clearThemePreviewBtn" type="button">Clear Preview</button>
+            <button class="btn btn--primary" type="submit">Save Theme</button>
+          </div>
+
+          <div class="hint" id="themeHint" aria-live="polite"></div>
+        </form>
+
+        <div class="card themePreview" id="themePreviewCard" aria-label="Theme preview">
+          <div class="themePreview__title">Preview</div>
+          <div class="themePreview__body">This is what your accent + text + background will look like.</div>
+          <div class="themePreview__actions">
+            <button class="btn btn--primary" type="button">Primary button</button>
+            <button class="btn" type="button">Secondary</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn" id="exportAllBtn" type="button">Export Everything to Website</button>
+        </div>
+      </section>
+
+      <!-- Account -->
+      <section class="tabPanel" role="tabpanel" id="tab-account" aria-labelledby="tabBtn-account" hidden>
+        <h2>Account</h2>
+        <p class="muted" id="accountNote">Update your profile and password.</p>
+
+        <h3>Personal info</h3>
+        <form id="accountForm" class="form form--row">
+          <label class="label">
+            Name
+            <input class="input" name="name" type="text" autocomplete="name" />
+          </label>
+          <label class="label">
+            Email
+            <input class="input" name="email" type="email" autocomplete="username" required />
+          </label>
+          <button class="btn btn--primary" type="submit">Save Profile</button>
+          <div class="hint" id="accountHint" aria-live="polite"></div>
+        </form>
+
+        <h3>Change password</h3>
+        <form id="passwordForm" class="form">
+          <label class="label">
+            Current password
+            <div class="inputGroup">
+              <input class="input" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+              <button class="peekBtn" type="button" data-peek-target="currentPassword" aria-label="Show password" aria-pressed="false">
+                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+
+          <label class="label">
+            New password
+            <div class="inputGroup">
+              <input class="input" id="newPassword" name="newPassword" type="password" autocomplete="new-password" required />
+              <button class="peekBtn" type="button" data-peek-target="newPassword" aria-label="Show password" aria-pressed="false">
+                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="pwHelp" id="accountPwHelp">
+              <div class="pwHelp__row"><meter class="pwMeter" id="accountPwMeter" min="0" max="4" value="0"></meter><span class="pwMeter__text" id="accountPwText">Password strength</span></div>
+              <ul class="pwRules" aria-label="Password requirements">
+                <li>At least 8 characters</li>
+                <li>At least 1 capital letter</li>
+                <li>At least 1 special character</li>
+              </ul>
+            </div>
+          </label>
+
+          <label class="label">
+            Confirm new password
+            <div class="inputGroup">
+              <input class="input" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+              <button class="peekBtn" type="button" data-peek-target="confirmPassword" aria-label="Show password" aria-pressed="false">
+                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
+                </svg>
+              </button>
+            </div>
+          </label>
+
+          <button class="btn btn--primary" type="submit">Update Password</button>
+          <div class="hint" id="passwordHint" aria-live="polite"></div>
+        </form>
+      </section>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

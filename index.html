@@ -39,6 +39,31 @@
                 <span class="hero-line">Church</span>
             </h1>
             <a href="Pages/contact.html#contact-form-section" class="btn-contact">Contact Us</a> <!-- Corrected path -->
+
+            <!-- Announcement ticker (links to Admin → Content → Announcements) -->
+            <div class="announcement-ticker-wrap" id="announcementTickerWrap" hidden>
+                <a class="announcement-ticker" id="announcementTicker" href="/admin/#announcements">
+                    <span class="announcement-ticker__label">Announcement</span>
+                    <span class="announcement-ticker__viewport" aria-hidden="true">
+                        <span class="announcement-ticker__stack" id="announcementTickerStack">
+                            <span class="announcement-ticker__line" id="announcementTickerLineA">Loading announcements…</span>
+                            <span class="announcement-ticker__line" id="announcementTickerLineB"></span>
+                        </span>
+                    </span>
+                    <span class="sr-only" id="announcementTickerSr">Loading announcements…</span>
+                </a>
+            </div>
+
+            <!-- Bulletin frame (only shows when a bulletin is scheduled) -->
+            <div class="bulletin-frame-wrap" id="bulletinFrameWrap" hidden>
+                <div class="bulletin-frame" role="region" aria-label="Bulletin">
+                    <div class="bulletin-frame__header">
+                        <div class="bulletin-frame__title" id="bulletinTitle">Bulletin</div>
+                        <a class="bulletin-frame__open" id="bulletinOpenLink" href="#" target="_blank" rel="noopener noreferrer">Open</a>
+                    </div>
+                    <div class="bulletin-frame__body" id="bulletinFrameBody"></div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -322,6 +347,8 @@
     </footer>
 
     <script src="script.js"></script> <!-- Corrected path -->
+    <script src="announcements_ticker.js"></script>
+    <script src="bulletins_widget.js"></script>
     <script src="schedule_app.js"></script> <!-- Corrected path -->
 </body>
 </html>

@@ -1,0 +1,14 @@
+# Node
+node_modules/
+
+# Admin server secrets/sessions
+admin/.env
+admin/.sessions/
+admin/uploads/
+
+# Local exports / backups
+schedule.json.bak
+
+# OS
+.DS_Store
+Thumbs.db
