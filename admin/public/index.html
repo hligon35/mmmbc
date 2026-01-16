@@ -180,7 +180,7 @@
           <button class="tab tab--nav" role="tab" aria-selected="true" aria-controls="tab-photos" id="tabBtn-photos">Photo Gallery</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-stream" id="tabBtn-stream">Live Stream</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-events" id="tabBtn-events">Events</button>
-          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-content" id="tabBtn-content">Content</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-content" id="tabBtn-content">Announcements</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-settings" id="tabBtn-settings">Settings</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-account" id="tabBtn-account">Account</button>
         </nav>
@@ -189,7 +189,10 @@
 
       <!-- Photo Gallery -->
       <section class="tabPanel" role="tabpanel" id="tab-photos" aria-labelledby="tabBtn-photos">
-        <h2>Photo Gallery</h2>
+        <div class="sectionHeader">
+          <h2 class="sectionHeader__title">Photo Gallery</h2>
+          <button class="btn" id="exportBtn" type="button">Export to Website</button>
+        </div>
         <p class="muted">Upload photos and organize them by album. Tags help sorting and searching.</p>
 
         <form id="photoUploadForm" class="form form--row" enctype="multipart/form-data">
@@ -213,7 +216,7 @@
           <div class="hint" id="photoUploadHint" aria-live="polite"></div>
         </form>
 
-        <div class="toolbar">
+        <div class="toolbar toolbar--nowrap" aria-label="Photo sorting and filters">
           <label class="label label--inline">
             Sort
             <select class="select" id="photoSort">
@@ -231,7 +234,6 @@
             Search tags
             <input class="input" id="photoTagFilter" type="text" placeholder="youth" />
           </label>
-          <button class="btn" id="exportBtn" type="button">Export to Website</button>
         </div>
 
         <div class="grid" id="photoGrid" aria-live="polite"></div>
@@ -259,17 +261,27 @@
 
         <div class="toolbar">
           <label class="label label--inline">
-            Active platform
+            Website player shows
             <select class="select" id="activePlatform">
               <option value="website">Website</option>
               <option value="youtube">YouTube</option>
               <option value="facebook">Facebook</option>
             </select>
           </label>
-          <button class="btn btn--primary" id="goLiveBtn" type="button">Go Live</button>
+
+          <fieldset class="fieldset" aria-label="Platforms to go live on">
+            <legend>Go live on</legend>
+            <div class="checkRow">
+              <label class="label label--inline"><input class="checkbox" type="checkbox" name="livePlatforms" value="website" checked />Website</label>
+              <label class="label label--inline"><input class="checkbox" type="checkbox" name="livePlatforms" value="youtube" />YouTube</label>
+              <label class="label label--inline"><input class="checkbox" type="checkbox" name="livePlatforms" value="facebook" />Facebook</label>
+            </div>
+          </fieldset>
+
+          <button class="btn" id="saveLivestreamBtn" type="button">Save</button>
           <button class="btn" id="goOfflineBtn" type="button">Set Offline</button>
           <span class="statusChip" id="liveStatus" aria-live="polite">Offline</span>
-          <button class="btn" id="saveLivestreamBtn" type="button">Save</button>
+          <button class="btn btn--primary" id="goLiveBtn" type="button">Go Live</button>
         </div>
 
         <h3>Recurring streams</h3>
@@ -288,7 +300,8 @@
           </label>
           <label class="label">
             Time
-            <input class="input" name="time" type="time" required />
+            <div class="timePicker" id="recurringTimePicker" data-time-picker="required"></div>
+            <input class="input" id="recurringTime" name="time" type="hidden" required />
           </label>
           <label class="label">
             Label
@@ -302,77 +315,89 @@
 
       <!-- Content -->
       <section class="tabPanel" role="tabpanel" id="tab-content" aria-labelledby="tabBtn-content" hidden>
-        <h2>Content Management</h2>
+        <div class="sectionHeader">
+          <h2 class="sectionHeader__title">Announcements</h2>
+          <div class="tabs subTabs" role="tablist" aria-label="Announcements sections">
+            <button class="tab tab--sub" role="tab" aria-selected="true" aria-controls="panel-content-announcements" id="subTabBtn-content-announcements" type="button">Announcements</button>
+            <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-content-bulletins" id="subTabBtn-content-bulletins" type="button">Bulletins</button>
+          </div>
+        </div>
 
-        <h3 id="announcements">Announcements</h3>
-        <form id="announceForm" class="form">
-          <label class="label">
-            Title
-            <input class="input" name="title" type="text" maxlength="120" required />
-          </label>
-          <label class="label">
-            Message
-            <textarea class="textarea" name="body" rows="4" maxlength="5000" required></textarea>
-          </label>
-          <label class="label">
-            Expires in (days)
-            <input class="input" name="expiresInDays" type="number" min="1" max="365" value="30" />
-            <div class="hint">Leave blank to use the default (30 days). Set "Never expires" to keep it permanently.</div>
-          </label>
-          <label class="label label--inline">
-            <input class="checkbox" name="neverExpires" type="checkbox" />
-            Never expires
-          </label>
-          <button class="btn btn--primary" type="submit">Post Announcement</button>
-          <div class="hint" id="announceHint" aria-live="polite"></div>
-        </form>
-        <div class="list" id="announceList"></div>
-
-        <h3 id="bulletins">Bulletins</h3>
-        <form id="bulletinForm" class="form" enctype="multipart/form-data">
-          <div class="formRow">
+        <div class="subTabPanel" role="tabpanel" id="panel-content-announcements" aria-labelledby="subTabBtn-content-announcements">
+          <h3 id="announcements" class="srOnly">Announcements</h3>
+          <form id="announceForm" class="form">
             <label class="label">
               Title
-              <input class="input" name="title" type="text" maxlength="120" placeholder="Sunday Bulletin" required />
+              <input class="input" name="title" type="text" maxlength="120" required />
             </label>
             <label class="label">
-              Show from
-              <input class="input" name="startsAt" type="datetime-local" required />
+              Message
+              <textarea class="textarea" name="body" rows="4" maxlength="5000" required></textarea>
             </label>
-            <label class="label">
-              Show until
-              <input class="input" name="endsAt" type="datetime-local" required />
-            </label>
-          </div>
+            <div class="inlineRow" aria-label="Announcement scheduling">
+              <label class="label label--inline">
+                Expires (days)
+                <input class="input" name="expiresInDays" type="number" min="1" max="365" value="30" />
+              </label>
+              <label class="label label--inline">
+                <input class="checkbox" name="neverExpires" type="checkbox" />
+                Never expires
+              </label>
+              <button class="btn btn--primary" type="submit">Post Announcement</button>
+            </div>
+            <div class="hint">Leave blank to use the default (30 days). Set "Never expires" to keep it permanently.</div>
+            <div class="hint" id="announceHint" aria-live="polite"></div>
+          </form>
+          <div class="list" id="announceList"></div>
+        </div>
 
-          <div class="formRow">
-            <label class="label">
-              File (PDF or image)
-              <input class="input" name="file" type="file" accept="application/pdf,image/*" required />
-              <div class="hint">This will display on the homepage below the announcement ticker during the scheduled window.</div>
-            </label>
-          </div>
+        <div class="subTabPanel" role="tabpanel" id="panel-content-bulletins" aria-labelledby="subTabBtn-content-bulletins" hidden>
+          <h3 id="bulletins" class="srOnly">Bulletins</h3>
+          <form id="bulletinForm" class="form" enctype="multipart/form-data">
+            <div class="formRow">
+              <label class="label">
+                Title
+                <input class="input" name="title" type="text" maxlength="120" placeholder="Sunday Bulletin" required />
+              </label>
+              <label class="label">
+                Show from
+                <input class="input" name="startsAt" type="datetime-local" required />
+              </label>
+              <label class="label">
+                Show until
+                <input class="input" name="endsAt" type="datetime-local" required />
+              </label>
+            </div>
 
-          <label class="label label--inline">
-            <input class="checkbox" name="createAnnouncement" type="checkbox" />
-            Create a coordinated announcement for this bulletin
-          </label>
+            <div class="formRow">
+              <label class="label">
+                File (PDF or image)
+                <input class="input" name="file" type="file" accept="application/pdf,image/*" required />
+                <div class="hint">This will display on the homepage below the announcement ticker during the scheduled window.</div>
+              </label>
+            </div>
 
-          <div class="formRow">
-            <label class="label">
-              Announcement title (optional)
-              <input class="input" name="announcementTitle" type="text" maxlength="120" placeholder="New Bulletin Available" />
+            <label class="label label--inline">
+              <input class="checkbox" name="createAnnouncement" type="checkbox" />
+              Create a coordinated announcement for this bulletin
             </label>
-            <label class="label">
-              Announcement message (optional)
-              <input class="input" name="announcementBody" type="text" maxlength="5000" placeholder="Click the bulletin frame on the homepage to view." />
-            </label>
-          </div>
 
-          <button class="btn btn--primary" type="submit">Schedule Bulletin</button>
-          <div class="hint" id="bulletinHint" aria-live="polite"></div>
-        </form>
-        <div class="list" id="bulletinList"></div>
+            <div class="formRow">
+              <label class="label">
+                Announcement title (optional)
+                <input class="input" name="announcementTitle" type="text" maxlength="120" placeholder="New Bulletin Available" />
+              </label>
+              <label class="label">
+                Announcement message (optional)
+                <input class="input" name="announcementBody" type="text" maxlength="5000" placeholder="Click the bulletin frame on the homepage to view." />
+              </label>
+            </div>
+
+            <button class="btn btn--primary" type="submit">Schedule Bulletin</button>
+            <div class="hint" id="bulletinHint" aria-live="polite"></div>
+          </form>
+          <div class="list" id="bulletinList"></div>
+        </div>
       </section>
 
       <!-- Events -->
@@ -391,89 +416,103 @@
           </label>
           <label class="label">
             Time
-            <input class="input" name="time" type="time" />
+            <div class="timePicker" id="eventTimePicker" data-time-picker="optional"></div>
+            <input class="input" id="eventTime" name="time" type="hidden" />
           </label>
           <button class="btn btn--primary" type="submit">Add Event</button>
           <div class="hint" id="eventHint" aria-live="polite"></div>
         </form>
 
-        <div class="list" id="eventList"></div>
+        <div class="list list--scrollEvents" id="eventList"></div>
       </section>
 
       <!-- Settings -->
       <section class="tabPanel" role="tabpanel" id="tab-settings" aria-labelledby="tabBtn-settings" hidden>
-        <h2>Settings</h2>
+        <div class="sectionHeader">
+          <h2 class="sectionHeader__title">Settings</h2>
+          <div class="tabs subTabs" role="tablist" aria-label="Settings sections">
+            <button class="tab tab--sub" role="tab" aria-selected="true" aria-controls="panel-settings-users" id="subTabBtn-settings-users" type="button">User accounts</button>
+            <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-settings-social" id="subTabBtn-settings-social" type="button">Social links</button>
+            <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-settings-theme" id="subTabBtn-settings-theme" type="button">Theme</button>
+          </div>
+        </div>
 
-        <h3>User accounts</h3>
-        <form id="userForm" class="form form--row">
-          <label class="label">
-            New admin email
-            <input class="input" name="email" type="email" required />
-          </label>
-          <button class="btn btn--primary" type="submit">Create Invite Link</button>
-          <div class="hint" id="userHint" aria-live="polite"></div>
-        </form>
-        <div class="list" id="userList"></div>
+        <div class="subTabPanel" role="tabpanel" id="panel-settings-users" aria-labelledby="subTabBtn-settings-users">
+          <h3 class="srOnly">User accounts</h3>
+          <form id="userForm" class="form form--row">
+            <label class="label">
+              New admin email
+              <input class="input" name="email" type="email" required />
+            </label>
+            <button class="btn btn--primary" type="submit">Create Invite Link</button>
+            <div class="hint" id="userHint" aria-live="polite"></div>
+          </form>
+          <div class="list list--scroll5" id="userList"></div>
+        </div>
 
-        <h3>Social links</h3>
-        <form id="socialForm" class="form form--row">
-          <label class="label">Facebook URL <input class="input" name="facebook" type="url" /></label>
-          <label class="label">YouTube URL <input class="input" name="youtube" type="url" /></label>
-          <label class="label">Email <input class="input" name="email" type="email" /></label>
-          <label class="label">Phone <input class="input" name="phone" type="tel" /></label>
-          <label class="label">Address <input class="input" name="address" type="text" /></label>
-          <button class="btn btn--primary" type="submit">Save Social Links</button>
-          <div class="hint" id="socialHint" aria-live="polite"></div>
-        </form>
+        <div class="subTabPanel" role="tabpanel" id="panel-settings-social" aria-labelledby="subTabBtn-settings-social" hidden>
+          <h3 class="srOnly">Social links</h3>
+          <form id="socialForm" class="form form--row">
+            <label class="label">Facebook URL <input class="input" name="facebook" type="url" /></label>
+            <label class="label">YouTube URL <input class="input" name="youtube" type="url" /></label>
+            <label class="label">Email <input class="input" name="email" type="email" /></label>
+            <label class="label">Phone <input class="input" name="phone" type="tel" /></label>
+            <label class="label">Address <input class="input" name="address" type="text" /></label>
+            <button class="btn btn--primary" type="submit">Save Social Links</button>
+            <div class="hint" id="socialHint" aria-live="polite"></div>
+          </form>
+        </div>
 
-        <h3>Theme</h3>
-        <form id="themeForm" class="form">
-          <div class="themeGrid">
-            <div class="themeRow">
-              <label class="label" for="themeAccent">Accent color</label>
-              <div class="colorRow">
-                <input class="colorPicker" id="themeAccent" name="accent" type="color" value="#c46123" />
-                <input class="input colorHex" id="themeAccentHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#c46123" />
+        <div class="subTabPanel" role="tabpanel" id="panel-settings-theme" aria-labelledby="subTabBtn-settings-theme" hidden>
+          <h3 class="srOnly">Theme</h3>
+          <form id="themeForm" class="form">
+            <div class="themeGrid">
+              <div class="themeRow">
+                <label class="label" for="themeAccent">Accent color</label>
+                <div class="colorRow">
+                  <input class="colorPicker" id="themeAccent" name="accent" type="color" value="#c46123" />
+                  <input class="input colorHex" id="themeAccentHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#c46123" />
+                </div>
+              </div>
+
+              <div class="themeRow">
+                <label class="label" for="themeText">Text color</label>
+                <div class="colorRow">
+                  <input class="colorPicker" id="themeText" name="text" type="color" value="#ffffff" />
+                  <input class="input colorHex" id="themeTextHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#ffffff" />
+                </div>
+              </div>
+
+              <div class="themeRow">
+                <label class="label" for="themeBackground">Background color</label>
+                <div class="colorRow">
+                  <input class="colorPicker" id="themeBackground" name="background" type="color" value="#000000" />
+                  <input class="input colorHex" id="themeBackgroundHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#000000" />
+                </div>
               </div>
             </div>
 
-            <div class="themeRow">
-              <label class="label" for="themeText">Text color</label>
-              <div class="colorRow">
-                <input class="colorPicker" id="themeText" name="text" type="color" value="#ffffff" />
-                <input class="input colorHex" id="themeTextHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#ffffff" />
-              </div>
+            <div class="toolbar">
+              <button class="btn" id="previewThemeBtn" type="button">Preview Theme</button>
+              <button class="btn" id="clearThemePreviewBtn" type="button">Clear Preview</button>
+              <button class="btn btn--primary" type="submit">Save Theme</button>
             </div>
 
-            <div class="themeRow">
-              <label class="label" for="themeBackground">Background color</label>
-              <div class="colorRow">
-                <input class="colorPicker" id="themeBackground" name="background" type="color" value="#000000" />
-                <input class="input colorHex" id="themeBackgroundHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#000000" />
-              </div>
+            <div class="hint" id="themeHint" aria-live="polite"></div>
+          </form>
+
+          <div class="card themePreview" id="themePreviewCard" aria-label="Theme preview">
+            <div class="themePreview__title">Preview</div>
+            <div class="themePreview__body">This is what your accent + text + background will look like.</div>
+            <div class="themePreview__actions">
+              <button class="btn btn--primary" type="button">Primary button</button>
+              <button class="btn" type="button">Secondary</button>
             </div>
           </div>
 
           <div class="toolbar">
-            <button class="btn" id="previewThemeBtn" type="button">Preview Theme</button>
-            <button class="btn" id="clearThemePreviewBtn" type="button">Clear Preview</button>
-            <button class="btn btn--primary" type="submit">Save Theme</button>
+            <button class="btn" id="exportAllBtn" type="button">Export Everything to Website</button>
           </div>
-
-          <div class="hint" id="themeHint" aria-live="polite"></div>
-        </form>
-
-        <div class="card themePreview" id="themePreviewCard" aria-label="Theme preview">
-          <div class="themePreview__title">Preview</div>
-          <div class="themePreview__body">This is what your accent + text + background will look like.</div>
-          <div class="themePreview__actions">
-            <button class="btn btn--primary" type="button">Primary button</button>
-            <button class="btn" type="button">Secondary</button>
-          </div>
-        </div>
-
-        <div class="toolbar">
-          <button class="btn" id="exportAllBtn" type="button">Export Everything to Website</button>
         </div>
       </section>
 

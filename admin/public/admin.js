@@ -15,6 +15,142 @@ async function api(path, options = {}) {
 
 function $(id) { return document.getElementById(id); }
 
+function confirmWrite(message) {
+  return confirm(message || 'Save changes?');
+}
+
+function uniqStringsLower(list) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of (list || [])) {
+    const v = String(raw || '').trim().toLowerCase();
+    if (!v) continue;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+}
+
+function toTime24(hour12, minute, ampm) {
+  const h = Number(hour12);
+  const m = String(minute || '').padStart(2, '0');
+  const a = String(ampm || '').toUpperCase();
+  if (!h || h < 1 || h > 12) return '';
+  if (!/^\d{2}$/.test(m)) return '';
+  if (a !== 'AM' && a !== 'PM') return '';
+
+  let hour = h % 12;
+  if (a === 'PM') hour += 12;
+  return `${String(hour).padStart(2, '0')}:${m}`;
+}
+
+function fromTime24(value) {
+  const t = String(value || '').trim();
+  const m = t.match(/^([0-2]\d):([0-5]\d)/);
+  if (!m) return null;
+  const hour24 = Number(m[1]);
+  const minute = m[2];
+  if (!Number.isFinite(hour24)) return null;
+  const ampm = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return { hour12: String(hour12), minute, ampm };
+}
+
+function initTimePicker(pickerId, hiddenInputId, { required, defaultValue } = {}) {
+  const root = $(pickerId);
+  const hidden = $(hiddenInputId);
+  if (!root || !hidden) return;
+
+  root.innerHTML = '';
+
+  const hour = document.createElement('select');
+  hour.className = 'select';
+  hour.setAttribute('aria-label', 'Hour');
+
+  const minute = document.createElement('select');
+  minute.className = 'select';
+  minute.setAttribute('aria-label', 'Minutes');
+
+  const ampm = document.createElement('select');
+  ampm.className = 'select';
+  ampm.setAttribute('aria-label', 'AM/PM');
+
+  const addOption = (sel, val, label) => {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  };
+
+  if (!required) {
+    addOption(hour, '', 'Hour');
+    addOption(minute, '', 'Min');
+    addOption(ampm, '', 'AM/PM');
+  }
+
+  for (let h = 1; h <= 12; h += 1) addOption(hour, String(h), String(h));
+  for (const mm of ['00', '15', '30', '45']) addOption(minute, mm, mm);
+  addOption(ampm, 'AM', 'AM');
+  addOption(ampm, 'PM', 'PM');
+
+  root.appendChild(hour);
+  root.appendChild(minute);
+  root.appendChild(ampm);
+
+  const syncToHidden = () => {
+    const v = toTime24(hour.value, minute.value, ampm.value);
+    hidden.value = v;
+  };
+
+  const syncFromHidden = () => {
+    const parsed = fromTime24(hidden.value);
+    if (!parsed) return;
+    hour.value = parsed.hour12;
+    minute.value = parsed.minute;
+    ampm.value = parsed.ampm;
+  };
+
+  hour.addEventListener('change', syncToHidden);
+  minute.addEventListener('change', syncToHidden);
+  ampm.addEventListener('change', syncToHidden);
+
+  // Initialize
+  if (hidden.value) {
+    syncFromHidden();
+    syncToHidden();
+  } else if (defaultValue) {
+    hidden.value = String(defaultValue);
+    syncFromHidden();
+    syncToHidden();
+  } else {
+    syncToHidden();
+  }
+
+  const form = root.closest('form');
+  if (form && !form.dataset.timePickersWired) {
+    form.addEventListener('reset', () => {
+      // Let the browser reset other fields first.
+      setTimeout(() => {
+        if (defaultValue) {
+          hidden.value = String(defaultValue);
+          syncFromHidden();
+          syncToHidden();
+        } else {
+          hidden.value = '';
+          if (!required) {
+            hour.value = '';
+            minute.value = '';
+            ampm.value = '';
+          }
+          syncToHidden();
+        }
+      }, 0);
+    });
+    form.dataset.timePickersWired = '1';
+  }
+}
+
 function getInitials(user) {
   const name = String(user?.name || '').trim();
   if (name) {
@@ -191,15 +327,55 @@ function applyHashNavigation() {
   if (h === 'photos') setTab('tab-photos');
   if (h === 'stream') setTab('tab-stream');
   if (h === 'events') setTab('tab-events');
-  if (h === 'content') setTab('tab-content');
-  if (h === 'settings') setTab('tab-settings');
+  if (h === 'content') {
+    setTab('tab-content');
+    setContentSubTab('panel-content-announcements');
+  }
+  if (h === 'settings') {
+    setTab('tab-settings');
+    setSettingsSubTab('panel-settings-users');
+  }
   if (h === 'account') setTab('tab-account');
 
   if (h === 'announcements') {
     setTab('tab-content');
-    const el = document.getElementById('announcements');
-    if (el) el.scrollIntoView({ block: 'start' });
+    setContentSubTab('panel-content-announcements');
   }
+
+  if (h === 'bulletins') {
+    setTab('tab-content');
+    setContentSubTab('panel-content-bulletins');
+  }
+}
+
+function setSubTab(buttonIds, panelIds, activePanelId) {
+  for (const bid of buttonIds) {
+    const b = $(bid);
+    if (!b) continue;
+    const isActive = b.getAttribute('aria-controls') === activePanelId;
+    b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  }
+  for (const pid of panelIds) {
+    const p = $(pid);
+    if (!p) continue;
+    p.hidden = pid !== activePanelId;
+  }
+}
+
+function setContentSubTab(panelId) {
+  setSubTab(
+    ['subTabBtn-content-announcements', 'subTabBtn-content-bulletins'],
+    ['panel-content-announcements', 'panel-content-bulletins'],
+    panelId
+  );
+}
+
+function setSettingsSubTab(panelId) {
+  setSubTab(
+    ['subTabBtn-settings-users', 'subTabBtn-settings-social', 'subTabBtn-settings-theme'],
+    ['panel-settings-users', 'panel-settings-social', 'panel-settings-theme'],
+    panelId
+  );
 }
 
 let inviteLoadedToken = '';
@@ -451,6 +627,8 @@ function renderEvents() {
         const date = inputs[1]?.value || '';
         const time = inputs[2]?.value || '';
 
+        if (!confirmWrite('Save changes to this event?')) return;
+
         await api(`/api/events/${ev.id}`, {
           method: 'PUT',
           body: JSON.stringify({ title, date, time })
@@ -647,11 +825,27 @@ async function loadUsers() {
 // -------- Livestream --------
 let livestream = null;
 
+function getSelectedLivePlatforms() {
+  const inputs = Array.from(document.querySelectorAll('input[name="livePlatforms"]'));
+  return uniqStringsLower(inputs.filter((i) => i.checked).map((i) => i.value));
+}
+
+function setSelectedLivePlatforms(platforms) {
+  const set = new Set(uniqStringsLower(platforms));
+  const inputs = Array.from(document.querySelectorAll('input[name="livePlatforms"]'));
+  for (const el of inputs) el.checked = set.has(String(el.value || '').toLowerCase());
+}
+
 function renderLivestream() {
   $('ytEmbed').value = livestream?.embeds?.youtube || '';
   $('fbEmbed').value = livestream?.embeds?.facebook || '';
   $('siteEmbed').value = livestream?.embeds?.website || '';
   $('activePlatform').value = livestream?.active?.platform || 'website';
+
+  const activePlatforms = (livestream?.active?.platforms && Array.isArray(livestream.active.platforms))
+    ? livestream.active.platforms
+    : [livestream?.active?.platform || 'website'];
+  setSelectedLivePlatforms(activePlatforms);
 
   const isLive = (livestream?.active?.status || 'offline') === 'live';
   const chip = $('liveStatus');
@@ -683,6 +877,7 @@ function renderLivestream() {
     del.type = 'button';
     del.textContent = 'Delete';
     del.addEventListener('click', async () => {
+      if (!confirm('Delete this recurring stream?')) return;
       livestream.recurring = (livestream.recurring || []).filter((x) => x.id !== r.id);
       await saveLivestream();
     });
@@ -793,9 +988,32 @@ document.addEventListener('DOMContentLoaded', () => {
   $('tabBtn-photos').addEventListener('click', () => setTab('tab-photos'));
   $('tabBtn-stream').addEventListener('click', () => setTab('tab-stream'));
   $('tabBtn-events').addEventListener('click', () => setTab('tab-events'));
-  $('tabBtn-content').addEventListener('click', () => setTab('tab-content'));
-  $('tabBtn-settings').addEventListener('click', () => setTab('tab-settings'));
+  $('tabBtn-content').addEventListener('click', () => {
+    setTab('tab-content');
+    setContentSubTab('panel-content-announcements');
+  });
+  $('tabBtn-settings').addEventListener('click', () => {
+    setTab('tab-settings');
+    setSettingsSubTab('panel-settings-users');
+  });
   $('tabBtn-account').addEventListener('click', () => setTab('tab-account'));
+
+  // Sub-tabs
+  if ($('subTabBtn-content-announcements')) {
+    $('subTabBtn-content-announcements').addEventListener('click', () => setContentSubTab('panel-content-announcements'));
+  }
+  if ($('subTabBtn-content-bulletins')) {
+    $('subTabBtn-content-bulletins').addEventListener('click', () => setContentSubTab('panel-content-bulletins'));
+  }
+  if ($('subTabBtn-settings-users')) {
+    $('subTabBtn-settings-users').addEventListener('click', () => setSettingsSubTab('panel-settings-users'));
+  }
+  if ($('subTabBtn-settings-social')) {
+    $('subTabBtn-settings-social').addEventListener('click', () => setSettingsSubTab('panel-settings-social'));
+  }
+  if ($('subTabBtn-settings-theme')) {
+    $('subTabBtn-settings-theme').addEventListener('click', () => setSettingsSubTab('panel-settings-theme'));
+  }
 
   // Header avatar
   $('accountBtn').addEventListener('click', () => {
@@ -933,6 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('accountForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('accountHint');
+    if (!confirmWrite('Save account profile changes?')) return;
     hint.textContent = 'Saving…';
     const fd = new FormData(e.currentTarget);
     try {
@@ -967,6 +1186,9 @@ document.addEventListener('DOMContentLoaded', () => {
       hint.textContent = policyErr;
       return;
     }
+
+    if (!confirmWrite('Update your password?')) return;
+
     hint.textContent = 'Updating…';
     try {
       await api('/api/account/password', {
@@ -989,6 +1211,9 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const form = e.currentTarget;
     const hint = $('photoUploadHint');
+
+    if (!confirmWrite('Upload selected photo(s)?')) return;
+
     hint.textContent = 'Uploading…';
 
     const fd = new FormData(form);
@@ -1014,6 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('photoTagFilter').addEventListener('input', applyPhotoFilters);
 
   $('exportBtn').addEventListener('click', async () => {
+    if (!confirmWrite('Export current content to website files now?')) return;
     await api('/api/export', { method: 'POST', body: '{}' });
     alert('Exported to website files (gallery.json, schedule.json, theme.css, etc).');
   });
@@ -1022,6 +1248,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('announceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('announceHint');
+
+    if (!confirmWrite('Post this announcement?')) return;
+
     hint.textContent = 'Posting…';
 
     const fd = new FormData(e.currentTarget);
@@ -1050,6 +1279,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('eventForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('eventHint');
+
+    if (!confirmWrite('Save this event?')) return;
+
     hint.textContent = 'Saving…';
 
     const fd = new FormData(e.currentTarget);
@@ -1067,6 +1299,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('bulletinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('bulletinHint');
+
+    if (!confirmWrite('Upload and schedule this bulletin?')) return;
+
     hint.textContent = 'Uploading…';
 
     const fd = new FormData(e.currentTarget);
@@ -1094,6 +1329,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('userForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('userHint');
+
+    if (!confirmWrite('Create an admin invite link for this email?')) return;
+
     hint.textContent = 'Creating invite…';
 
     const fd = new FormData(e.currentTarget);
@@ -1109,21 +1347,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Livestream controls
   $('goLiveBtn').addEventListener('click', async () => {
-    livestream.active = { platform: $('activePlatform').value, status: 'live' };
+    if (!confirmWrite('Set livestream status to LIVE now?')) return;
+    const platform = $('activePlatform').value;
+    const platforms = getSelectedLivePlatforms();
+    const nextPlatforms = platforms.length ? platforms : [platform];
+    if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
+    livestream.active = { platform, platforms: nextPlatforms, status: 'live' };
     await saveLivestream();
   });
   $('goOfflineBtn').addEventListener('click', async () => {
-    livestream.active = { platform: $('activePlatform').value, status: 'offline' };
+    if (!confirmWrite('Set livestream status to OFFLINE now?')) return;
+    const platform = $('activePlatform').value;
+    const platforms = getSelectedLivePlatforms();
+    const nextPlatforms = platforms.length ? platforms : [platform];
+    if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
+    livestream.active = { platform, platforms: nextPlatforms, status: 'offline' };
     await saveLivestream();
   });
   $('saveLivestreamBtn').addEventListener('click', async () => {
-    livestream.active = { platform: $('activePlatform').value, status: livestream.active?.status || 'offline' };
+    if (!confirmWrite('Save livestream settings?')) return;
+    const platform = $('activePlatform').value;
+    const platforms = getSelectedLivePlatforms();
+    const nextPlatforms = platforms.length ? platforms : [platform];
+    if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
+    livestream.active = { platform, platforms: nextPlatforms, status: livestream.active?.status || 'offline' };
     await saveLivestream();
     alert('Saved livestream settings.');
   });
 
   $('recurringForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    if (!confirmWrite('Add this recurring stream?')) return;
+
     const fd = new FormData(e.currentTarget);
     const item = {
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
@@ -1140,6 +1396,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('socialForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('socialHint');
+
+    if (!confirmWrite('Save social links?')) return;
+
     hint.textContent = 'Saving…';
     const fd = new FormData(e.currentTarget);
     await saveSettingsPatch({
@@ -1158,6 +1417,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('themeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const hint = $('themeHint');
+
+    if (!confirmWrite('Save theme settings?')) return;
+
     hint.textContent = 'Saving…';
     const fd = new FormData(e.currentTarget);
     await saveSettingsPatch({
@@ -1203,6 +1465,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   syncHex('themeAccent', 'themeAccentHex');
+
+  // Time pickers
+  initTimePicker('recurringTimePicker', 'recurringTime', { required: true, defaultValue: '10:00' });
+  initTimePicker('eventTimePicker', 'eventTime', { required: false });
   syncHex('themeText', 'themeTextHex');
   syncHex('themeBackground', 'themeBackgroundHex');
 
@@ -1230,6 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   $('exportAllBtn').addEventListener('click', async () => {
+    if (!confirmWrite('Export current content to website files now?')) return;
     await api('/api/export', { method: 'POST', body: '{}' });
     alert('Exported to website files.');
   });

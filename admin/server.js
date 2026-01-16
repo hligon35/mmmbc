@@ -1191,7 +1191,7 @@ app.delete('/api/documents/:id', requireAuth, (req, res) => {
 // ----------------- LIVESTREAM -----------------
 function loadLivestream() {
   return readJson(LIVESTREAM_DATA_PATH, readJson(LIVESTREAM_DATA_PATH, {
-    active: { platform: 'website', status: 'offline' },
+    active: { platform: 'website', platforms: ['website'], status: 'offline' },
     embeds: { youtube: '', facebook: '', website: '' },
     recurring: []
   }));
@@ -1206,11 +1206,32 @@ app.get('/api/livestream', requireAuth, (req, res) => {
 
 app.put('/api/livestream', requireAuth, (req, res) => {
   const data = loadLivestream();
+
+  const allowedPlatforms = new Set(['website', 'youtube', 'facebook']);
+  const platform = sanitizeSegment(req.body.active?.platform || data.active.platform).toLowerCase();
+  const status = sanitizeSegment(req.body.active?.status || data.active.status).toLowerCase();
+
+  const rawPlatforms = Array.isArray(req.body.active?.platforms)
+    ? req.body.active.platforms
+    : Array.isArray(data.active?.platforms)
+      ? data.active.platforms
+      : [];
+
+  const platforms = Array.from(new Set(
+    rawPlatforms
+      .map((p) => sanitizeSegment(p).toLowerCase())
+      .filter((p) => allowedPlatforms.has(p))
+  ));
+
+  if (!platforms.length && allowedPlatforms.has(platform)) platforms.push(platform);
+  if (platform && allowedPlatforms.has(platform) && !platforms.includes(platform)) platforms.unshift(platform);
+
   const next = {
     ...data,
     active: {
-      platform: sanitizeSegment(req.body.active?.platform || data.active.platform).toLowerCase(),
-      status: sanitizeSegment(req.body.active?.status || data.active.status).toLowerCase()
+      platform,
+      platforms,
+      status
     },
     embeds: {
       youtube: String(req.body.embeds?.youtube ?? data.embeds.youtube).trim(),
