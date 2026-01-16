@@ -207,7 +207,12 @@ body {
 /********** Hero Section **********/
 
 .hero-section {
-    height: 75vh;
+    /* Use min-height (not fixed height) so large hero text/buttons never overflow
+       into the next section on shorter landscape viewports (e.g., Surface Pro). */
+    min-height: 75vh;
+    height: auto;
+    padding: 40px 16px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -278,6 +283,14 @@ body {
 .btn-contact:hover {
     background-color: #c46123; /* Darker shade on hover */
     transform: scale(1.25); /* Increase size by 25% */
+}
+
+/* Touch/pen devices can end up in a "stuck" hover-like state; avoid scaling that
+   can visually overlap nearby content on those devices. */
+@media (hover: none) {
+    .btn-contact:hover {
+        transform: none;
+    }
 }
 
 .btn-contact:active {
