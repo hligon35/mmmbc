@@ -175,12 +175,27 @@
     <section class="card" id="dashboardCard" aria-label="Admin dashboard" hidden>
       <div class="salutation" id="salutation" aria-live="polite"></div>
 
+      <div class="financeTopBar noPrint" id="financeTopBar" aria-label="Finance totals" hidden>
+        <div class="financePeriodTabs" role="tablist" aria-label="Finance period">
+          <button class="miniTab miniTab--xs" id="financePeriodWeekBtn" type="button" role="tab" aria-selected="true">Wk</button>
+          <button class="miniTab miniTab--xs" id="financePeriodMonthBtn" type="button" role="tab" aria-selected="false">Mon</button>
+        </div>
+        <div class="financeTopBar__label">Finance Totals</div>
+        <span class="statusChip" id="financeIncomeTotal">$0.00 Income</span>
+        <span class="statusChip" id="financeExpenseTotal">$0.00 Expense</span>
+        <span class="statusChip" id="financeTithesTotal">$0.00 Tithes</span>
+        <span class="statusChip" id="financeOfferingsTotal">$0.00 Offerings</span>
+        <span class="statusChip" id="financeGivingTotal">$0.00 Total</span>
+        <span class="statusChip" id="financeNetTotal">$0.00 Net</span>
+      </div>
+
       <div class="adminLayout">
         <nav class="sideNav" role="tablist" aria-label="Admin sections">
           <button class="tab tab--nav" role="tab" aria-selected="true" aria-controls="tab-photos" id="tabBtn-photos">Photo Gallery</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-stream" id="tabBtn-stream">Live Stream</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-events" id="tabBtn-events">Events</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-content" id="tabBtn-content">Announcements</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-finances" id="tabBtn-finances">Finances</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-settings" id="tabBtn-settings">Settings</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-account" id="tabBtn-account">Account</button>
         </nav>
@@ -227,7 +242,7 @@
             </select>
           </label>
           <label class="label label--inline">
-            Filter album
+            Filter Album
             <input class="input" id="photoAlbumFilter" type="text" placeholder="Events" />
           </label>
           <label class="label label--inline">
@@ -397,6 +412,201 @@
             <div class="hint" id="bulletinHint" aria-live="polite"></div>
           </form>
           <div class="list" id="bulletinList"></div>
+        </div>
+      </section>
+
+      <!-- Finances -->
+      <section class="tabPanel" role="tabpanel" id="tab-finances" aria-labelledby="tabBtn-finances" hidden>
+        <div class="sectionHeader financeHeader">
+          <div class="financeHeaderLeftTop">
+            <div class="financeHeaderTitleRow">
+              <h2 class="sectionHeader__title">Finances</h2>
+
+              <div class="iconGroup noPrint" aria-label="Finance actions">
+                <button class="iconBtn" id="financePrintBtn" type="button" aria-label="Print" title="Print">
+                  <svg class="iconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M6 7V3h12v4H6zm12 2h1a3 3 0 0 1 3 3v5h-4v4H6v-4H2v-5a3 3 0 0 1 3-3h1V9h12v0zm-2 12v-6H8v6h8zm2-10a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                  </svg>
+                  <span class="srOnly">Print</span>
+                </button>
+                <button class="iconBtn" id="financeExportCsvBtn" type="button" aria-label="Export CSV" title="Export CSV">
+                  <svg class="iconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M5 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7l2 2h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5zm7-11v6.17l1.59-1.58L15 15l-3 3-3-3 1.41-1.41L12 15.17V9h0z"/>
+                  </svg>
+                  <span class="srOnly">Export CSV</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="financeHeaderLeftBottom">
+            <div class="financeQuickTabs noPrint" id="financeQuickTabs" role="tablist" aria-label="Finance quick tabs">
+              <button class="miniTab" type="button" role="tab" aria-selected="true" data-fin-kind="income">Income</button>
+              <button class="miniTab" type="button" role="tab" aria-selected="false" data-fin-kind="expense">Expense</button>
+              <button class="miniTab" type="button" role="tab" aria-selected="false" data-fin-kind="tithes">Tithes</button>
+              <button class="miniTab" type="button" role="tab" aria-selected="false" data-fin-kind="offerings">Offering</button>
+            </div>
+          </div>
+
+          <form class="financeHeaderSearch noPrint" id="financeSearchForm" role="search" aria-label="Search finances">
+            <div class="inputGroup">
+              <input class="input" id="financeSearch" type="search" placeholder="Search ledger…" autocomplete="off" />
+              <button class="inputIconBtn" type="submit" aria-label="Search" title="Search">
+                <svg class="inputIconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M10 2a8 8 0 1 1 5.3 13.9l4.4 4.4-1.4 1.4-4.4-4.4A8 8 0 0 1 10 2zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/>
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          <div class="financeHeaderRight noPrint">
+            <details class="menu" id="financeFilterMenu">
+              <summary class="iconBtn" aria-label="Filters" title="Filters">
+                <svg class="iconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M3 5h18v2l-7 8v5l-4-2v-3L3 7V5z"/>
+                </svg>
+                <span class="srOnly">Filters</span>
+              </summary>
+              <div class="menu__panel" role="menu" aria-label="Filters">
+                <div class="menu__title">Date range</div>
+
+                <label class="menu__checkItem" role="menuitemcheckbox">
+                  <input class="menu__check" type="checkbox" data-fin-range="7" />
+                  <span>Last 7 days</span>
+                </label>
+                <label class="menu__checkItem" role="menuitemcheckbox">
+                  <input class="menu__check" type="checkbox" data-fin-range="30" />
+                  <span>Last 30 days</span>
+                </label>
+                <label class="menu__checkItem" role="menuitemcheckbox">
+                  <input class="menu__check" type="checkbox" data-fin-range="90" />
+                  <span>Last 90 days</span>
+                </label>
+                <label class="menu__checkItem" role="menuitemcheckbox">
+                  <input class="menu__check" type="checkbox" data-fin-range="custom" id="financeCustomToggle" />
+                  <span>Custom</span>
+                </label>
+
+                <div class="menu__custom" id="financeCustomRange" hidden>
+                  <div class="formRow">
+                    <label class="label">
+                      From
+                      <input class="input" id="financeFrom" type="date" />
+                    </label>
+                    <label class="label">
+                      To
+                      <input class="input" id="financeTo" type="date" />
+                    </label>
+                  </div>
+                  <div class="toolbar toolbar--tightTop">
+                    <button class="btn btn--primary" id="financeApplyCustomRangeBtn" type="button">Apply</button>
+                    <button class="btn" id="financeClearRangeBtn" type="button">Clear</button>
+                  </div>
+                </div>
+
+                <div class="menu__divider" role="separator" aria-hidden="true"></div>
+
+                <div class="menu__title menu__title--spaced">Type</div>
+                <label class="menu__checkItem" role="menuitemcheckbox">
+                  <input class="menu__check" type="checkbox" id="financeTypeIncome" checked />
+                  <span>Income</span>
+                </label>
+                <label class="menu__checkItem" role="menuitemcheckbox">
+                  <input class="menu__check" type="checkbox" id="financeTypeExpense" checked />
+                  <span>Expense</span>
+                </label>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <p class="muted">Add income and expenses, filter the ledger, export to CSV, and print cleanly.</p>
+
+        <div class="financePrintHeader printOnly" aria-label="Print header">
+          <div class="financePrintHeader__title">Mt. Moriah Missionary Baptist Church — Finance Ledger</div>
+          <div class="financePrintHeader__meta" id="financePrintMeta"></div>
+        </div>
+
+        <form id="financeEntryForm" class="form" aria-label="Add or edit ledger entry">
+          <input id="financeEditId" type="hidden" />
+
+          <div class="formRow">
+            <label class="label">
+              Date
+              <input class="input" id="financeDate" type="date" required />
+            </label>
+            <label class="label">
+              Type
+              <select class="select" id="financeType" required>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+            </label>
+            <label class="label">
+              Category
+              <input class="input" id="financeCategory" type="text" list="financeCategoriesList" placeholder="Tithes" required />
+            </label>
+            <label class="label">
+              Fund
+              <input class="input" id="financeFund" type="text" list="financeFundsList" placeholder="General" />
+            </label>
+            <label class="label">
+              Method
+              <select class="select" id="financeMethod">
+                <option value="">(Any)</option>
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+                <option value="card">Card</option>
+                <option value="online">Online</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label class="label">
+              Amount
+              <input class="input" id="financeAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" required />
+            </label>
+          </div>
+
+          <div class="formRow">
+            <label class="label">
+              <span id="financePartyLabel">From (optional)</span>
+              <input class="input" id="financeParty" type="text" maxlength="120" placeholder="John Doe / Vendor" />
+            </label>
+            <label class="label">
+              Memo (optional)
+              <input class="input" id="financeMemo" type="text" maxlength="200" placeholder="Notes" />
+            </label>
+          </div>
+
+          <div class="toolbar noPrint">
+            <button class="btn btn--primary" id="financeSaveBtn" type="submit">Add Entry</button>
+            <button class="btn" id="financeCancelEditBtn" type="button" hidden>Cancel Edit</button>
+            <div class="hint" id="financeHint" aria-live="polite"></div>
+          </div>
+        </form>
+
+        <datalist id="financeCategoriesList"></datalist>
+        <datalist id="financeFundsList"></datalist>
+
+        <div class="divider"></div>
+
+        <div class="tableWrap" aria-label="Ledger table">
+          <table class="financeTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Fund</th>
+                <th>Method</th>
+                <th>From/To</th>
+                <th>Memo</th>
+                <th class="num">Amount</th>
+                <th class="noPrint">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="financeTableBody"></tbody>
+          </table>
         </div>
       </section>
 

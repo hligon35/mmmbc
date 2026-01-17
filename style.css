@@ -20,6 +20,7 @@ body {
     padding-top: 100px; /* Adjusted to prevent content overlap by 100px fixed navbar */
     min-height: calc(100% - 100px); /* Ensure body content area can fill remaining space */
     box-sizing: border-box; /* Include padding in height calculation */
+    overflow-x: hidden; /* Prevent horizontal scroll from nav/tab overflow */
 }
 
 /* Accessibility utility: visually hidden but still available to screen readers */
@@ -55,6 +56,38 @@ body {
 .nav-logo {
     height: 100px; /* Adjust as needed to fit well */
     width: auto;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.devicon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.25);
+    color: #ffffff;
+    text-decoration: none;
+    flex: 0 0 auto;
+}
+
+.devicon-btn:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.devicon-btn__text {
+    font-weight: 800;
+    font-size: 0.95em;
+    line-height: 1;
 }
 
 /********** Menu Button Styling **********/
@@ -134,10 +167,11 @@ body {
         grid-template-columns: auto 1fr;
         grid-template-rows: 1fr 56px; /* bottom row is the "piano key" tab bar */
         align-items: center;
-        column-gap: 150px;
+        column-gap: 24px;
+        overflow-x: hidden;
     }
 
-    .nav-logo {
+    .nav-left {
         justify-self: start;
         grid-column: 1;
         grid-row: 1 / span 2;
@@ -161,11 +195,13 @@ body {
         position: static;
         width: 100%;
         height: 56px;
-        padding: 0 50px 6px 350px;
+        padding: 0 12px 6px 12px;
         background-color: transparent;
         border-top: none;
         border-radius: 0;
         box-sizing: border-box;
+        min-width: 0; /* allow the grid item to shrink instead of forcing overflow */
+        overflow-x: hidden;
     }
 
     .nav-links a {
@@ -1371,6 +1407,7 @@ footer {
     border-radius: 16px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
     overflow: hidden;
+    -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
 }
 

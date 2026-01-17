@@ -37,3 +37,9 @@ Open:
 
 - The master password is **not** hardcoded. On startup, the server creates/updates the master admin account using env vars and stores only a **bcrypt hash** in `admin/data/users.json`.
 - This is designed for a church office computer or a trusted server. If you deploy publicly, add HTTPS + backups and consider stronger auth.
+
+## Deployment (Render now, Raspberry Pi later)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for:
+- Render setup (root directory, env vars, persistent disk for data/uploads)
+- Raspberry Pi local-server setup (systemd + optional nginx reverse proxy)

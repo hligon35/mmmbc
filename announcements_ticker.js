@@ -90,11 +90,11 @@
 
     if (!wrap || !srEl || !linkEl || !stack || !lineA || !lineB) return;
 
-    const showFallback = (msg) => {
-      wrap.hidden = false;
-      lineA.textContent = msg;
+    const hideTicker = () => {
+      wrap.hidden = true;
+      lineA.textContent = '';
       lineB.textContent = '';
-      srEl.textContent = msg;
+      srEl.textContent = '';
     };
 
     try {
@@ -115,7 +115,7 @@
         .filter(Boolean);
 
       if (!messages.length) {
-        showFallback('No current announcements — click to manage.');
+        hideTicker();
         return;
       }
 
@@ -130,7 +130,7 @@
 
       startRotation({ wrap: linkEl, stack, lineA, lineB, srEl, messages });
     } catch {
-      showFallback('Announcements are unavailable right now — click to manage.');
+      hideTicker();
     }
   }
 

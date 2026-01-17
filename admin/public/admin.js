@@ -1,6 +1,39 @@
+let csrfToken = '';
+let csrfReady = Promise.resolve();
+
+async function fetchCsrfToken() {
+  try {
+    const res = await fetch('/api/csrf', { method: 'GET', credentials: 'same-origin' });
+    if (!res.ok) return '';
+    const data = await res.json();
+    csrfToken = String(data?.csrfToken || '');
+    return csrfToken;
+  } catch {
+    return '';
+  }
+}
+
 async function api(path, options = {}) {
+  const method = String(options.method || 'GET').toUpperCase();
+  const needsCsrf = path.startsWith('/api/')
+    && !['GET', 'HEAD', 'OPTIONS'].includes(method)
+    && !path.startsWith('/api/auth/login')
+    && !path.startsWith('/api/auth/logout')
+    && !path.startsWith('/api/auth/recover')
+    && !path.startsWith('/api/invites/');
+
+  if (needsCsrf) {
+    await csrfReady;
+  }
+
+  const headers = {
+    ...(options.headers || {}),
+    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' })
+  };
+  if (needsCsrf && csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers,
     credentials: 'same-origin',
     ...options
   });
@@ -34,7 +67,11 @@ function uniqStringsLower(list) {
 
 function toTime24(hour12, minute, ampm) {
   const h = Number(hour12);
-  const m = String(minute || '').padStart(2, '0');
+  const minuteRaw = String(minute || '').trim();
+  if (minuteRaw === '') return '';
+  const minuteNum = Number(minuteRaw);
+  if (!Number.isFinite(minuteNum) || minuteNum < 0 || minuteNum > 59) return '';
+  const m = String(Math.floor(minuteNum)).padStart(2, '0');
   const a = String(ampm || '').toUpperCase();
   if (!h || h < 1 || h > 12) return '';
   if (!/^\d{2}$/.test(m)) return '';
@@ -64,39 +101,57 @@ function initTimePicker(pickerId, hiddenInputId, { required, defaultValue } = {}
 
   root.innerHTML = '';
 
-  const hour = document.createElement('select');
-  hour.className = 'select';
-  hour.setAttribute('aria-label', 'Hour');
-
-  const minute = document.createElement('select');
-  minute.className = 'select';
-  minute.setAttribute('aria-label', 'Minutes');
-
-  const ampm = document.createElement('select');
-  ampm.className = 'select';
-  ampm.setAttribute('aria-label', 'AM/PM');
-
-  const addOption = (sel, val, label) => {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = label;
-    sel.appendChild(opt);
+  const makeDatalist = (id, values) => {
+    const dl = document.createElement('datalist');
+    dl.id = id;
+    for (const v of values) {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      dl.appendChild(opt);
+    }
+    return dl;
   };
 
-  if (!required) {
-    addOption(hour, '', 'Hour');
-    addOption(minute, '', 'Min');
-    addOption(ampm, '', 'AM/PM');
-  }
+  const hour = document.createElement('input');
+  hour.className = 'select';
+  hour.setAttribute('aria-label', 'H');
+  hour.setAttribute('inputmode', 'numeric');
+  hour.setAttribute('autocomplete', 'off');
+  hour.placeholder = required ? 'H' : 'Hour';
 
-  for (let h = 1; h <= 12; h += 1) addOption(hour, String(h), String(h));
-  for (const mm of ['00', '15', '30', '45']) addOption(minute, mm, mm);
-  addOption(ampm, 'AM', 'AM');
-  addOption(ampm, 'PM', 'PM');
+  const minute = document.createElement('input');
+  minute.className = 'select';
+  minute.setAttribute('aria-label', 'M');
+  minute.setAttribute('inputmode', 'numeric');
+  minute.setAttribute('autocomplete', 'off');
+  minute.placeholder = required ? 'M' : 'Min';
+
+  const ampm = document.createElement('input');
+  ampm.className = 'select';
+  ampm.setAttribute('aria-label', 'A/P');
+  ampm.setAttribute('autocomplete', 'off');
+  ampm.placeholder = required ? 'AM/PM' : 'AM/PM';
+
+  const hoursListId = `${pickerId}__hours`;
+  const minutesListId = `${pickerId}__minutes`;
+  const ampmListId = `${pickerId}__ampm`;
+
+  hour.setAttribute('list', hoursListId);
+  minute.setAttribute('list', minutesListId);
+  ampm.setAttribute('list', ampmListId);
+
+  const hours = [];
+  for (let h = 1; h <= 12; h += 1) hours.push(String(h));
+  const minutes = [];
+  for (let m = 0; m <= 59; m += 1) minutes.push(String(m).padStart(2, '0'));
+  const ampmVals = ['AM', 'PM'];
 
   root.appendChild(hour);
   root.appendChild(minute);
   root.appendChild(ampm);
+  root.appendChild(makeDatalist(hoursListId, hours));
+  root.appendChild(makeDatalist(minutesListId, minutes));
+  root.appendChild(makeDatalist(ampmListId, ampmVals));
 
   const syncToHidden = () => {
     const v = toTime24(hour.value, minute.value, ampm.value);
@@ -111,6 +166,9 @@ function initTimePicker(pickerId, hiddenInputId, { required, defaultValue } = {}
     ampm.value = parsed.ampm;
   };
 
+  hour.addEventListener('input', syncToHidden);
+  minute.addEventListener('input', syncToHidden);
+  ampm.addEventListener('input', syncToHidden);
   hour.addEventListener('change', syncToHidden);
   minute.addEventListener('change', syncToHidden);
   ampm.addEventListener('change', syncToHidden);
@@ -224,6 +282,7 @@ function setTab(activeId) {
     $('tabBtn-stream'),
     $('tabBtn-events'),
     $('tabBtn-content'),
+    $('tabBtn-finances'),
     $('tabBtn-settings'),
     $('tabBtn-account')
   ];
@@ -232,6 +291,7 @@ function setTab(activeId) {
     $('tab-stream'),
     $('tab-events'),
     $('tab-content'),
+    $('tab-finances'),
     $('tab-settings'),
     $('tab-account')
   ];
@@ -243,6 +303,9 @@ function setTab(activeId) {
   panels.forEach((p) => {
     p.hidden = p.id !== activeId;
   });
+
+  const financeTopBar = $('financeTopBar');
+  if (financeTopBar) financeTopBar.hidden = activeId !== 'tab-finances';
 }
 
 async function refreshAuthUI() {
@@ -278,6 +341,8 @@ async function refreshAuthUI() {
   }
 
   if (loggedIn) {
+    csrfReady = fetchCsrfToken();
+    await csrfReady;
     await loadAll();
     applyHashNavigation();
   }
@@ -297,10 +362,15 @@ async function login(email, password, twoFactorCode) {
       ...(code ? { twoFactorCode: code } : {})
     })
   });
+
+  csrfReady = fetchCsrfToken();
+  await csrfReady;
 }
 
 async function logout() {
   await api('/api/auth/logout', { method: 'POST', body: '{}' });
+  csrfToken = '';
+  csrfReady = Promise.resolve();
 }
 
 function formatDate(iso) {
@@ -331,6 +401,7 @@ function applyHashNavigation() {
     setTab('tab-content');
     setContentSubTab('panel-content-announcements');
   }
+  if (h === 'finances' || h === 'finance') setTab('tab-finances');
   if (h === 'settings') {
     setTab('tab-settings');
     setSettingsSubTab('panel-settings-users');
@@ -346,6 +417,487 @@ function applyHashNavigation() {
     setTab('tab-content');
     setContentSubTab('panel-content-bulletins');
   }
+}
+
+// -------- Finances --------
+let finances = { entries: [], meta: { categories: [], funds: [] } };
+let financeQuickKind = 'income';
+let financeGivingPeriod = 'week';
+
+function formatMoneyCents(cents) {
+  const n = Number(cents || 0) / 100;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+}
+
+function setFinanceHint(text) {
+  const el = $('financeHint');
+  if (!el) return;
+  el.textContent = String(text || '');
+}
+
+function financeSelectedTypes() {
+  const incomeEl = $('financeTypeIncome');
+  const expenseEl = $('financeTypeExpense');
+
+  // Backward compatible: fall back to the legacy single-select if the new checkboxes aren't present.
+  if (!incomeEl && !expenseEl) {
+    const legacy = $('financeTypeFilter');
+    const t = String(legacy?.value || '').trim();
+    return t ? [t] : [];
+  }
+
+  const types = [];
+  if (incomeEl?.checked) types.push('income');
+  if (expenseEl?.checked) types.push('expense');
+
+  // If none or both are selected, treat it as "All".
+  if (types.length === 0 || types.length === 2) return [];
+  return types;
+}
+
+function financeNormalizeKey(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function financeDetectKindFromEntry(entry) {
+  const t = String(entry?.type || '');
+  if (t === 'expense') return 'expense';
+  if (t === 'income') {
+    const cat = financeNormalizeKey(entry?.category);
+    if (cat.includes('tithe')) return 'tithes';
+    if (cat.includes('offering')) return 'offerings';
+    return 'income';
+  }
+  return 'income';
+}
+
+function financeApplyKindToForm(kind) {
+  const typeEl = $('financeType');
+  const catEl = $('financeCategory');
+  const isEditing = !!String($('financeEditId')?.value || '').trim();
+
+  if (typeEl) {
+    typeEl.disabled = true;
+    typeEl.value = (kind === 'expense') ? 'expense' : 'income';
+  }
+
+  if (catEl) {
+    if (kind === 'tithes') {
+      if (!isEditing) catEl.value = 'Tithes';
+      catEl.disabled = true;
+    } else if (kind === 'offerings') {
+      if (!isEditing) catEl.value = 'Offerings';
+      catEl.disabled = true;
+    } else {
+      catEl.disabled = false;
+      if (!isEditing) {
+        // Only clear on add-mode; keep category when editing.
+        if (kind === 'income' && !String(catEl.value || '').trim()) catEl.value = '';
+        if (kind === 'expense' && !String(catEl.value || '').trim()) catEl.value = '';
+      }
+    }
+  }
+
+  const partyLabel = $('financePartyLabel');
+  const partyInput = $('financeParty');
+  if (partyLabel) {
+    if (kind === 'expense') partyLabel.textContent = 'To (optional)';
+    else if (kind === 'tithes') partyLabel.textContent = 'Giver (required)';
+    else if (kind === 'offerings') partyLabel.textContent = 'Giver (optional)';
+    else partyLabel.textContent = 'From (optional)';
+  }
+  if (partyInput instanceof HTMLInputElement) {
+    partyInput.required = (kind === 'tithes');
+  }
+}
+
+function financeSetQuickKind(kind, { render = true } = {}) {
+  const k = String(kind || '').trim();
+  if (!k) return;
+  financeQuickKind = k;
+
+  // Sync the mini-tabs UI
+  const tabs = $('financeQuickTabs');
+  if (tabs) {
+    const btns = Array.from(tabs.querySelectorAll('[data-fin-kind]'));
+    for (const b of btns) {
+      const v = String(b.getAttribute('data-fin-kind') || '');
+      b.setAttribute('aria-selected', v === financeQuickKind ? 'true' : 'false');
+    }
+  }
+
+  // Sync the type checkboxes in the filter menu.
+  const incomeCb = $('financeTypeIncome');
+  const expenseCb = $('financeTypeExpense');
+  if (incomeCb instanceof HTMLInputElement && expenseCb instanceof HTMLInputElement) {
+    if (financeQuickKind === 'expense') {
+      incomeCb.checked = false;
+      expenseCb.checked = true;
+    } else {
+      incomeCb.checked = true;
+      expenseCb.checked = false;
+    }
+  }
+
+  financeApplyKindToForm(financeQuickKind);
+  if (render) renderFinances();
+}
+
+function financeReadCheckedRangeDays(menuEl) {
+  if (!menuEl) return [];
+  const inputs = Array.from(menuEl.querySelectorAll('input[data-fin-range]'));
+  const days = [];
+  for (const el of inputs) {
+    if (!(el instanceof HTMLInputElement)) continue;
+    if (!el.checked) continue;
+    const v = String(el.getAttribute('data-fin-range') || '').trim();
+    if (/^\d+$/.test(v)) days.push(Number(v));
+  }
+  return days;
+}
+
+function financeCurrentFilters() {
+  const selectedTypes = financeSelectedTypes();
+  return {
+    from: String($('financeFrom')?.value || ''),
+    to: String($('financeTo')?.value || ''),
+    type: String($('financeTypeFilter')?.value || ''),
+    types: selectedTypes,
+    kind: String(financeQuickKind || ''),
+    search: String($('financeSearch')?.value || '').trim().toLowerCase()
+  };
+}
+
+function setFinanceRangePreset(days) {
+  const fromEl = $('financeFrom');
+  const toEl = $('financeTo');
+  if (!fromEl || !toEl) return;
+
+  const d = Number(days);
+  if (!Number.isFinite(d) || d <= 0) return;
+
+  const to = isoDateToday();
+  const from = addDaysToIsoDate(to, -(d - 1));
+  fromEl.value = from;
+  toEl.value = to;
+}
+
+function setFinanceCustomMode(enabled) {
+  const panel = $('financeCustomRange');
+  if (!panel) return;
+  panel.hidden = !enabled;
+}
+
+function financeEntryMatches(entry, filters) {
+  const date = String(entry?.date || '');
+  if (filters.from && date && date < filters.from) return false;
+  if (filters.to && date && date > filters.to) return false;
+
+  const entryType = String(entry?.type || '');
+  if (Array.isArray(filters.types) && filters.types.length > 0) {
+    if (!filters.types.includes(entryType)) return false;
+  } else if (filters.type && entryType !== filters.type) {
+    // Legacy single-select support
+    return false;
+  }
+
+  const kind = String(filters?.kind || '').trim();
+  if (kind === 'income' && entryType !== 'income') return false;
+  if (kind === 'expense' && entryType !== 'expense') return false;
+  if (kind === 'tithes') {
+    if (entryType !== 'income') return false;
+    if (!financeNormalizeKey(entry?.category).includes('tithe')) return false;
+  }
+  if (kind === 'offerings') {
+    if (entryType !== 'income') return false;
+    if (!financeNormalizeKey(entry?.category).includes('offering')) return false;
+  }
+
+  if (filters.search) {
+    const hay = [
+      entry?.category,
+      entry?.fund,
+      entry?.method,
+      entry?.party,
+      entry?.memo,
+      entry?.type,
+      entry?.date
+    ].map((v) => String(v || '').toLowerCase()).join(' ');
+    if (!hay.includes(filters.search)) return false;
+  }
+  return true;
+}
+
+function populateFinanceDatalists() {
+  const catList = $('financeCategoriesList');
+  const fundList = $('financeFundsList');
+  if (catList) {
+    catList.innerHTML = '';
+    for (const c of (finances?.meta?.categories || [])) {
+      const opt = document.createElement('option');
+      opt.value = String(c || '');
+      catList.appendChild(opt);
+    }
+  }
+  if (fundList) {
+    fundList.innerHTML = '';
+    for (const f of (finances?.meta?.funds || [])) {
+      const opt = document.createElement('option');
+      opt.value = String(f || '');
+      fundList.appendChild(opt);
+    }
+  }
+}
+
+function financeSetEditMode(isEditing) {
+  const cancelBtn = $('financeCancelEditBtn');
+  const saveBtn = $('financeSaveBtn');
+  if (cancelBtn) cancelBtn.hidden = !isEditing;
+  if (saveBtn) saveBtn.textContent = isEditing ? 'Save Changes' : 'Add Entry';
+}
+
+function financeResetForm() {
+  $('financeEditId').value = '';
+  $('financeType').value = 'income';
+  $('financeCategory').value = '';
+  $('financeFund').value = '';
+  $('financeMethod').value = '';
+  $('financeAmount').value = '';
+  $('financeParty').value = '';
+  $('financeMemo').value = '';
+
+  // Default date to today if empty.
+  if (!$('financeDate').value) {
+    $('financeDate').value = new Date().toISOString().slice(0, 10);
+  }
+
+  financeSetEditMode(false);
+
+  // Ensure the form reflects the selected quick tab.
+  financeApplyKindToForm(financeQuickKind);
+}
+
+function financeStartEdit(entry) {
+  if (!entry) return;
+  financeSetQuickKind(financeDetectKindFromEntry(entry), { render: false });
+  $('financeEditId').value = String(entry.id || '');
+  $('financeDate').value = String(entry.date || '');
+  $('financeType').value = String(entry.type || 'income');
+  $('financeCategory').value = String(entry.category || '');
+  $('financeFund').value = String(entry.fund || '');
+  $('financeMethod').value = String(entry.method || '');
+  $('financeAmount').value = (Number(entry.amountCents || 0) / 100).toFixed(2);
+  $('financeParty').value = String(entry.party || '');
+  $('financeMemo').value = String(entry.memo || '');
+  financeSetEditMode(true);
+  try { $('financeCategory').focus(); } catch { /* ignore */ }
+}
+
+function renderFinances() {
+  populateFinanceDatalists();
+
+  const filters = financeCurrentFilters();
+  const all = Array.isArray(finances?.entries) ? finances.entries : [];
+  const rows = all.filter((e) => financeEntryMatches(e, filters));
+
+  let income = 0;
+  let expense = 0;
+  for (const e of rows) {
+    const cents = Number(e?.amountCents || 0);
+    if (String(e?.type) === 'income') income += cents;
+    if (String(e?.type) === 'expense') expense += cents;
+  }
+  const net = income - expense;
+
+  if ($('financeIncomeTotal')) $('financeIncomeTotal').textContent = `${formatMoneyCents(income)} income`;
+  if ($('financeExpenseTotal')) $('financeExpenseTotal').textContent = `${formatMoneyCents(expense)} expense`;
+  if ($('financeNetTotal')) $('financeNetTotal').textContent = `${formatMoneyCents(net)} net`;
+
+  const meta = $('financePrintMeta');
+  if (meta) {
+    const range = filters.from || filters.to ? `${filters.from || '…'} to ${filters.to || '…'}` : 'All dates';
+    meta.textContent = `${range} • ${rows.length} entries • Income ${formatMoneyCents(income)} • Expense ${formatMoneyCents(expense)} • Net ${formatMoneyCents(net)}`;
+  }
+
+  const tbody = $('financeTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  // Weekly Giving summary is independent of the table/filters.
+  renderWeeklyGiving();
+
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 9;
+    td.textContent = 'No entries match the current filters.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  for (const e of rows) {
+    const tr = document.createElement('tr');
+
+    const amountCents = Number(e?.amountCents || 0);
+    const amtTd = document.createElement('td');
+    amtTd.className = `num ${String(e?.type) === 'income' ? 'financeAmt--income' : 'financeAmt--expense'}`;
+    const sign = String(e?.type) === 'expense' ? '-' : '';
+    amtTd.textContent = `${sign}${formatMoneyCents(amountCents)}`;
+
+    const mkTd = (text) => {
+      const td = document.createElement('td');
+      td.textContent = String(text || '');
+      return td;
+    };
+
+    tr.appendChild(mkTd(e?.date));
+    tr.appendChild(mkTd(e?.type));
+    tr.appendChild(mkTd(e?.category));
+    tr.appendChild(mkTd(e?.fund));
+    tr.appendChild(mkTd(e?.method));
+    tr.appendChild(mkTd(e?.party));
+    tr.appendChild(mkTd(e?.memo));
+    tr.appendChild(amtTd);
+
+    const actions = document.createElement('td');
+    actions.className = 'noPrint';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'btn btn--sm';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => financeStartEdit(e));
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn btn--sm';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', async () => {
+      if (!confirmWrite('Delete this finance entry? This cannot be undone.')) return;
+      setFinanceHint('Deleting…');
+      try {
+        const res = await api(`/api/finances/entries/${encodeURIComponent(String(e.id))}`, { method: 'DELETE' });
+        finances = res.data;
+        financeResetForm();
+        renderFinances();
+        setFinanceHint('Deleted.');
+      } catch (err) {
+        setFinanceHint(err.message);
+      }
+    });
+
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+    actions.style.display = 'flex';
+    actions.style.gap = '8px';
+
+    tr.appendChild(actions);
+    tbody.appendChild(tr);
+  }
+
+  renderWeeklyGiving();
+}
+
+async function loadFinances() {
+  const data = await api('/api/finances', { method: 'GET' });
+  finances = data;
+  if ($('financeDate') && !$('financeDate').value) $('financeDate').value = isoDateToday();
+  // Hide custom range UI unless the user explicitly opens it.
+  if ($('financeCustomRange')) {
+    const customToggle = $('financeCustomToggle');
+    const wantsCustom = (customToggle instanceof HTMLInputElement) ? !!customToggle.checked : false;
+    setFinanceCustomMode(wantsCustom);
+  }
+  renderFinances();
+}
+
+function financeCsvEscape(value) {
+  const s = String(value ?? '');
+  if (/[\n\r,\"]/g.test(s)) return `"${s.replace(/\"/g, '""')}"`;
+  return s;
+}
+
+function downloadTextFile(name, text, mime) {
+  const blob = new Blob([text], { type: mime || 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function isoDateToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDaysToIsoDate(isoDate, days) {
+  const d = new Date(`${isoDate}T00:00:00`);
+  d.setDate(d.getDate() + Number(days || 0));
+  return d.toISOString().slice(0, 10);
+}
+
+function startOfMonth(isoDate) {
+  const d = new Date(`${isoDate}T00:00:00`);
+  d.setDate(1);
+  return d.toISOString().slice(0, 10);
+}
+
+function startOfWeekSunday(isoDate) {
+  const d = new Date(`${isoDate}T00:00:00`);
+  const day = d.getDay(); // 0=Sun
+  d.setDate(d.getDate() - day);
+  return d.toISOString().slice(0, 10);
+}
+
+function normalizeCategoryKey(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function renderWeeklyGiving() {
+  const today = isoDateToday();
+  let from = '';
+  let to = '';
+
+  if (financeGivingPeriod === 'month') {
+    from = startOfMonth(today);
+    to = today;
+  } else {
+    from = startOfWeekSunday(today);
+    to = addDaysToIsoDate(from, 6);
+  }
+
+  const tithesKey = 'tithes';
+  const offeringsKey = 'offerings';
+
+  const entries = Array.isArray(finances?.entries) ? finances.entries : [];
+  const inRange = entries.filter((e) => {
+    const d = String(e?.date || '');
+    if (!d) return false;
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  });
+
+  let tithes = 0;
+  let offerings = 0;
+
+  for (const e of inRange) {
+    if (String(e?.type) !== 'income') continue;
+    const cat = normalizeCategoryKey(e?.category);
+    const cents = Number(e?.amountCents || 0);
+    if (!Number.isFinite(cents)) continue;
+    if (cat === tithesKey || (tithesKey === 'tithes' && cat.includes('tithe'))) tithes += cents;
+    if (cat === offeringsKey || (offeringsKey === 'offerings' && cat.includes('offering'))) offerings += cents;
+  }
+
+  const total = tithes + offerings;
+  if ($('financeTithesTotal')) $('financeTithesTotal').textContent = `${formatMoneyCents(tithes)} tithes`;
+  if ($('financeOfferingsTotal')) $('financeOfferingsTotal').textContent = `${formatMoneyCents(offerings)} offerings`;
+  if ($('financeGivingTotal')) $('financeGivingTotal').textContent = `${formatMoneyCents(total)} total`;
 }
 
 function setSubTab(buttonIds, panelIds, activePanelId) {
@@ -978,6 +1530,7 @@ async function loadAll() {
     loadBulletins(),
     loadUsers(),
     loadLivestream(),
+    loadFinances(),
     loadSettings()
   ]);
 }
@@ -992,6 +1545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTab('tab-content');
     setContentSubTab('panel-content-announcements');
   });
+  $('tabBtn-finances').addEventListener('click', () => setTab('tab-finances'));
   $('tabBtn-settings').addEventListener('click', () => {
     setTab('tab-settings');
     setSettingsSubTab('panel-settings-users');
@@ -1020,6 +1574,250 @@ document.addEventListener('DOMContentLoaded', () => {
     setTab('tab-account');
     window.location.hash = '#account';
   });
+
+  // Finances
+  if ($('financeEntryForm')) {
+    const forceDatePickerOpen = (inputId) => {
+      const input = $(inputId);
+      if (!(input instanceof HTMLInputElement)) return;
+      if (String(input.type || '') !== 'date') return;
+      const open = () => {
+        try { input.focus(); } catch { /* ignore */ }
+        const sp = input.showPicker;
+        if (typeof sp === 'function') {
+          try { sp.call(input); } catch { /* ignore */ }
+        }
+      };
+
+      // Clicking the label/container should also open the picker.
+      const label = input.closest('label');
+      if (label) {
+        label.addEventListener('click', (e) => {
+          if (e.target === input) return;
+          open();
+        });
+      }
+
+      // Clicking in the input should open it too (consistent behavior).
+      input.addEventListener('click', () => open());
+    };
+
+    forceDatePickerOpen('financeDate');
+    forceDatePickerOpen('financeFrom');
+    forceDatePickerOpen('financeTo');
+
+    $('financeEntryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setFinanceHint('');
+
+      const id = String($('financeEditId').value || '');
+      const payload = {
+        date: String($('financeDate').value || ''),
+        type: String($('financeType').value || ''),
+        category: String($('financeCategory').value || ''),
+        fund: String($('financeFund').value || ''),
+        method: String($('financeMethod').value || ''),
+        amount: String($('financeAmount').value || ''),
+        party: String($('financeParty').value || ''),
+        memo: String($('financeMemo').value || '')
+      };
+
+      if (!confirmWrite(id ? 'Save changes to this entry?' : 'Add this finance entry?')) return;
+      setFinanceHint(id ? 'Saving…' : 'Adding…');
+
+      try {
+        const res = await api(id
+          ? `/api/finances/entries/${encodeURIComponent(id)}`
+          : '/api/finances/entries',
+        {
+          method: id ? 'PUT' : 'POST',
+          body: JSON.stringify(payload)
+        });
+        finances = res.data;
+        financeResetForm();
+        renderFinances();
+        setFinanceHint(id ? 'Saved.' : 'Added.');
+      } catch (err) {
+        setFinanceHint(err.message);
+      }
+    });
+  }
+
+  if ($('financeCancelEditBtn')) {
+    $('financeCancelEditBtn').addEventListener('click', () => {
+      financeResetForm();
+      renderFinances();
+      setFinanceHint('');
+    });
+  }
+
+  for (const id of ['financeFrom', 'financeTo', 'financeSearch']) {
+    const el = $(id);
+    if (!el) continue;
+    el.addEventListener('input', () => renderFinances());
+    el.addEventListener('change', () => renderFinances());
+  }
+
+  for (const id of ['financeTypeIncome', 'financeTypeExpense']) {
+    const el = $(id);
+    if (!el) continue;
+    el.addEventListener('change', () => renderFinances());
+  }
+
+  // Finance quick tabs (Income / Expense / Tithes / Offerings)
+  if ($('financeQuickTabs')) {
+    const wrap = $('financeQuickTabs');
+    const btns = Array.from(wrap.querySelectorAll('[data-fin-kind]'));
+    for (const b of btns) {
+      b.addEventListener('click', () => {
+        const kind = b.getAttribute('data-fin-kind');
+        financeSetQuickKind(kind);
+      });
+    }
+  }
+
+  const setGivingPeriod = (period) => {
+    financeGivingPeriod = (period === 'month') ? 'month' : 'week';
+    const wk = $('financePeriodWeekBtn');
+    const mon = $('financePeriodMonthBtn');
+    if (wk) wk.setAttribute('aria-selected', financeGivingPeriod === 'week' ? 'true' : 'false');
+    if (mon) mon.setAttribute('aria-selected', financeGivingPeriod === 'month' ? 'true' : 'false');
+    renderWeeklyGiving();
+  };
+
+  if ($('financePeriodWeekBtn')) {
+    $('financePeriodWeekBtn').addEventListener('click', () => setGivingPeriod('week'));
+  }
+  if ($('financePeriodMonthBtn')) {
+    $('financePeriodMonthBtn').addEventListener('click', () => setGivingPeriod('month'));
+  }
+
+  // Default to current week in the giving chips.
+  setGivingPeriod(financeGivingPeriod);
+
+  // Default quick view
+  financeSetQuickKind(financeQuickKind, { render: false });
+
+  if ($('financeSearchForm')) {
+    $('financeSearchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      renderFinances();
+      const menu = $('financeFilterMenu');
+      if (menu && menu.open) menu.open = false;
+    });
+  }
+
+  // Filter dropdown (multi-select presets + custom)
+  if ($('financeFilterMenu')) {
+    const menu = $('financeFilterMenu');
+    const rangeInputs = Array.from(menu.querySelectorAll('input[data-fin-range]'))
+      .filter((el) => el instanceof HTMLInputElement);
+    const customToggle = $('financeCustomToggle');
+
+    const uncheckNumericRanges = () => {
+      for (const el of rangeInputs) {
+        const v = String(el.getAttribute('data-fin-range') || '').trim();
+        if (/^\d+$/.test(v)) el.checked = false;
+      }
+    };
+
+    const applyCheckedPresets = () => {
+      const days = financeReadCheckedRangeDays(menu);
+      if (days.length > 0) {
+        setFinanceCustomMode(false);
+        if (customToggle instanceof HTMLInputElement) customToggle.checked = false;
+        setFinanceRangePreset(Math.max(...days));
+        return true;
+      }
+      return false;
+    };
+
+    for (const el of rangeInputs) {
+      el.addEventListener('change', () => {
+        const v = String(el.getAttribute('data-fin-range') || '').trim();
+
+        if (v === 'custom') {
+          const isOn = !!el.checked;
+          setFinanceCustomMode(isOn);
+          if (isOn) uncheckNumericRanges();
+          renderFinances();
+          return;
+        }
+
+        // Numeric preset changed
+        setFinanceCustomMode(false);
+        if (customToggle instanceof HTMLInputElement) customToggle.checked = false;
+
+        const applied = applyCheckedPresets();
+        if (!applied) {
+          if ($('financeFrom')) $('financeFrom').value = '';
+          if ($('financeTo')) $('financeTo').value = '';
+        }
+        renderFinances();
+      });
+    }
+  }
+
+  if ($('financeApplyCustomRangeBtn')) {
+    $('financeApplyCustomRangeBtn').addEventListener('click', () => {
+      setFinanceCustomMode(true);
+      if ($('financeCustomToggle') instanceof HTMLInputElement) $('financeCustomToggle').checked = true;
+      renderFinances();
+      const menu = $('financeFilterMenu');
+      if (menu) menu.open = false;
+    });
+  }
+
+  if ($('financeClearRangeBtn')) {
+    $('financeClearRangeBtn').addEventListener('click', () => {
+      if ($('financeFrom')) $('financeFrom').value = '';
+      if ($('financeTo')) $('financeTo').value = '';
+      if ($('financeCustomToggle') instanceof HTMLInputElement) $('financeCustomToggle').checked = false;
+      if ($('financeFilterMenu')) {
+        const menu = $('financeFilterMenu');
+        const rangeInputs = Array.from(menu.querySelectorAll('input[data-fin-range]'))
+          .filter((el) => el instanceof HTMLInputElement);
+        for (const el of rangeInputs) {
+          const v = String(el.getAttribute('data-fin-range') || '').trim();
+          if (/^\d+$/.test(v)) el.checked = false;
+        }
+      }
+      setFinanceCustomMode(false);
+      renderFinances();
+      const menu = $('financeFilterMenu');
+      if (menu) menu.open = false;
+    });
+  }
+
+  if ($('financeExportCsvBtn')) {
+    $('financeExportCsvBtn').addEventListener('click', () => {
+      const filters = financeCurrentFilters();
+      const rows = (finances?.entries || []).filter((en) => financeEntryMatches(en, filters));
+      const header = ['Date', 'Type', 'Category', 'Fund', 'Method', 'FromTo', 'Memo', 'Amount'];
+      const lines = [header.map(financeCsvEscape).join(',')];
+      for (const r of rows) {
+        const amount = (Number(r.amountCents || 0) / 100).toFixed(2);
+        lines.push([
+          r.date,
+          r.type,
+          r.category,
+          r.fund,
+          r.method,
+          r.party,
+          r.memo,
+          amount
+        ].map(financeCsvEscape).join(','));
+      }
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadTextFile(`finances_${stamp}.csv`, lines.join('\n'), 'text/csv');
+    });
+  }
+
+  if ($('financePrintBtn')) {
+    $('financePrintBtn').addEventListener('click', () => {
+      window.print();
+    });
+  }
 
   // Password peek + meters
   wirePeekButtons();
@@ -1217,9 +2015,11 @@ document.addEventListener('DOMContentLoaded', () => {
     hint.textContent = 'Uploading…';
 
     const fd = new FormData(form);
+    await csrfReady;
     const res = await fetch('/api/gallery/upload', {
       method: 'POST',
       body: fd,
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
       credentials: 'same-origin'
     });
 
@@ -1308,9 +2108,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const createAnnouncement = fd.get('createAnnouncement') === 'on';
     fd.set('createAnnouncement', createAnnouncement ? 'true' : 'false');
 
+    await csrfReady;
     const res = await fetch('/api/bulletins/upload', {
       method: 'POST',
       body: fd,
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
       credentials: 'same-origin'
     });
 

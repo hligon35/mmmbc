@@ -4,10 +4,12 @@ const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
 const express = require('express');
+const compression = require('compression');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const csrf = require('csurf');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const speakeasy = require('speakeasy');
@@ -15,21 +17,69 @@ const qrcode = require('qrcode');
 const mime = require('mime-types');
 const sharp = require('sharp');
 
+const { logger, audit, requestLogger, LOG_DIR, tailFile } = require('./lib/logger');
+const { maybeEncrypt, maybeDecrypt } = require('./lib/crypto');
+
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const ADMIN_DIR = path.resolve(__dirname);
-const DATA_DIR = path.join(ADMIN_DIR, 'data');
-const UPLOADS_DIR = path.join(ADMIN_DIR, 'uploads');
+const DATA_DIR = process.env.ADMIN_DATA_DIR
+  ? path.resolve(process.env.ADMIN_DATA_DIR)
+  : path.join(ADMIN_DIR, 'data');
+const UPLOADS_DIR = process.env.ADMIN_UPLOADS_DIR
+  ? path.resolve(process.env.ADMIN_UPLOADS_DIR)
+  : path.join(ADMIN_DIR, 'uploads');
 const DOCS_UPLOADS_DIR = path.join(UPLOADS_DIR, 'docs');
 const BULLETINS_UPLOADS_DIR = path.join(UPLOADS_DIR, 'bulletins');
 const ROOT_BULLETINS_DIR = path.join(ROOT_DIR, 'bulletins');
 const GALLERY_DIR = path.join(ROOT_DIR, 'ConImg', 'gallery');
 const PORT = Number(process.env.PORT || 8787);
-const ENABLE_EXPORTS = String(process.env.ENABLE_EXPORTS || 'true').toLowerCase() === 'true';
+const HOST = String(process.env.HOST || '').trim();
+
+function envBool(name, defaultValue) {
+  if (!Object.prototype.hasOwnProperty.call(process.env, name)) return defaultValue;
+  const raw = String(process.env[name] || '').trim().toLowerCase();
+  if (['1', 'true', 'yes', 'y', 'on'].includes(raw)) return true;
+  if (['0', 'false', 'no', 'n', 'off'].includes(raw)) return false;
+  return defaultValue;
+}
+
+const ENABLE_EXPORTS = envBool('ENABLE_EXPORTS', true);
+// In production (e.g., Render) default to trusting a single reverse proxy.
+// Override with TRUST_PROXY=false when running directly (to avoid header spoofing).
+const TRUST_PROXY = envBool('TRUST_PROXY', process.env.NODE_ENV === 'production');
+// Allow ENFORCE_HTTPS=false to override production defaults (useful for LAN-only Pi setups).
+const ENFORCE_HTTPS = envBool('ENFORCE_HTTPS', process.env.NODE_ENV === 'production');
+const ENABLE_CSP = String(process.env.ENABLE_CSP || '').toLowerCase() === 'true';
 const SESSIONS_DIR = process.env.SESSIONS_DIR
   ? path.resolve(process.env.SESSIONS_DIR)
   : path.join(os.tmpdir(), 'mmmbc-admin-sessions');
+
+function listenWithPortFallback(appInstance, startPort, { maxTries = 25, host } = {}) {
+  return new Promise((resolve, reject) => {
+    let port = Number(startPort);
+    if (!Number.isFinite(port) || port <= 0) port = 8787;
+    const endPort = port + Math.max(0, Number(maxTries) - 1);
+
+    const tryListen = () => {
+      const server = host
+        ? appInstance.listen(port, host, () => resolve({ server, port }))
+        : appInstance.listen(port, () => resolve({ server, port }));
+      server.on('error', (err) => {
+        if (err && err.code === 'EADDRINUSE' && port < endPort) {
+          console.warn(`[MMMBC Admin] Port ${port} in use. Trying ${port + 1}…`);
+          port += 1;
+          setTimeout(tryListen, 50);
+          return;
+        }
+        reject(err);
+      });
+    };
+
+    tryListen();
+  });
+}
 
 function mustGetEnv(name) {
   const val = process.env[name];
@@ -37,9 +87,17 @@ function mustGetEnv(name) {
   return String(val);
 }
 
+const jsonCache = new Map();
 function readJson(filePath, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const stat = fs.statSync(filePath);
+    const cached = jsonCache.get(filePath);
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+      return cached.value;
+    }
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    jsonCache.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, value: parsed });
+    return parsed;
   } catch {
     return fallback;
   }
@@ -49,6 +107,7 @@ function writeJsonAtomic(filePath, data) {
   const tmp = `${filePath}.${Date.now()}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
   fs.renameSync(tmp, filePath);
+  try { jsonCache.delete(filePath); } catch { /* ignore */ }
 }
 
 function ensureDir(dir) {
@@ -111,13 +170,64 @@ function isAllowedImage(mimeType) {
 }
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', TRUST_PROXY ? 1 : false);
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.disable('x-powered-by');
+
+// Optional HTTPS enforcement (recommended when deployed behind TLS).
+// Local dev stays HTTP unless ENFORCE_HTTPS=true.
+app.use((req, res, next) => {
+  if (!ENFORCE_HTTPS) return next();
+  const xfProto = String(req.headers['x-forwarded-proto'] || '').toLowerCase();
+  const isHttps = req.secure || xfProto === 'https';
+  if (isHttps) return next();
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    const host = req.get('host');
+    return res.redirect(301, `https://${host}${req.originalUrl}`);
+  }
+  return res.status(403).json({ error: 'HTTPS required' });
+});
+
+// Security headers (CSP is opt-in to avoid breaking existing inline patterns)
+app.use(helmet({
+  contentSecurityPolicy: ENABLE_CSP ? {
+    useDefaults: true,
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "default-src": ["'self'"],
+      "img-src": ["'self'", 'data:', 'blob:'],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "script-src": ["'self'", "'unsafe-inline'"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"],
+      "frame-ancestors": ["'none'"],
+      ...(ENFORCE_HTTPS ? { "upgrade-insecure-requests": [] } : {})
+    }
+  } : false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// HSTS should only be sent over HTTPS.
+if (ENFORCE_HTTPS) {
+  app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true }));
+}
+
+app.use(requestLogger);
+app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(rateLimit({ windowMs: 60 * 1000, limit: 120 }));
+
+// Brute-force protection for login endpoints (IP-based)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: 'Too many login attempts. Try again later.' }
+});
 
 // Store sessions outside OneDrive-backed folders to avoid EPERM rename issues on Windows.
 ensureDir(SESSIONS_DIR);
@@ -131,11 +241,57 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false
+      // In production behind TLS, set Secure automatically (requires trust proxy).
+      secure: (process.env.NODE_ENV === 'production' && TRUST_PROXY) ? 'auto' : false
     },
     store: new FileStore({ path: SESSIONS_DIR })
   })
 );
+
+// CSRF protection for state-changing API requests.
+// Exempt login/invite flows and let the admin UI fetch a token after login.
+const csrfProtection = csrf({ ignoreMethods: ['GET', 'HEAD', 'OPTIONS'] });
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/')) return next();
+  const p = req.path;
+  if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/recover') return next();
+  if (p.startsWith('/api/invites/')) return next();
+  if (p === '/api/csrf') return next();
+  return csrfProtection(req, res, next);
+});
+
+app.get('/api/csrf', requireAuth, csrfProtection, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// Audit trail for non-GET admin API calls (avoid logging secrets)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    if (!req.path.startsWith('/api/')) return;
+    if (req.method === 'GET' || req.method === 'HEAD') return;
+    const user = req.session?.user;
+    if (!user?.id) return;
+
+    const redact = new Set(['password', 'newPassword', 'currentPassword', 'twoFactorCode', 'recoveryCode']);
+    const bodyKeys = (req.body && typeof req.body === 'object')
+      ? Object.keys(req.body).filter((k) => !redact.has(k))
+      : [];
+
+    audit('admin_action', {
+      at: new Date().toISOString(),
+      userId: user.id,
+      userEmail: user.email,
+      method: req.method,
+      path: req.originalUrl,
+      status: res.statusCode,
+      ms: Date.now() - start,
+      bodyKeys
+    });
+  });
+  next();
+});
 
 // Serve theme.css dynamically so an authenticated admin can preview theme changes
 // without writing the real theme.css file.
@@ -179,12 +335,95 @@ const DOCUMENTS_DATA_PATH = path.join(DATA_DIR, 'documents.json');
 const BULLETINS_DATA_PATH = path.join(DATA_DIR, 'bulletins.json');
 const LIVESTREAM_DATA_PATH = path.join(DATA_DIR, 'livestream.json');
 const SETTINGS_DATA_PATH = path.join(DATA_DIR, 'settings.json');
+const FINANCES_DATA_PATH = path.join(DATA_DIR, 'finances.json');
+
+function normalizeDateOnly(value) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const t = Date.parse(v);
+  if (Number.isNaN(t)) return '';
+  return new Date(t).toISOString().slice(0, 10);
+}
+
+function normalizeMoneyToCents(value) {
+  const raw = String(value ?? '').trim().replace(/[$,\s]/g, '');
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return NaN;
+  return Math.round(n * 100);
+}
+
+function normalizeFinanceText(value, maxLen) {
+  return String(value || '').trim().slice(0, maxLen);
+}
+
+function uniqNonEmptyStrings(list) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of (list || [])) {
+    const v = String(raw || '').trim();
+    if (!v) continue;
+    const key = v.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+  }
+  return out;
+}
+
+function loadFinances() {
+  const stored = readJson(FINANCES_DATA_PATH, { entries: [], meta: { categories: [], funds: [] } });
+  const entries = Array.isArray(stored.entries) ? stored.entries : [];
+  const metaRaw = stored.meta && typeof stored.meta === 'object' ? stored.meta : {};
+  const meta = {
+    categories: uniqNonEmptyStrings(metaRaw.categories || []),
+    funds: uniqNonEmptyStrings(metaRaw.funds || [])
+  };
+  return { entries, meta };
+}
+
+function saveFinances(data) {
+  const entries = Array.isArray(data?.entries) ? data.entries : [];
+  const metaRaw = data?.meta && typeof data.meta === 'object' ? data.meta : {};
+  const meta = {
+    categories: uniqNonEmptyStrings(metaRaw.categories || []),
+    funds: uniqNonEmptyStrings(metaRaw.funds || [])
+  };
+  writeJsonAtomic(FINANCES_DATA_PATH, { entries, meta });
+}
+
+function sortFinanceEntries(entries) {
+  (entries || []).sort((a, b) => {
+    const ad = String(a?.date || '');
+    const bd = String(b?.date || '');
+    if (bd !== ad) return bd.localeCompare(ad);
+    const at = String(a?.createdAt || '');
+    const bt = String(b?.createdAt || '');
+    return bt.localeCompare(at);
+  });
+}
 
 function loadUsers() {
-  return readJson(USERS_PATH, { users: [] });
+  const data = readJson(USERS_PATH, { users: [] });
+  const users = Array.isArray(data.users) ? data.users : [];
+  // Decrypt at rest (optional) for sensitive secrets.
+  for (const u of users) {
+    if (!u || typeof u !== 'object') continue;
+    if (u.twoFactorSecret) u.twoFactorSecret = maybeDecrypt(u.twoFactorSecret);
+    if (u.twoFactorPendingSecret) u.twoFactorPendingSecret = maybeDecrypt(u.twoFactorPendingSecret);
+  }
+  return { users };
 }
 function saveUsers(data) {
-  writeJsonAtomic(USERS_PATH, data);
+  const users = Array.isArray(data?.users) ? data.users : [];
+  const out = users.map((u) => {
+    if (!u || typeof u !== 'object') return u;
+    const copy = { ...u };
+    if (copy.twoFactorSecret) copy.twoFactorSecret = maybeEncrypt(copy.twoFactorSecret);
+    if (copy.twoFactorPendingSecret) copy.twoFactorPendingSecret = maybeEncrypt(copy.twoFactorPendingSecret);
+    return copy;
+  });
+  writeJsonAtomic(USERS_PATH, { users: out });
 }
 
 function passwordPolicyError(password) {
@@ -270,20 +509,70 @@ app.get('/api/me', (req, res) => {
   res.json({ user: req.session.user });
 });
 
-app.post('/api/auth/login', async (req, res) => {
+// ----------------- ADMIN DEBUG (secured) -----------------
+app.get('/api/admin/health', requireAuth, (req, res) => {
+  res.json({
+    ok: true,
+    time: new Date().toISOString(),
+    uptimeSec: Math.round(process.uptime()),
+    node: process.version,
+    pid: process.pid,
+    env: process.env.NODE_ENV || 'development',
+    enforceHttps: ENFORCE_HTTPS,
+    trustProxy: TRUST_PROXY,
+    memory: process.memoryUsage(),
+    loadavg: os.loadavg(),
+    dataDir: DATA_DIR,
+    sessionsDir: SESSIONS_DIR
+  });
+});
+
+app.get('/api/admin/logs', requireAuth, (req, res) => {
+  const type = String(req.query.type || 'app');
+  const maxLines = Math.min(1000, Math.max(50, Number(req.query.lines || 300)));
+  const prefix = type === 'audit' ? 'audit' : 'app';
+
+  try {
+    const files = fs.readdirSync(LOG_DIR)
+      .filter((f) => f.startsWith(`${prefix}-`) && f.endsWith('.log'))
+      .map((f) => ({
+        name: f,
+        path: path.join(LOG_DIR, f),
+        mtimeMs: fs.statSync(path.join(LOG_DIR, f)).mtimeMs
+      }))
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+    if (!files.length) return res.json({ ok: true, type: prefix, file: null, lines: '' });
+    const latest = files[0];
+    const lines = tailFile(latest.path, maxLines);
+    res.json({ ok: true, type: prefix, file: latest.name, lines });
+  } catch (e) {
+    logger.error('log_tail_failed', { err: e });
+    res.status(500).json({ error: 'Unable to read logs.' });
+  }
+});
+
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const email = String(req.body.email || '').toLowerCase().trim();
   const password = String(req.body.password || '');
   const twoFactorCode = normalizeTotp(req.body.twoFactorCode || '');
   const usersData = loadUsers();
   const user = (usersData.users || []).find((u) => String(u.email).toLowerCase() === email);
-  if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+  if (!user) {
+    audit('auth_login_failed', { at: new Date().toISOString(), email, ip: req.ip, reason: 'no_user' });
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
 
   if (user.mustOnboard) {
+    audit('auth_login_failed', { at: new Date().toISOString(), email, ip: req.ip, reason: 'must_onboard' });
     return res.status(403).json({ error: 'Account setup required. Use your invite link to finish setup.' });
   }
 
   const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
+  if (!ok) {
+    audit('auth_login_failed', { at: new Date().toISOString(), email, ip: req.ip, reason: 'bad_password' });
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
 
   if (user.twoFactorEnabled) {
     if (!twoFactorCode) return res.status(401).json({ error: '2FA code required' });
@@ -293,19 +582,31 @@ app.post('/api/auth/login', async (req, res) => {
       token: twoFactorCode,
       window: 1
     });
-    if (!verified) return res.status(401).json({ error: 'Invalid 2FA code' });
+    if (!verified) {
+      audit('auth_login_failed', { at: new Date().toISOString(), email, ip: req.ip, reason: 'bad_2fa' });
+      return res.status(401).json({ error: 'Invalid 2FA code' });
+    }
   }
 
-  req.session.user = {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    name: user.name || '',
-    isMaster: !!user.isMaster,
-    mustOnboard: !!user.mustOnboard,
-    twoFactorEnabled: !!user.twoFactorEnabled
-  };
-  res.json({ ok: true });
+  // Prevent session fixation by regenerating the session on login.
+  req.session.regenerate((err) => {
+    if (err) {
+      logger.error('session_regenerate_failed', { err, email, ip: req.ip });
+      return res.status(500).json({ error: 'Login failed. Try again.' });
+    }
+
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name || '',
+      isMaster: !!user.isMaster,
+      mustOnboard: !!user.mustOnboard,
+      twoFactorEnabled: !!user.twoFactorEnabled
+    };
+    audit('auth_login_success', { at: new Date().toISOString(), email, ip: req.ip, userId: user.id });
+    res.json({ ok: true });
+  });
 });
 
 // Recovery-code based reset (no email sending required)
@@ -955,6 +1256,119 @@ app.delete('/api/events/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ----------------- FINANCES (internal only) -----------------
+app.get('/api/finances', requireAuth, (req, res) => {
+  res.json(loadFinances());
+});
+
+app.put('/api/finances/meta', requireAuth, (req, res) => {
+  const categories = uniqNonEmptyStrings(req.body?.categories || []);
+  const funds = uniqNonEmptyStrings(req.body?.funds || []);
+  const data = loadFinances();
+  const next = {
+    entries: Array.isArray(data.entries) ? data.entries : [],
+    meta: { categories, funds }
+  };
+  saveFinances(next);
+  res.json({ ok: true, data: next });
+});
+
+app.post('/api/finances/entries', requireAuth, (req, res) => {
+  const date = normalizeDateOnly(req.body?.date);
+  const type = String(req.body?.type || '').trim().toLowerCase();
+  const category = normalizeFinanceText(req.body?.category, 80);
+  const fund = normalizeFinanceText(req.body?.fund, 80);
+  const method = normalizeFinanceText(req.body?.method, 24).toLowerCase();
+  const party = normalizeFinanceText(req.body?.party, 120);
+  const memo = normalizeFinanceText(req.body?.memo, 200);
+  const amountCents = normalizeMoneyToCents(req.body?.amount);
+
+  if (!date) return res.status(400).json({ error: 'Valid date required.' });
+  if (type !== 'income' && type !== 'expense') return res.status(400).json({ error: 'Type must be income or expense.' });
+  if (!category) return res.status(400).json({ error: 'Category required.' });
+  if (!Number.isFinite(amountCents) || amountCents <= 0) return res.status(400).json({ error: 'Amount must be greater than 0.' });
+
+  const data = loadFinances();
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  const meta = data.meta && typeof data.meta === 'object' ? data.meta : { categories: [], funds: [] };
+
+  const entry = {
+    id: newId(),
+    date,
+    type,
+    category,
+    fund,
+    method,
+    party,
+    memo,
+    amountCents,
+    createdAt: new Date().toISOString()
+  };
+
+  entries.push(entry);
+  sortFinanceEntries(entries);
+
+  const nextMeta = {
+    categories: uniqNonEmptyStrings([...(meta.categories || []), category]),
+    funds: uniqNonEmptyStrings([...(meta.funds || []), fund])
+  };
+  const next = { entries, meta: nextMeta };
+  saveFinances(next);
+  res.json({ ok: true, entry, data: next });
+});
+
+app.put('/api/finances/entries/:id', requireAuth, (req, res) => {
+  const id = String(req.params.id);
+  const date = normalizeDateOnly(req.body?.date);
+  const type = String(req.body?.type || '').trim().toLowerCase();
+  const category = normalizeFinanceText(req.body?.category, 80);
+  const fund = normalizeFinanceText(req.body?.fund, 80);
+  const method = normalizeFinanceText(req.body?.method, 24).toLowerCase();
+  const party = normalizeFinanceText(req.body?.party, 120);
+  const memo = normalizeFinanceText(req.body?.memo, 200);
+  const amountCents = normalizeMoneyToCents(req.body?.amount);
+
+  if (!date) return res.status(400).json({ error: 'Valid date required.' });
+  if (type !== 'income' && type !== 'expense') return res.status(400).json({ error: 'Type must be income or expense.' });
+  if (!category) return res.status(400).json({ error: 'Category required.' });
+  if (!Number.isFinite(amountCents) || amountCents <= 0) return res.status(400).json({ error: 'Amount must be greater than 0.' });
+
+  const data = loadFinances();
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  const entry = entries.find((e) => e.id === id);
+  if (!entry) return res.status(404).json({ error: 'Not found' });
+
+  entry.date = date;
+  entry.type = type;
+  entry.category = category;
+  entry.fund = fund;
+  entry.method = method;
+  entry.party = party;
+  entry.memo = memo;
+  entry.amountCents = amountCents;
+  entry.updatedAt = new Date().toISOString();
+
+  sortFinanceEntries(entries);
+  const meta = data.meta && typeof data.meta === 'object' ? data.meta : { categories: [], funds: [] };
+  const nextMeta = {
+    categories: uniqNonEmptyStrings([...(meta.categories || []), category]),
+    funds: uniqNonEmptyStrings([...(meta.funds || []), fund])
+  };
+  const next = { entries, meta: nextMeta };
+  saveFinances(next);
+  res.json({ ok: true, entry, data: next });
+});
+
+app.delete('/api/finances/entries/:id', requireAuth, (req, res) => {
+  const id = String(req.params.id);
+  const data = loadFinances();
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  const nextEntries = entries.filter((e) => e.id !== id);
+  const next = { entries: nextEntries, meta: data.meta || { categories: [], funds: [] } };
+  saveFinances(next);
+  res.json({ ok: true, data: next });
+});
+
 // ----------------- DOCUMENTS -----------------
 function loadDocuments() {
   return readJson(DOCUMENTS_DATA_PATH, { documents: [] });
@@ -1350,8 +1764,34 @@ app.post('/api/export', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ----------------- ERROR HANDLING -----------------
+app.use((err, req, res, next) => {
+  if (!err) return next();
+
+  if (err.code === 'EBADCSRFTOKEN') {
+    audit('csrf_rejected', { at: new Date().toISOString(), ip: req.ip, path: req.originalUrl });
+    return res.status(403).json({ error: 'Invalid CSRF token.' });
+  }
+
+  const status = Number(err.statusCode || err.status || 500);
+  logger.error('request_error', {
+    status,
+    path: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    userId: req.session?.user?.id || null,
+    message: err.message,
+    stack: err.stack
+  });
+
+  const safeMessage = process.env.NODE_ENV === 'production'
+    ? 'Server error.'
+    : (err.message || 'Server error.');
+  res.status(status).json({ error: safeMessage });
+});
+
 // ----------------- BOOT -----------------
-(async () => {
+async function boot({ listen = true } = {}) {
   ensureDir(DATA_DIR);
   ensureDir(UPLOADS_DIR);
   ensureDir(DOCS_UPLOADS_DIR);
@@ -1361,8 +1801,22 @@ app.post('/api/export', requireAuth, (req, res) => {
 
   await ensureMasterAdmin();
 
-  app.listen(PORT, () => {
-    console.log(`MMMBC Admin server running on http://localhost:${PORT}`);
-    console.log(`Admin dashboard: http://localhost:${PORT}/admin/`);
+  if (!listen) return { port: null };
+
+  const { port } = await listenWithPortFallback(app, PORT, { maxTries: 25, host: HOST || undefined });
+  logger.info('server_started', { port, host: HOST || null, enforceHttps: ENFORCE_HTTPS, trustProxy: TRUST_PROXY });
+  // Keep console messages for local dev convenience.
+  console.log(`MMMBC Admin server running on http://localhost:${port}`);
+  console.log(`Admin dashboard: http://localhost:${port}/admin/`);
+  return { port };
+}
+
+if (require.main === module) {
+  boot().catch((err) => {
+    logger.error('boot_failed', { err, stack: err?.stack });
+    console.error(err);
+    process.exit(1);
   });
-})();
+}
+
+module.exports = { app, boot };

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\Harold Ligon\\Desktop\\MyMobileApps\\MoriahFaithConnect\\mmmbc\\admin\\logs\\.ad2caa0f6f66f581ece0b2854291650910053aba-audit.json",
+    "files": [
+        {
+            "date": 1768606241708,
+            "name": "C:\\Users\\Harold Ligon\\Desktop\\MyMobileApps\\MoriahFaithConnect\\mmmbc\\admin\\logs\\audit-2026-01-16.log",
+            "hash": "af5b16353e31b6eb73cecde0b29dbf27ac89a9b8793905d6d0a8138fa5742e40"
+        }
+    ],
+    "hashType": "sha256"
+}
