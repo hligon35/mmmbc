@@ -1,0 +1,11 @@
+{
+  "name": "mmmbc-site",
+  "compatibility_date": "2026-01-21",
+
+  // Assets-only Worker deployment (static site)
+  // This intentionally deploys ONLY the curated public-site files in ./cf_site
+  // so that the admin server code and admin data are never published.
+  "assets": {
+    "directory": "./cf_site"
+  }
+}

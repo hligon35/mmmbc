@@ -45,10 +45,12 @@ Notes:
 ### 4) Persist data + uploads (important)
 
 Render’s filesystem is ephemeral unless you add a **Disk**. If you don’t add one, you’ll lose:
+
 - logins/users
 - uploaded docs/bulletins
 - gallery uploads
 - finance entries
+
 
 Do this:
 
@@ -61,6 +63,7 @@ Do this:
 ### 5) Health/log endpoints
 
 When logged into the admin UI, you can call:
+
 - `GET /api/admin/health`
 - `GET /api/admin/logs?type=app&lines=300`
 - `GET /api/admin/logs?type=audit&lines=300`
