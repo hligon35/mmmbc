@@ -3,7 +3,7 @@
     {
       "id": "5b10576b-4201-4eab-87c0-11adc3cbccd0",
       "email": "hligon@getsparqd.com",
-      "passwordHash": "$2a$12$rCG0YSQyFS5.u7EA..tmmekK2WPii6nivx40VIxtBAg7S9H5cv0AG",
+      "passwordHash": "$2a$12$Gd/PVGUVwSd8ICGfibkCJufxKCB0lgWFhKlEG/X/rO3mReDkjicEa",
       "role": "admin",
       "createdAt": "2026-01-16T02:55:32.779Z",
       "isMaster": true,

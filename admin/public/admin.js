@@ -956,6 +956,38 @@ async function loadInvite(token) {
 
 // -------- Photo Gallery --------
 let galleryItems = [];
+let photoArrangeAlbum = '';
+
+function toNumberOrNull(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function buildAlbumList(items) {
+  const albums = Array.from(new Set((items || []).map((i) => String(i.album || '').trim()).filter(Boolean)));
+  albums.sort((a, b) => a.localeCompare(b));
+  return albums;
+}
+
+function renderArrangeAlbumOptions() {
+  const select = $('photoArrangeAlbum');
+  if (!select) return;
+  const albums = buildAlbumList(galleryItems);
+  const current = String(photoArrangeAlbum || '');
+
+  select.innerHTML = '<option value="">(Pick an album)</option>';
+  for (const a of albums) {
+    const opt = document.createElement('option');
+    opt.value = a;
+    opt.textContent = a;
+    select.appendChild(opt);
+  }
+  if (albums.includes(current)) select.value = current;
+}
+
+function isManualMode() {
+  return $('photoSort')?.value === 'manual' && String(photoArrangeAlbum || '').trim();
+}
 
 function applyPhotoFilters() {
   const sort = $('photoSort').value;
@@ -966,14 +998,42 @@ function applyPhotoFilters() {
   if (albumFilter) items = items.filter((i) => String(i.album || '').toLowerCase().includes(albumFilter));
   if (tagFilter) items = items.filter((i) => (i.tags || []).some((t) => String(t).toLowerCase().includes(tagFilter)));
 
-  items.sort((a, b) => {
-    if (sort === 'name-asc') return String(a.originalName).localeCompare(String(b.originalName));
-    if (sort === 'name-desc') return String(b.originalName).localeCompare(String(a.originalName));
-    if (sort === 'date-asc') return String(a.createdAt).localeCompare(String(b.createdAt));
-    return String(b.createdAt).localeCompare(String(a.createdAt));
-  });
+  const manualAlbum = String(photoArrangeAlbum || '').trim();
+  if (sort === 'manual' && manualAlbum) {
+    items = items.filter((i) => String(i.album || '') === manualAlbum);
+    items.sort((a, b) => {
+      const ap = toNumberOrNull(a.position);
+      const bp = toNumberOrNull(b.position);
+      if (ap === null && bp === null) return String(b.createdAt).localeCompare(String(a.createdAt));
+      if (ap === null) return 1;
+      if (bp === null) return -1;
+      if (ap !== bp) return ap - bp;
+      return String(b.createdAt).localeCompare(String(a.createdAt));
+    });
+  } else {
+    items.sort((a, b) => {
+      if (sort === 'name-asc') return String(a.originalName).localeCompare(String(b.originalName));
+      if (sort === 'name-desc') return String(b.originalName).localeCompare(String(a.originalName));
+      if (sort === 'date-asc') return String(a.createdAt).localeCompare(String(b.createdAt));
+      return String(b.createdAt).localeCompare(String(a.createdAt));
+    });
+  }
 
   renderPhotoGrid(items);
+}
+
+async function saveManualOrder(album, orderedIds) {
+  await api('/api/gallery/order', {
+    method: 'PUT',
+    body: JSON.stringify({ album, orderedIds })
+  });
+
+  // Update local positions so the UI stays in sync without a full reload.
+  const byId = new Map(galleryItems.map((it) => [String(it.id), it]));
+  orderedIds.forEach((id, idx) => {
+    const it = byId.get(String(id));
+    if (it) it.position = idx;
+  });
 }
 
 function renderPhotoGrid(items) {
@@ -1013,6 +1073,43 @@ function renderPhotoGrid(items) {
     const actions = document.createElement('div');
     actions.className = 'row__actions';
 
+    if (isManualMode()) {
+      const up = document.createElement('button');
+      up.className = 'btn';
+      up.type = 'button';
+      up.textContent = 'Up';
+
+      const down = document.createElement('button');
+      down.className = 'btn';
+      down.type = 'button';
+      down.textContent = 'Down';
+
+      up.addEventListener('click', async () => {
+        const album = String(photoArrangeAlbum || '').trim();
+        if (!album) return;
+        const ordered = items.map((x) => String(x.id));
+        const idx = ordered.indexOf(String(item.id));
+        if (idx <= 0) return;
+        [ordered[idx - 1], ordered[idx]] = [ordered[idx], ordered[idx - 1]];
+        await saveManualOrder(album, ordered);
+        applyPhotoFilters();
+      });
+
+      down.addEventListener('click', async () => {
+        const album = String(photoArrangeAlbum || '').trim();
+        if (!album) return;
+        const ordered = items.map((x) => String(x.id));
+        const idx = ordered.indexOf(String(item.id));
+        if (idx === -1 || idx >= ordered.length - 1) return;
+        [ordered[idx + 1], ordered[idx]] = [ordered[idx], ordered[idx + 1]];
+        await saveManualOrder(album, ordered);
+        applyPhotoFilters();
+      });
+
+      actions.appendChild(up);
+      actions.appendChild(down);
+    }
+
     const del = document.createElement('button');
     del.className = 'btn';
     del.type = 'button';
@@ -1040,6 +1137,7 @@ function renderPhotoGrid(items) {
 async function loadGallery() {
   const data = await api('/api/gallery', { method: 'GET' });
   galleryItems = data.items || [];
+  renderArrangeAlbumOptions();
   applyPhotoFilters();
 }
 
@@ -2037,6 +2135,16 @@ document.addEventListener('DOMContentLoaded', () => {
   $('photoSort').addEventListener('change', applyPhotoFilters);
   $('photoAlbumFilter').addEventListener('input', applyPhotoFilters);
   $('photoTagFilter').addEventListener('input', applyPhotoFilters);
+
+  $('photoArrangeAlbum').addEventListener('change', (e) => {
+    photoArrangeAlbum = String(e.currentTarget.value || '').trim();
+    // If they picked an album, default to manual ordering.
+    if (photoArrangeAlbum) {
+      const sortSel = $('photoSort');
+      if (sortSel) sortSel.value = 'manual';
+    }
+    applyPhotoFilters();
+  });
 
   $('exportBtn').addEventListener('click', async () => {
     if (!confirmWrite('Export current content to website files now?')) return;

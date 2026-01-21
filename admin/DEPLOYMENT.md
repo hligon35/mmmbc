@@ -31,6 +31,17 @@ Recommended:
 - `ENFORCE_HTTPS` = `true` (or omit; production default enforces HTTPS)
 - `ENABLE_EXPORTS` = `true` (default) or `false` if you want to prevent exporting into repo-root files
 
+Optional (gallery “CDN” mode):
+
+- `GALLERY_URL_PREFIX` = empty (default) keeps URLs like `/ConImg/gallery/...`
+- `GALLERY_URL_PREFIX` = `/cdn` makes new uploads/exported `gallery.json` point at `/cdn/ConImg/gallery/...`
+- `GALLERY_URL_PREFIX` = `https://cdn.yourdomain.com` makes gallery.json use that CDN domain
+
+Notes:
+
+- The admin server now exposes a cache-friendly path: `/cdn/ConImg/gallery/...` with `Cache-Control: public, max-age=31536000, immutable`.
+- Cloudflare is optional: you can put Cloudflare in front later and set `GALLERY_URL_PREFIX` to your CDN hostname.
+
 ### 4) Persist data + uploads (important)
 
 Render’s filesystem is ephemeral unless you add a **Disk**. If you don’t add one, you’ll lose:

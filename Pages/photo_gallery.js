@@ -37,7 +37,8 @@
       file: safeText(it.file || ''),
       thumb: safeText(it.thumb || it.file || ''),
       originalName: safeText(it.originalName || ''),
-      createdAt: safeText(it.createdAt || '')
+      createdAt: safeText(it.createdAt || ''),
+      position: Number.isFinite(Number(it.position)) ? Number(it.position) : null
     }));
   }
 
@@ -72,6 +73,15 @@
 
     const sort = sortBy.value;
     filtered.sort((a, b) => {
+      if (sort === 'manual') {
+        const ap = a.position;
+        const bp = b.position;
+        if (ap === null && bp === null) return b.createdAt.localeCompare(a.createdAt);
+        if (ap === null) return 1;
+        if (bp === null) return -1;
+        if (ap !== bp) return ap - bp;
+        return b.createdAt.localeCompare(a.createdAt);
+      }
       if (sort === 'name-asc') return a.originalName.localeCompare(b.originalName);
       if (sort === 'name-desc') return b.originalName.localeCompare(a.originalName);
       if (sort === 'date-asc') return a.createdAt.localeCompare(b.createdAt);

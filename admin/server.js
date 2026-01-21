@@ -323,7 +323,19 @@ app.use('/', express.static(ROOT_DIR, { extensions: ['html'] }));
 app.use('/admin', express.static(path.join(ADMIN_DIR, 'public'), { extensions: ['html'] }));
 
 // Expose gallery images and uploaded docs
+// Standard gallery path (compatible with existing gallery.json)
 app.use('/ConImg/gallery', express.static(GALLERY_DIR));
+
+// CDN-style path with aggressive caching (optional; set GALLERY_URL_PREFIX="/cdn" to emit these URLs)
+app.use('/cdn/ConImg/gallery', express.static(GALLERY_DIR, {
+  immutable: true,
+  maxAge: '365d',
+  setHeaders: (res) => {
+    // Allow embedding across origins if later fronted by a CDN domain.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
 app.use('/admin-uploads/docs', express.static(DOCS_UPLOADS_DIR));
 app.use('/admin-uploads/bulletins', express.static(BULLETINS_UPLOADS_DIR));
 
@@ -890,10 +902,28 @@ app.delete('/api/users/:id', requireAuth, (req, res) => {
 
 // ----------------- GALLERY -----------------
 function loadGallery() {
-  return readJson(GALLERY_DATA_PATH, { items: [] });
+  const data = readJson(GALLERY_DATA_PATH, { items: [] });
+  if (!data || typeof data !== 'object') return { items: [] };
+  if (!Array.isArray(data.items)) data.items = [];
+  return data;
 }
 function saveGallery(data) {
   writeJsonAtomic(GALLERY_DATA_PATH, data);
+}
+
+function galleryUrlPrefix() {
+  const raw = String(process.env.GALLERY_URL_PREFIX || '').trim();
+  if (!raw) return '';
+  // Allow absolute URLs (e.g. https://cdn.example.com) or path prefixes (/cdn)
+  return raw.replace(/\/$/, '');
+}
+
+function withPrefix(prefix, pathWithLeadingSlash) {
+  const p = String(pathWithLeadingSlash || '');
+  if (!prefix) return p;
+  if (/^https?:\/\//i.test(prefix)) return `${prefix}${p}`;
+  // Treat as path prefix
+  return `${prefix}${p}`;
 }
 
 const galleryUpload = multer({
@@ -954,28 +984,73 @@ app.post('/api/gallery/upload', requireAuth, galleryUpload.array('images', 20), 
 
     const createdAt = new Date().toISOString();
 
+    const prefix = galleryUrlPrefix();
+
     const item = {
       id,
       album,
       label,
       tags,
-      file: `/${relPath.replace(/\\/g, '/')}`,
-      thumb: fs.existsSync(absThumb) ? `/${relThumb.replace(/\\/g, '/')}` : `/${relPath.replace(/\\/g, '/')}`,
+      file: withPrefix(prefix, `/${relPath.replace(/\\/g, '/')}`),
+      thumb: fs.existsSync(absThumb)
+        ? withPrefix(prefix, `/${relThumb.replace(/\\/g, '/')}`)
+        : withPrefix(prefix, `/${relPath.replace(/\\/g, '/')}`),
       originalName: file.originalname,
-      createdAt
+      createdAt,
+      position: null
     };
 
     items.unshift(item);
     added.push(item);
   }
 
-  saveGallery({ items });
+  const nextGallery = { ...gallery, items };
+  saveGallery(nextGallery);
 
   if (ENABLE_EXPORTS) {
-    writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), { items });
+    writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), nextGallery);
   }
 
   res.json({ ok: true, added });
+});
+
+app.put('/api/gallery/order', requireAuth, (req, res) => {
+  const album = sanitizeSegment(req.body?.album || '');
+  const orderedIds = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds.map((x) => String(x)) : [];
+  if (!album) return res.status(400).json({ error: 'Album is required.' });
+  if (!orderedIds.length) return res.status(400).json({ error: 'orderedIds is required.' });
+
+  const gallery = loadGallery();
+  const items = Array.isArray(gallery.items) ? gallery.items : [];
+  const byId = new Map(items.map((it) => [String(it.id), it]));
+
+  // Validate: all ids exist and belong to album
+  for (const id of orderedIds) {
+    const it = byId.get(id);
+    if (!it) return res.status(400).json({ error: 'One or more ids do not exist.' });
+    if (String(it.album) !== album) return res.status(400).json({ error: 'All ids must belong to the selected album.' });
+  }
+
+  // Apply positions in the provided order.
+  orderedIds.forEach((id, idx) => {
+    const it = byId.get(id);
+    if (it) it.position = idx;
+  });
+
+  // Any remaining items in the album not included get appended (stable-ish by createdAt desc).
+  const remaining = items
+    .filter((it) => String(it.album) === album && !orderedIds.includes(String(it.id)))
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+
+  let nextPos = orderedIds.length;
+  for (const it of remaining) {
+    it.position = nextPos;
+    nextPos += 1;
+  }
+
+  saveGallery({ ...gallery, items });
+  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), { ...gallery, items });
+  res.json({ ok: true });
 });
 
 app.put('/api/gallery/:id', requireAuth, (req, res) => {
@@ -995,8 +1070,9 @@ app.put('/api/gallery/:id', requireAuth, (req, res) => {
       .slice(0, 25);
   }
 
-  saveGallery({ items });
-  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), { items });
+  const nextGallery = { ...gallery, items };
+  saveGallery(nextGallery);
+  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), nextGallery);
 
   res.json({ ok: true, item });
 });
@@ -1024,8 +1100,9 @@ app.delete('/api/gallery/:id', requireAuth, (req, res) => {
     // ignore
   }
 
-  saveGallery({ items });
-  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), { items });
+  const nextGallery = { ...gallery, items };
+  saveGallery(nextGallery);
+  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), nextGallery);
 
   res.json({ ok: true });
 });
