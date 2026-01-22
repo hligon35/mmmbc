@@ -18,6 +18,18 @@ That folder is a **download/snapshot of the old live site** page:
 
 Those files were **not produced** by the current admin uploader; they look like they were fetched from the live website by a scraping/downloader tool.
 
+## Import from WordPress (best quality)
+
+The WordPress admin media library URL (`/wp-admin/upload.php`) requires an authenticated browser session, so the efficient, high-quality migration approach is:
+
+- Use WordPress REST API (authenticated using a WordPress **Application Password**) to list all media items
+- Download the **largest/original** image for each item
+- Upload into the Worker via `POST /api/gallery/upload` (writes to **R2 + D1**)
+
+Scripts + instructions:
+- `scripts/import_wp_media_to_worker_gallery.mjs`
+- `scripts/IMPORT_WORDPRESS_MEDIA.md`
+
 ## Provision Cloudflare resources
 
 ### 1) Create D1 databases
