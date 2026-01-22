@@ -5,6 +5,8 @@
 // Auth model (Cloudflare-native): protect /admin and /api via Cloudflare Access.
 // When Access is enabled, Cloudflare injects cf-access-authenticated-user-email.
 
+import { EmailMessage } from 'cloudflare:email';
+
 function json(resBody, { status = 200, headers = {} } = {}) {
   return new Response(JSON.stringify(resBody), {
     status,
@@ -171,6 +173,37 @@ async function handleSupportMessage(request, env) {
     message
   ].join('\n');
 
+  // Prefer Cloudflare Email Routing (send_email binding) when configured.
+  // This is more reliable than the legacy MailChannels endpoint, which may reject requests.
+  if (env.SUPPORT_EMAIL && typeof env.SUPPORT_EMAIL.send === 'function') {
+    const escapeQuotes = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
+    const fromHeaderName = fromName ? `"${escapeQuotes(fromName)}" ` : '';
+    const fromHeader = `${fromHeaderName}<${fromEmail}>`;
+    const replyToHeader = replyTo ? `Reply-To: ${replyTo}\r\n` : '';
+
+    // Minimal RFC-5322-ish message. Good enough for plain-text support emails.
+    const raw = [
+      `To: ${toEmail}`,
+      `From: ${fromHeader}`,
+      replyToHeader.trimEnd(),
+      `Subject: ${composedSubject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      textBody
+    ].filter(Boolean).join('\r\n');
+
+    try {
+      const msg = new EmailMessage(fromEmail, toEmail, raw);
+      await env.SUPPORT_EMAIL.send(msg);
+      return json({ ok: true });
+    } catch (e) {
+      const msg = (e && (e.stack || e.message)) ? String(e.stack || e.message) : String(e);
+      return json({ error: `Email send failed (Email Routing). ${msg}`.slice(0, 2000) }, { status: 502 });
+    }
+  }
+
+  // Fallback: MailChannels (legacy). This may return 401/403 depending on current policy.
   const payload = {
     personalizations: [{ to: [{ email: toEmail }], subject: composedSubject }],
     from: { email: fromEmail, name: fromName },
@@ -186,7 +219,15 @@ async function handleSupportMessage(request, env) {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    return json({ error: `Email send failed (${res.status}). ${errText}`.trim() }, { status: 502 });
+    if (res.status === 401) {
+      return json(
+        {
+          error: 'Email send failed (401 from MailChannels). Configure Cloudflare Email Routing with a send_email binding named SUPPORT_EMAIL.'
+        },
+        { status: 502 }
+      );
+    }
+    return json({ error: `Email send failed (${res.status}). ${errText}`.trim().slice(0, 2000) }, { status: 502 });
   }
 
   return json({ ok: true });
@@ -663,7 +704,11 @@ async function handleCdn(request, env) {
 
   const headers = new Headers();
   obj.writeHttpMetadata(headers);
-  headers.set('Content-Type', headers.get('Content-Type') || guessContentType(key));
+  const guessed = guessContentType(key);
+  const ct = String(headers.get('Content-Type') || '').trim().toLowerCase();
+  if (!ct || ct === 'application/octet-stream' || ct === 'binary/octet-stream') {
+    headers.set('Content-Type', guessed);
+  }
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
 

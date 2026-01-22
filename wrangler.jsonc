@@ -23,6 +23,12 @@
 			"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
 		}
 	],
+	"send_email": [
+		{
+			"name": "SUPPORT_EMAIL",
+			"destination_address": "hligon@getsparqd.com"
+		}
+	],
 	"vars": {
 		// Comma-separated emails allowed for admin API access (when Cloudflare Access is enabled).
 		// Example: "you@example.com,other@example.com"
@@ -53,6 +59,12 @@
 					"binding": "DB",
 					"database_name": "mmdb",
 					"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
+				}
+			],
+			"send_email": [
+				{
+					"name": "SUPPORT_EMAIL",
+					"destination_address": "hligon@getsparqd.com"
 				}
 			],
 			"vars": {
@@ -86,6 +98,12 @@
 					"binding": "DB",
 					"database_name": "mmdb",
 					"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
+				}
+			],
+			"send_email": [
+				{
+					"name": "SUPPORT_EMAIL",
+					"destination_address": "hligon@getsparqd.com"
 				}
 			],
 			"vars": {

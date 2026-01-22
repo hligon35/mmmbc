@@ -680,7 +680,10 @@ body{
 }
 
 /* Photo Gallery */
-.photosHelp{margin:12px 0 0 0;}
+.photosHelp{margin:12px 0 0 0;color:#fff;}
+.photosHelp :where(p, li, div, span, strong, em, small, h1, h2, h3, h4, h5, h6){color:inherit;}
+.photosHelp a{color:#fff;}
+.photosHelp a:hover{color:#fff;}
 
 .photosManageGrid{display:grid;grid-template-columns:minmax(0, 1fr) 360px;gap:16px;align-items:start;margin-top:12px;}
 .photosManageMain{min-width:0;}
@@ -717,11 +720,20 @@ body{
   border-radius:12px;
   border:2px solid rgba(255,255,255,.18);
   background:rgba(255,255,255,.03);
+  color:rgba(255,255,255,.95);
 }
 .photosHelp__summary:hover{border-color:rgba(255,255,255,.35);}
 .photosHelp__summary::-webkit-details-marker{display:none;}
 .photosHelp__body{margin-top:12px;}
-.photosHelp code{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);padding:2px 6px;border-radius:8px;color:rgba(255,255,255,.92);}
+.photosHelp__list{color:#fff;}
+.photosHelp code{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);padding:2px 6px;border-radius:8px;color:#fff;}
+
+/* Photo upload help dialog: force all instruction text to pure white */
+#photoHelpDialog{color:#fff;}
+#photoHelpDialog :where(p, li, div, span, strong, em, small, h1, h2, h3, h4, h5, h6, summary){color:#fff;}
+#photoHelpDialog .muted{color:#fff;}
+#photoHelpDialog a{color:#fff;}
+#photoHelpDialog code{color:#fff;}
 
 /* Fit time/date inputs to content in list rows (prevents oversized controls) */
 .row__actions input[type="date"].input,

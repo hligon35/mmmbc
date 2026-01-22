@@ -722,6 +722,12 @@ app.post('/api/auth/logout', (req, res) => {
 
 // ----------------- SUPPORT -----------------
 app.post('/api/support/message', requireAuth, async (req, res) => {
+  // MailChannels is intended to be called from Cloudflare (Workers). When local admin is
+  // configured with WORKER_ORIGIN, proxy this request to the Worker so sending works.
+  if (String(process.env.WORKER_ORIGIN || '').trim()) {
+    return proxyToWorker(req, res);
+  }
+
   const subjectRaw = String(req.body?.subject || '').trim();
   const messageRaw = String(req.body?.message || '').trim();
   const replyToRaw = String(req.body?.replyTo || '').trim();
@@ -1008,7 +1014,7 @@ function proxyToWorker(req, res) {
   const base = String(process.env.WORKER_ORIGIN || '').trim().replace(/\/$/, '');
   if (!base) {
     return res.status(501).json({
-      error: 'R2 bucket browsing is provided by the Cloudflare Worker. Set WORKER_ORIGIN to your Worker URL (and optionally CF_ACCESS_CLIENT_ID/CF_ACCESS_CLIENT_SECRET for Access-protected Workers).'
+      error: 'This endpoint is provided by the Cloudflare Worker. Set WORKER_ORIGIN to your Worker URL (and optionally CF_ACCESS_CLIENT_ID/CF_ACCESS_CLIENT_SECRET for Access-protected Workers).'
     });
   }
 
