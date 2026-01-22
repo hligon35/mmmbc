@@ -412,6 +412,8 @@
 
                     <button class="menu__item" id="printFinanceLedgerBtn" type="button" role="menuitem">Finance ledger (current filters)</button>
 
+                    <button class="menu__item" id="printFinanceReceiptsBtn" type="button" role="menuitem">Receipts (select entries)</button>
+
                     <div class="menu__divider" role="separator" aria-hidden="true"></div>
 
                     <div class="menu__title">Events</div>
@@ -532,6 +534,34 @@
           <div class="financePrintHeader__title" id="financePrintTitle">Mt. Moriah Missionary Baptist Church — Finance</div>
           <div class="financePrintHeader__meta" id="financePrintMeta"></div>
         </div>
+
+        <dialog class="dialog" id="financeReceiptsDialog" aria-label="Print receipts">
+          <form method="dialog" class="card dialog__inner">
+            <div class="sectionHeader sectionHeader--compact">
+              <h3 class="sectionHeader__title">Print receipts</h3>
+              <button class="btn" id="financeReceiptsCloseBtn" type="submit">Close</button>
+            </div>
+
+            <p class="muted">Search and select one, multiple, or all finance entries to print as receipts.</p>
+
+            <div class="toolbarGroup">
+              <div class="inputGroup financeReceiptsSearchGroup">
+                <input class="input" id="financeReceiptsSearch" type="search" placeholder="Search entries…" autocomplete="off" />
+                <button class="inputIconBtn" id="financeReceiptsSearchClear" type="button" aria-label="Clear search" title="Clear">×</button>
+              </div>
+              <button class="btn" id="financeReceiptsSelectAllBtn" type="button">Select all</button>
+              <button class="btn" id="financeReceiptsClearBtn" type="button">Clear</button>
+            </div>
+
+            <div class="hint" id="financeReceiptsCount" aria-live="polite"></div>
+            <div class="list list--scroll5" id="financeReceiptsList" aria-label="Receipt entries"></div>
+
+            <div class="toolbar">
+              <button class="btn btn--primary" id="financeReceiptsPrintSelectedBtn" type="button">Print selected</button>
+              <button class="btn" id="financeReceiptsPrintAllBtn" type="button">Print all (current filters)</button>
+            </div>
+          </form>
+        </dialog>
 
         <div class="printOnly" id="adminPrintBody" aria-label="Print report body"></div>
 

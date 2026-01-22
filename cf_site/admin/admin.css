@@ -429,11 +429,33 @@ body{
 .iconBtn:focus{outline:3px solid rgba(196,97,35,.55);outline-offset:2px;}
 .iconBtn__icon{width:20px;height:20px;display:block;}
 
+/*
+  Help modal:
+  - Modern browsers: <dialog> + showModal() uses ::backdrop.
+  - Fallback: if showModal isn't supported/reliable, we toggle [open] and
+    rely on CSS to render a centered overlay.
+*/
 .dialog{border:0;padding:0;background:transparent;max-width:min(720px, calc(100vw - 32px));}
 .dialog::backdrop{background:rgba(0,0,0,.55);}
 .dialog__inner{margin:0;}
 
+/* Fallback overlay behavior (also OK with native dialog). */
+.dialog{display:none;}
+.dialog[open]{
+  display:flex;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background:rgba(0,0,0,.55);
+}
+.dialog[open] .dialog__inner{max-width:min(720px, calc(100vw - 32px)); width:100%;}
+
 .toolbarGroup{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+
+.financeReceiptsSearchGroup{min-width:min(420px, 100%);}
 
 .inlineRow{display:flex;flex-wrap:nowrap;gap:10px;align-items:end;}
 .inlineRow .label--inline{white-space:nowrap;}
@@ -565,6 +587,28 @@ body{
 .financePrintHeader__title{font-weight:1000;font-size:1.1rem;margin-bottom:4px;}
 .financePrintHeader__meta{font-weight:800;color:rgba(0,0,0,.75);}
 
+/* Receipt printing */
+.receipt{border:1px solid #000;border-radius:10px;padding:12px;background:#fff;color:#000;}
+.receipt__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 8px 0;}
+.receipt__headLeft{min-width:0;}
+.receipt__headRight{text-align:right;white-space:nowrap;}
+.receipt__church{font-weight:1000;font-size:1.1rem;line-height:1.1;}
+.receipt__report{font-weight:1000;font-size:1rem;line-height:1.1;margin-top:2px;}
+.receipt__receiptNo{font-weight:1000;font-size:1rem;}
+.receipt__meta{margin:0 0 10px 0;color:rgba(0,0,0,.75);font-weight:800;}
+.receipt__title{font-weight:1000;font-size:1.05rem;margin:0 0 6px 0;}
+.receipt__sub{margin:0 0 10px 0;color:rgba(0,0,0,.75);font-weight:800;}
+.receipt__table{width:100%;border-collapse:collapse;}
+.receipt__table td{border:1px solid #000;padding:8px 10px;vertical-align:top;}
+.receipt__label{width:32%;font-weight:1000;}
+.receipt__value{width:68%;}
+.receipt__sign{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;}
+.receipt__line{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:900;}
+.receipt__blank{flex:1;border-bottom:2px solid #000;min-width:120px;height:0;}
+.receipt__note{margin-top:10px;color:rgba(0,0,0,.75);font-weight:800;}
+.receipt--page{page-break-after:always;break-after:page;}
+.receipt--page:last-child{page-break-after:auto;break-after:auto;}
+
 /* Print report body (used for events reports) */
 #adminPrintBody{margin-top:10px;}
 .printReportTitle{font-weight:1000;font-size:1.05rem;margin:10px 0 6px 0;}
@@ -578,6 +622,7 @@ body{
   body{background:#fff;color:#000;}
   .header,.sideNav,.noPrint{display:none !important;}
   .printOnly{display:block !important;}
+  #financeTopBar{display:none !important;}
   .app{max-width:none;margin:0;padding:0;}
   .card{border:none;background:transparent;padding:0;}
   .tableWrap{border:none;border-radius:0;overflow:visible;background:transparent;}
@@ -589,6 +634,13 @@ body{
   /* Events report printing: suppress the ledger table area */
   body[data-print-mode="events"] #tab-finances .divider,
   body[data-print-mode="events"] #tab-finances .tableWrap{
+    display:none !important;
+  }
+
+  /* Receipt printing: suppress the ledger + entry form */
+  body[data-print-mode="receipts"] #tab-finances .divider,
+  body[data-print-mode="receipts"] #tab-finances .tableWrap,
+  body[data-print-mode="receipts"] #tab-finances #financeEntryForm{
     display:none !important;
   }
 }

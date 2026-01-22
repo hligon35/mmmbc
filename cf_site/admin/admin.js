@@ -468,7 +468,7 @@ function financeNormalizeKey(value) {
 }
 
 function financeDetectKindFromEntry(entry) {
-  const t = String(entry?.type || '');
+  const t = financeNormalizeKey(entry?.type);
   if (t === 'expense') return 'expense';
   if (t === 'income') {
     const cat = financeNormalizeKey(entry?.category);
@@ -520,7 +520,7 @@ function financeApplyKindToForm(kind) {
 }
 
 function financeSetQuickKind(kind, { render = true } = {}) {
-  const k = String(kind || '').trim();
+  const k = financeNormalizeKey(kind);
   if (!k) return;
   financeQuickKind = k;
 
@@ -601,7 +601,7 @@ function financeEntryMatches(entry, filters) {
   if (filters.from && date && date < filters.from) return false;
   if (filters.to && date && date > filters.to) return false;
 
-  const entryType = String(entry?.type || '');
+  const entryType = financeNormalizeKey(entry?.type);
   if (Array.isArray(filters.types) && filters.types.length > 0) {
     if (!filters.types.includes(entryType)) return false;
   } else if (filters.type && entryType !== filters.type) {
@@ -708,12 +708,19 @@ function renderFinances() {
   const all = Array.isArray(finances?.entries) ? finances.entries : [];
   const rows = all.filter((e) => financeEntryMatches(e, filters));
 
+  // Totals should reflect the selected date/search filters, but not the
+  // quick-kind mini-tabs OR the type checkbox filters.
+  // (You may browse "Expense" while still wanting to see income/giving totals.)
+  const totalsFilters = { ...filters, kind: '', types: [], type: '' };
+  const totalsRows = all.filter((e) => financeEntryMatches(e, totalsFilters));
+
   let income = 0;
   let expense = 0;
-  for (const e of rows) {
+  for (const e of totalsRows) {
     const cents = Number(e?.amountCents || 0);
-    if (String(e?.type) === 'income') income += cents;
-    if (String(e?.type) === 'expense') expense += cents;
+    const t = financeNormalizeKey(e?.type);
+    if (t === 'income') income += cents;
+    if (t === 'expense') expense += cents;
   }
   const net = income - expense;
 
@@ -894,7 +901,7 @@ function renderWeeklyGiving() {
   let offerings = 0;
 
   for (const e of inRange) {
-    if (String(e?.type) !== 'income') continue;
+    if (financeNormalizeKey(e?.type) !== 'income') continue;
     const cat = normalizeCategoryKey(e?.category);
     const cents = Number(e?.amountCents || 0);
     if (!Number.isFinite(cents)) continue;
@@ -1553,6 +1560,332 @@ function setFinancePrintHeader(reportLabel, extraMetaParts = []) {
     if (p) parts.push(String(p));
   }
   meta.textContent = parts.join(' • ');
+}
+
+function financePartyLabelForEntry(entry) {
+  const kind = financeDetectKindFromEntry(entry);
+  if (kind === 'expense') return 'To';
+  if (kind === 'tithes') return 'Giver';
+  if (kind === 'offerings') return 'Giver';
+  return 'From';
+}
+
+function financeReceiptTitleForEntry(entry) {
+  const date = String(entry?.date || '').trim();
+  const type = financeNormalizeKey(entry?.type);
+  const amount = formatMoneyCents(Number(entry?.amountCents || 0));
+  const cat = String(entry?.category || '').trim();
+  const t = type ? (type[0].toUpperCase() + type.slice(1)) : 'Entry';
+  return `${date}${date ? ' • ' : ''}${t}${cat ? ` • ${cat}` : ''} • ${amount}`;
+}
+
+function financeReceiptHay(entry) {
+  return [
+    entry?.id,
+    entry?.date,
+    entry?.type,
+    entry?.category,
+    entry?.fund,
+    entry?.method,
+    entry?.party,
+    entry?.memo,
+    financeDetectKindFromEntry(entry)
+  ].map((v) => String(v || '').toLowerCase()).join(' ');
+}
+
+function financeGetReceiptsUniverse() {
+  const all = Array.isArray(finances?.entries) ? finances.entries : [];
+  // Respect current date/search filters, but not quick tabs or type checkbox filters.
+  const base = financeCurrentFilters();
+  const filters = { ...base, kind: '', types: [], type: '' };
+  return all.filter((e) => financeEntryMatches(e, filters));
+}
+
+function financeRenderReceiptsPicker({ keepSelection = true } = {}) {
+  const list = $('financeReceiptsList');
+  const countEl = $('financeReceiptsCount');
+  const searchEl = $('financeReceiptsSearch');
+  if (!list || !countEl || !(searchEl instanceof HTMLInputElement)) return;
+
+  const universe = financeGetReceiptsUniverse();
+  const q = String(searchEl.value || '').trim().toLowerCase();
+  const filtered = q ? universe.filter((e) => financeReceiptHay(e).includes(q)) : universe;
+
+  if (!window.__financeReceiptSelectedIds || !keepSelection) {
+    window.__financeReceiptSelectedIds = new Set();
+  }
+  const selectedIds = window.__financeReceiptSelectedIds;
+
+  // Prune selections that are no longer in scope.
+  const availableIds = new Set(filtered.map((e) => String(e?.id || '')));
+  for (const id of Array.from(selectedIds)) {
+    if (!availableIds.has(id)) selectedIds.delete(id);
+  }
+
+  list.innerHTML = '';
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'muted';
+    empty.textContent = 'No entries match your filters/search.';
+    list.appendChild(empty);
+  } else {
+    for (const e of filtered) {
+      const id = String(e?.id || '');
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const main = document.createElement('div');
+      main.className = 'row__main';
+
+      const title = document.createElement('div');
+      title.className = 'row__title';
+      title.textContent = financeReceiptTitleForEntry(e);
+
+      const meta = document.createElement('div');
+      meta.className = 'row__meta';
+      const kind = financeDetectKindFromEntry(e);
+      const partyLabel = financePartyLabelForEntry(e);
+      const party = String(e?.party || '').trim();
+      const fund = String(e?.fund || '').trim();
+      const method = String(e?.method || '').trim();
+      meta.textContent = [
+        kind ? `Kind: ${kind}` : '',
+        fund ? `Fund: ${fund}` : '',
+        method ? `Method: ${method}` : '',
+        party ? `${partyLabel}: ${party}` : ''
+      ].filter(Boolean).join(' • ');
+
+      main.appendChild(title);
+      main.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'row__actions';
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'checkbox';
+      cb.checked = selectedIds.has(id);
+      cb.addEventListener('change', () => {
+        if (cb.checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+        financeRenderReceiptsCount({ universe, filtered, selectedIds });
+      });
+
+      actions.appendChild(cb);
+      row.appendChild(main);
+      row.appendChild(actions);
+
+      // Clicking the row toggles the checkbox (except when clicking the checkbox).
+      row.addEventListener('click', (ev) => {
+        if (ev.target === cb) return;
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+
+      list.appendChild(row);
+    }
+  }
+
+  financeRenderReceiptsCount({ universe, filtered, selectedIds });
+}
+
+function financeRenderReceiptsCount({ universe, filtered, selectedIds }) {
+  const countEl = $('financeReceiptsCount');
+  if (!countEl) return;
+  const sel = selectedIds ? selectedIds.size : 0;
+  countEl.textContent = `${filtered.length} shown • ${universe.length} in current filters • ${sel} selected`;
+}
+
+function financeBuildReceiptBlock(entry, { index, total }) {
+  const id = String(entry?.id || '').trim();
+  const date = String(entry?.date || '').trim();
+  const type = financeNormalizeKey(entry?.type);
+  const category = String(entry?.category || '').trim();
+  const fund = String(entry?.fund || '').trim();
+  const method = String(entry?.method || '').trim();
+  const party = String(entry?.party || '').trim();
+  const memo = String(entry?.memo || '').trim();
+  const cents = Number(entry?.amountCents || 0);
+  const amount = formatMoneyCents(cents);
+  const partyLabel = financePartyLabelForEntry(entry);
+  const kind = financeDetectKindFromEntry(entry);
+
+  const churchName = 'Mt. Moriah Missionary Baptist Church';
+  const digits = String(entry?.id || '').replace(/\D+/g, '');
+  const receiptSuffix = (digits ? digits.slice(-4) : String((Number.isFinite(index) ? index : 0) + 1)).padStart(4, '0');
+  const receiptNo = `MMMBC-${receiptSuffix}`;
+
+  const wrap = document.createElement('section');
+  wrap.className = 'receipt receipt--page';
+
+  const head = document.createElement('div');
+  head.className = 'receipt__head';
+
+  const headLeft = document.createElement('div');
+  headLeft.className = 'receipt__headLeft';
+  const church = document.createElement('div');
+  church.className = 'receipt__church';
+  church.textContent = churchName;
+  const report = document.createElement('div');
+  report.className = 'receipt__report';
+  report.textContent = 'Financial Report';
+  headLeft.appendChild(church);
+  headLeft.appendChild(report);
+
+  const headRight = document.createElement('div');
+  headRight.className = 'receipt__headRight';
+  const receiptNoEl = document.createElement('div');
+  receiptNoEl.className = 'receipt__receiptNo';
+  receiptNoEl.textContent = receiptNo;
+  headRight.appendChild(receiptNoEl);
+
+  head.appendChild(headLeft);
+  head.appendChild(headRight);
+
+  const meta = document.createElement('div');
+  meta.className = 'receipt__meta';
+  const parts = [
+    date ? `Date: ${date}` : '',
+    kind ? `Kind: ${kind}` : '',
+    (Number.isFinite(index) && Number.isFinite(total)) ? `Item: ${index + 1}/${total}` : ''
+  ].filter(Boolean);
+  meta.textContent = parts.join(' • ');
+
+  const table = document.createElement('table');
+  table.className = 'receipt__table';
+
+  const rows = [
+    ['Receipt #', receiptNo],
+    ['Type', type || ''],
+    ['Category', category],
+    ['Fund', fund],
+    ['Method', method],
+    [partyLabel, party],
+    ['Amount', amount],
+    ['Memo', memo]
+  ].filter(([, v]) => String(v || '').trim());
+
+  const tbody = document.createElement('tbody');
+  for (const [k, v] of rows) {
+    const tr = document.createElement('tr');
+    const tdK = document.createElement('td');
+    tdK.className = 'receipt__label';
+    tdK.textContent = k;
+    const tdV = document.createElement('td');
+    tdV.className = 'receipt__value';
+    tdV.textContent = String(v);
+    tr.appendChild(tdK);
+    tr.appendChild(tdV);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+
+  const sign = document.createElement('div');
+  sign.className = 'receipt__sign';
+  sign.innerHTML = '<div class="receipt__line"><span>Signature</span><span class="receipt__blank"></span></div><div class="receipt__line"><span>Date</span><span class="receipt__blank"></span></div>';
+
+  wrap.appendChild(head);
+  wrap.appendChild(meta);
+  wrap.appendChild(table);
+  wrap.appendChild(sign);
+  return wrap;
+}
+
+function financeReceiptNoForEntry(entry, index) {
+  const digits = String(entry?.id || '').replace(/\D+/g, '');
+  const receiptSuffix = (digits ? digits.slice(-4) : String((Number.isFinite(index) ? index : 0) + 1)).padStart(4, '0');
+  return `MMMBC-${receiptSuffix}`;
+}
+
+function financeAppendSignatureLines(root) {
+  const sign = document.createElement('div');
+  sign.className = 'receipt__sign';
+  sign.innerHTML = '<div class="receipt__line"><span>Signature</span><span class="receipt__blank"></span></div><div class="receipt__line"><span>Date</span><span class="receipt__blank"></span></div>';
+  root.appendChild(sign);
+}
+
+function financeBuildReceiptsTable(entries) {
+  const safe = Array.isArray(entries) ? entries.filter(Boolean) : [];
+  const table = document.createElement('table');
+  table.className = 'printTable';
+
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Receipt #</th><th>Date</th><th>Kind</th><th>Type</th><th>Category</th><th>Fund</th><th>Method</th><th>Party</th><th>Amount</th><th>Memo</th></tr>';
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  safe.forEach((e, idx) => {
+    const tr = document.createElement('tr');
+
+    const receiptNo = financeReceiptNoForEntry(e, idx);
+    const date = String(e?.date || '').trim();
+    const kind = financeDetectKindFromEntry(e);
+    const type = financeNormalizeKey(e?.type);
+    const category = String(e?.category || '').trim();
+    const fund = String(e?.fund || '').trim();
+    const method = String(e?.method || '').trim();
+    const party = String(e?.party || '').trim();
+    const cents = Number(e?.amountCents || 0);
+    const amount = formatMoneyCents(cents);
+    const memo = String(e?.memo || '').trim();
+
+    const partyLabel = financePartyLabelForEntry(e);
+    const partyCell = partyLabel ? `${partyLabel}: ${party}` : party;
+
+    const cols = [
+      receiptNo,
+      date,
+      kind,
+      type,
+      category,
+      fund,
+      method,
+      partyCell,
+      amount,
+      memo
+    ];
+
+    for (const v of cols) {
+      const td = document.createElement('td');
+      td.textContent = String(v || '');
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  return table;
+}
+
+function financePrintReceipts(entries, { reportLabel } = {}) {
+  const safe = Array.isArray(entries) ? entries.filter(Boolean) : [];
+  if (!safe.length) {
+    alert('No entries selected to print.');
+    return;
+  }
+
+  setPrintMode('receipts');
+  setFinancePrintHeader('Mt. Moriah Missionary Baptist Church', ['Financial Report', `${safe.length} item(s)`]);
+
+  const root = $('adminPrintBody');
+  if (!root) return;
+  root.innerHTML = '';
+
+  if (safe.length === 1) {
+    const block = financeBuildReceiptBlock(safe[0], { index: 0, total: 1 });
+    block.classList.remove('receipt--page');
+    root.appendChild(block);
+  } else {
+    const h = document.createElement('div');
+    h.className = 'printReportTitle';
+    h.textContent = reportLabel || 'Receipts';
+    root.appendChild(h);
+
+    root.appendChild(financeBuildReceiptsTable(safe));
+    financeAppendSignatureLines(root);
+  }
+
+  window.print();
 }
 
 function refreshEventsPrintOptions() {
@@ -2383,6 +2716,103 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if ($('printFinanceReceiptsBtn')) {
+    $('printFinanceReceiptsBtn').addEventListener('click', () => {
+      closeDetailsMenu('financePrintMenu');
+
+      const dlg = $('financeReceiptsDialog');
+      if (!dlg) return;
+
+      // Open dialog (robust fallback)
+      if (typeof dlg.showModal === 'function') {
+        try { dlg.showModal(); }
+        catch { dlg.setAttribute('open', ''); }
+      } else {
+        dlg.setAttribute('open', '');
+      }
+
+      // Render the picker list using current filters.
+      financeRenderReceiptsPicker({ keepSelection: true });
+      try { $('financeReceiptsSearch')?.focus(); } catch { /* ignore */ }
+    });
+  }
+
+  if ($('financeReceiptsDialog')) {
+    const dlg = $('financeReceiptsDialog');
+    const closeDlg = () => {
+      try {
+        if (typeof dlg.close === 'function') dlg.close();
+        else dlg.removeAttribute('open');
+      } catch {
+        dlg.removeAttribute('open');
+      }
+    };
+
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) closeDlg();
+    });
+    dlg.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDlg();
+    });
+
+    if ($('financeReceiptsSearch') instanceof HTMLInputElement) {
+      $('financeReceiptsSearch').addEventListener('input', () => financeRenderReceiptsPicker({ keepSelection: true }));
+    }
+    if ($('financeReceiptsSearchClear')) {
+      $('financeReceiptsSearchClear').addEventListener('click', () => {
+        const s = $('financeReceiptsSearch');
+        if (s instanceof HTMLInputElement) s.value = '';
+        financeRenderReceiptsPicker({ keepSelection: true });
+        try { $('financeReceiptsSearch')?.focus(); } catch { /* ignore */ }
+      });
+    }
+
+    if ($('financeReceiptsSelectAllBtn')) {
+      $('financeReceiptsSelectAllBtn').addEventListener('click', () => {
+        const universe = financeGetReceiptsUniverse();
+        const s = $('financeReceiptsSearch');
+        const q = (s instanceof HTMLInputElement) ? String(s.value || '').trim().toLowerCase() : '';
+        const filtered = q ? universe.filter((e) => financeReceiptHay(e).includes(q)) : universe;
+        if (!window.__financeReceiptSelectedIds) window.__financeReceiptSelectedIds = new Set();
+        for (const e of filtered) {
+          const id = String(e?.id || '');
+          if (id) window.__financeReceiptSelectedIds.add(id);
+        }
+        financeRenderReceiptsPicker({ keepSelection: true });
+      });
+    }
+
+    if ($('financeReceiptsClearBtn')) {
+      $('financeReceiptsClearBtn').addEventListener('click', () => {
+        if (window.__financeReceiptSelectedIds) window.__financeReceiptSelectedIds.clear();
+        financeRenderReceiptsPicker({ keepSelection: true });
+      });
+    }
+
+    if ($('financeReceiptsPrintSelectedBtn')) {
+      $('financeReceiptsPrintSelectedBtn').addEventListener('click', () => {
+        const selectedIds = window.__financeReceiptSelectedIds || new Set();
+        const universe = financeGetReceiptsUniverse();
+        const picked = universe.filter((e) => selectedIds.has(String(e?.id || '')));
+        closeDlg();
+        financePrintReceipts(picked, { reportLabel: 'Receipts (selected entries)' });
+      });
+    }
+
+    if ($('financeReceiptsPrintAllBtn')) {
+      $('financeReceiptsPrintAllBtn').addEventListener('click', () => {
+        const universe = financeGetReceiptsUniverse();
+        closeDlg();
+        financePrintReceipts(universe, { reportLabel: 'Receipts (all entries in current filters)' });
+      });
+    }
+
+    if ($('financeReceiptsCloseBtn')) {
+      $('financeReceiptsCloseBtn').addEventListener('click', () => closeDlg());
+    }
+  }
+
   if ($('printEventsAllBtn')) {
     $('printEventsAllBtn').addEventListener('click', async () => {
       closeDetailsMenu('financePrintMenu');
@@ -2707,8 +3137,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Photo upload instructions help dialog
-  if ($('photoHelpBtn') && $('photoHelpDialog')) {
+  if ($('photoHelpDialog')) {
     const dlg = $('photoHelpDialog');
+    const openDlg = () => {
+      if (typeof dlg.showModal === 'function') {
+        try {
+          dlg.showModal();
+          return;
+        } catch {
+          // Some environments expose showModal but still throw.
+        }
+      }
+      dlg.setAttribute('open', '');
+    };
     const closeDlg = () => {
       try {
         if (typeof dlg.close === 'function') dlg.close();
@@ -2718,21 +3159,38 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    $('photoHelpBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof dlg.showModal === 'function') {
-        dlg.showModal();
-      } else {
-        // Fallback for browsers without <dialog> support.
-        dlg.setAttribute('open', '');
-      }
-    });
+    if (!window.__mmmbcPhotoHelpDelegated) {
+      window.__mmmbcPhotoHelpDelegated = true;
+      document.addEventListener('click', (e) => {
+        const btn = e.target?.closest ? e.target.closest('#photoHelpBtn') : null;
+        if (!btn) return;
+        e.preventDefault();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        openDlg();
+      }, true);
+    }
+
+    if ($('photoHelpBtn')) {
+      $('photoHelpBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        openDlg();
+      });
+    }
     if ($('photoHelpCloseBtn')) {
       $('photoHelpCloseBtn').addEventListener('click', () => closeDlg());
     }
     dlg.addEventListener('click', (e) => {
       // Close when clicking the backdrop
       if (e.target === dlg) closeDlg();
+    });
+
+    // Escape key / cancel
+    dlg.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDlg();
     });
   }
 

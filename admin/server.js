@@ -4,6 +4,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
 const https = require('https');
+const http = require('http');
 const express = require('express');
 const compression = require('compression');
 const session = require('express-session');
@@ -996,7 +997,10 @@ function proxyToWorker(req, res) {
     });
   }
 
-  const target = new URL(req.originalUrl, `${base}/`);
+  // IMPORTANT: req.originalUrl is absolute-path (starts with "/").
+  // Using new URL(req.originalUrl, base) would drop any path prefix on base.
+  // Concatenation preserves base path prefixes like "https://example.com/admin".
+  const target = new URL(`${base}${req.originalUrl}`);
   const method = String(req.method || 'GET').toUpperCase();
 
   const headers = {
@@ -1017,10 +1021,12 @@ function proxyToWorker(req, res) {
     headers['content-length'] = Buffer.byteLength(body);
   }
 
-  const proxyReq = https.request(
+  const client = target.protocol === 'http:' ? http : https;
+  const proxyReq = client.request(
     {
       method,
       hostname: target.hostname,
+      port: target.port || (target.protocol === 'http:' ? 80 : 443),
       path: `${target.pathname}${target.search}`,
       headers
     },
