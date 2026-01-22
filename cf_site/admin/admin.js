@@ -14,13 +14,17 @@ async function fetchCsrfToken() {
 }
 
 async function api(path, options = {}) {
+  let url = String(path || '');
+  // Ensure we always hit the root API, even when the admin UI is served under /admin/.
+  if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) url = `/${url}`;
+
   const method = String(options.method || 'GET').toUpperCase();
-  const needsCsrf = path.startsWith('/api/')
+  const needsCsrf = url.startsWith('/api/')
     && !['GET', 'HEAD', 'OPTIONS'].includes(method)
-    && !path.startsWith('/api/auth/login')
-    && !path.startsWith('/api/auth/logout')
-    && !path.startsWith('/api/auth/recover')
-    && !path.startsWith('/api/invites/');
+    && !url.startsWith('/api/auth/login')
+    && !url.startsWith('/api/auth/logout')
+    && !url.startsWith('/api/auth/recover')
+    && !url.startsWith('/api/invites/');
 
   if (needsCsrf) {
     await csrfReady;
@@ -32,7 +36,7 @@ async function api(path, options = {}) {
   };
   if (needsCsrf && csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
-  const res = await fetch(path, {
+  const res = await fetch(url, {
     headers,
     credentials: 'same-origin',
     ...options

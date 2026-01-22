@@ -311,7 +311,14 @@ app.use(
       // In production behind TLS, set Secure automatically (requires trust proxy).
       secure: (process.env.NODE_ENV === 'production' && TRUST_PROXY) ? 'auto' : false
     },
-    store: new FileStore({ path: SESSIONS_DIR })
+    // When session storage location changes, existing browser cookies may reference
+    // session IDs whose files no longer exist. session-file-store can log noisy
+    // ENOENT retries in that case. Treat missing sessions as normal.
+    store: new FileStore({
+      path: SESSIONS_DIR,
+      retries: 0,
+      logFn: () => {}
+    })
   })
 );
 
