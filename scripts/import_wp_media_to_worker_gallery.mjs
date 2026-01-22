@@ -186,6 +186,19 @@ async function uploadToWorker({ targetBaseUrl, album, label, tags, fileName, con
   const respCt = res.headers.get('content-type') || '';
   const txt = await res.text().catch(() => '');
 
+  // Cloudflare Access may return an HTML login page with 200.
+  // In that case, the request never reached the Worker, so treat it as a hard failure.
+  if (
+    res.ok
+    && respCt.toLowerCase().includes('text/html')
+    && /cloudflare\s+access/i.test(txt)
+  ) {
+    throw new Error(
+      `Upload blocked by Cloudflare Access (received HTML login page) for ${fileName}.`
+      + `\nFix: allow your Access Service Token for this app/path, or temporarily disable Access on /api/gallery/* during migration.`
+    );
+  }
+
   if (!res.ok) {
     throw new Error(
       `Upload failed ${res.status} ${res.statusText} for ${fileName}`
