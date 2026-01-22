@@ -183,12 +183,30 @@ async function uploadToWorker({ targetBaseUrl, album, label, tags, fileName, con
     body: form
   });
 
+  const respCt = res.headers.get('content-type') || '';
+  const txt = await res.text().catch(() => '');
+
   if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`Upload failed ${res.status} ${res.statusText} for ${fileName}\n${txt.slice(0, 800)}`);
+    throw new Error(
+      `Upload failed ${res.status} ${res.statusText} for ${fileName}`
+      + `\nContent-Type: ${respCt || '(none)'}`
+      + `\n${txt.slice(0, 800)}`
+    );
   }
 
-  return res.json().catch(() => ({ ok: true }));
+  // Some intermediaries return HTML (e.g. Access/login) even with 200.
+  // Always try to parse JSON, but keep a snippet for debugging when parsing fails.
+  try {
+    return JSON.parse(txt);
+  } catch {
+    return {
+      ok: true,
+      nonJson: true,
+      status: res.status,
+      contentType: respCt,
+      bodySnippet: txt.slice(0, 300)
+    };
+  }
 }
 
 async function main() {
@@ -271,6 +289,20 @@ async function main() {
       if (dryRun) {
         process.stdout.write('DRY RUN\n');
       } else {
+        if (result?.nonJson) {
+          process.stdout.write(
+            `OK (non-JSON response; status ${result.status}; ct ${result.contentType || 'n/a'})\n`
+          );
+          process.stdout.write(
+            `  HINT: This often means Cloudflare Access returned HTML (login/forbidden) or you hit a non-Worker endpoint.\n`
+          );
+          if (result.bodySnippet) {
+            process.stdout.write(`  BODY: ${String(result.bodySnippet).replace(/\s+/g, ' ').slice(0, 160)}\n`);
+          }
+          if (sleepMs > 0) await sleep(sleepMs);
+          continue;
+        }
+
         const added = Array.isArray(result?.added) ? result.added : [];
         const location = added[0]?.file || '';
         if (location) {
