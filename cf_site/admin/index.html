@@ -30,6 +30,13 @@
     <section class="card loginCard" id="loginCard" aria-label="Login">
       <h1 class="card__title">Sign in</h1>
       <p class="muted">Use your admin email and password.</p>
+
+      <div class="card" id="accessOnlyPanel" hidden>
+        <div class="card__subtitle">Cloudflare Access sign-in</div>
+        <p class="muted">This deployment is protected by Cloudflare Access. Use the Access login, then refresh this page.</p>
+        <a class="btn btn--primary" id="accessLoginBtn" href="/admin/login.html">Continue to sign-in</a>
+      </div>
+
       <form id="loginForm" class="form">
         <label class="label">
           Email

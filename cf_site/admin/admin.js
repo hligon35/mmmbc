@@ -52,6 +52,13 @@ function confirmWrite(message) {
   return confirm(message || 'Save changes?');
 }
 
+function isWorkersDeployment() {
+  // Option B runs on Cloudflare Workers, usually on a *.workers.dev hostname.
+  // In that mode, authentication is handled by Cloudflare Access instead of the legacy password form.
+  const host = String(window.location.hostname || '').toLowerCase();
+  return host.endsWith('.workers.dev');
+}
+
 function uniqStringsLower(list) {
   const out = [];
   const seen = new Set();
@@ -309,7 +316,12 @@ function setTab(activeId) {
 }
 
 async function refreshAuthUI() {
-  const me = await api('/api/me', { method: 'GET' });
+  let me = { user: null };
+  try {
+    me = await api('/api/me', { method: 'GET' });
+  } catch {
+    me = { user: null };
+  }
   const loggedIn = !!me.user;
 
   const inviteToken = getInviteTokenFromHash();
@@ -320,6 +332,17 @@ async function refreshAuthUI() {
   $('dashboardCard').hidden = !loggedIn || inInviteFlow;
   $('logoutBtn').hidden = !loggedIn;
   $('accountBtn').hidden = !loggedIn;
+
+  // Option B (Workers): use a custom login page that triggers Cloudflare Access.
+  // The legacy password form is not used in Workers deployments.
+  if (!loggedIn && !inInviteFlow && isWorkersDeployment()) {
+    const here = String(window.location.pathname || '');
+    if (!here.endsWith('/admin/login.html')) {
+      window.location.replace('/admin/login.html');
+      return;
+    }
+  }
+
   $('authStatus').textContent = loggedIn ? `Signed in as ${me.user.email}` : 'Not signed in';
 
   if (loggedIn) {
@@ -353,6 +376,10 @@ async function refreshAuthUI() {
 }
 
 async function login(email, password, twoFactorCode) {
+  if (isWorkersDeployment()) {
+    // In Option B, Access is the auth layer (no password login endpoint).
+    throw new Error('This admin uses Cloudflare Access. Use Access login, then refresh.');
+  }
   const code = String(twoFactorCode || '').trim();
   await api('/api/auth/login', {
     method: 'POST',
@@ -1927,6 +1954,14 @@ document.addEventListener('DOMContentLoaded', () => {
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     $('loginError').hidden = true;
+
+    if (isWorkersDeployment()) {
+      // Prefer the explicit Access link if present.
+      const link = $('accessLoginBtn');
+      const href = String(link?.getAttribute('href') || '/cdn-cgi/access/login');
+      window.location.href = href;
+      return;
+    }
 
     const fd = new FormData(e.currentTarget);
     try {

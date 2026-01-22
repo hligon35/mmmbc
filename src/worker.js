@@ -50,6 +50,14 @@ function getAccessEmail(request) {
   ).trim().toLowerCase();
 }
 
+function hasAccessSessionCookie(request) {
+  const cookie = String(request.headers.get('cookie') || '');
+  return (
+    /(?:^|;\s*)CF_Authorization(?:_[^=]+)?=/.test(cookie)
+    || /(?:^|;\s*)CF_AppSession=/.test(cookie)
+  );
+}
+
 function allowList(env) {
   const raw = String(env.ADMIN_ALLOW_EMAILS || '').trim();
   if (!raw) return null;
@@ -246,6 +254,18 @@ async function handleCdn(request, env) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Admin entrypoint: send unauthenticated users to the custom login page.
+    // Note: keep this narrow so that /admin/login.html can load its CSS/JS.
+    if (
+      request.method === 'GET'
+      && (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname === '/admin/index.html')
+      && !isDevBypass(env)
+      && !getAccessEmail(request)
+      && !hasAccessSessionCookie(request)
+    ) {
+      return Response.redirect(`${url.origin}/admin/login.html`, 302);
+    }
 
     // CDN endpoint for gallery objects in R2
     if (url.pathname.startsWith('/cdn/gallery/')) {

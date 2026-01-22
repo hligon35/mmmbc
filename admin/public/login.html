@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMMBC Admin • Sign in</title>
+  <meta name="description" content="Secure admin sign-in for Mt. Moriah Missionary Baptist Church." />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <header class="header">
+    <div class="header__left">
+      <img class="header__logo" src="/Icons/favicon.png" alt="MMMBC" />
+    </div>
+    <div class="header__center" aria-label="Admin">
+      <div class="header__title">Admin</div>
+    </div>
+    <div class="header__right">
+      <span class="status" id="authStatus" aria-live="polite">Checking Access…</span>
+    </div>
+  </header>
+
+  <main id="app" class="app" role="main">
+    <section class="card loginCard" aria-label="Cloudflare Access sign-in">
+      <h1 class="card__title">Sign in</h1>
+      <p class="muted">This admin portal is secured by Cloudflare Access.</p>
+
+      <div class="card">
+        <div class="card__subtitle">Continue with Access</div>
+        <p class="muted">Use your approved account. After sign-in, you’ll be redirected back to the dashboard.</p>
+        <a class="btn btn--primary" id="accessLoginBtn" href="/cdn-cgi/access/login">Sign in with Cloudflare Access</a>
+        <div class="hint" id="loginHint" aria-live="polite"></div>
+      </div>
+
+      <div class="divider"></div>
+      <p class="muted" style="margin:0">If you were just added, make sure your email is allowed in Access.</p>
+    </section>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>
