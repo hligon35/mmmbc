@@ -74,8 +74,27 @@ function isDevBypass(env) {
   return ['1', 'true', 'yes', 'y', 'on'].includes(raw);
 }
 
+function allowServiceTokenAdmin(env) {
+  const raw = String(env.ALLOW_SERVICE_TOKEN_ADMIN || '').trim().toLowerCase();
+  return ['1', 'true', 'yes', 'y', 'on'].includes(raw);
+}
+
+function hasServiceTokenHeaders(request) {
+  // Cloudflare Access service tokens are presented via these headers.
+  // Note: we do not validate values here; Access should gate requests at the edge.
+  const id = request.headers.get('CF-Access-Client-Id') || request.headers.get('cf-access-client-id') || '';
+  const secret = request.headers.get('CF-Access-Client-Secret') || request.headers.get('cf-access-client-secret') || '';
+  return Boolean(String(id).trim()) && Boolean(String(secret).trim());
+}
+
 function requireAdmin(request, env) {
   if (isDevBypass(env)) return { ok: true, email: 'dev@local' };
+
+  // Allow Access Service Tokens (useful for automation/migrations) when enabled.
+  if (allowServiceTokenAdmin(env) && hasServiceTokenHeaders(request)) {
+    return { ok: true, email: 'service-token@access' };
+  }
+
   const email = getAccessEmail(request);
   if (!email) return { ok: false, error: 'Unauthorized (Cloudflare Access required)' };
   const allow = allowList(env);
