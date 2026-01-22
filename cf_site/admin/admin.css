@@ -561,6 +561,14 @@ body{
 .financePrintHeader__title{font-weight:1000;font-size:1.1rem;margin-bottom:4px;}
 .financePrintHeader__meta{font-weight:800;color:rgba(0,0,0,.75);}
 
+/* Print report body (used for events reports) */
+#adminPrintBody{margin-top:10px;}
+.printReportTitle{font-weight:1000;font-size:1.05rem;margin:10px 0 6px 0;}
+.printTable{width:100%;border-collapse:collapse;}
+.printTable th,.printTable td{border:1px solid #000;padding:8px 10px;text-align:left;vertical-align:top;}
+.printTable th{font-weight:1000;}
+.printMuted{color:rgba(0,0,0,.75);}
+
 @media print{
   :root{--bg:#fff;--panel:#fff;--text:#000;--muted:#000;--border:#000;}
   body{background:#fff;color:#000;}
@@ -573,6 +581,12 @@ body{
   .financeTable thead th{position:static;background:transparent;color:#000;border:1px solid #000;}
   .financeTable td{border:1px solid #000;}
   .financeTable tbody tr:nth-child(even){background:transparent;}
+
+  /* Events report printing: suppress the ledger table area */
+  body[data-print-mode="events"] #tab-finances .divider,
+  body[data-print-mode="events"] #tab-finances .tableWrap{
+    display:none !important;
+  }
 }
 
 @media (max-width:540px){
@@ -585,4 +599,36 @@ body{
   .adminLayout{grid-template-columns:1fr;}
   .sideNav{flex-direction:row;flex-wrap:nowrap;overflow:auto;padding-bottom:6px;}
   .tab--nav{min-width:180px;}
+}
+
+/* Photo Gallery: collapsible instructions to free tab space */
+.photosTabGrid{display:block;}
+.photosTabMain{min-width:0;}
+.photosHelp{margin:12px 0 0 0;}
+
+.photosHelp__summary{
+  cursor:pointer;
+  list-style:none;
+  font-weight:1000;
+  padding:10px 12px;
+  border-radius:12px;
+  border:2px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.03);
+}
+.photosHelp__summary:hover{border-color:rgba(255,255,255,.35);}
+.photosHelp__summary::-webkit-details-marker{display:none;}
+.photosHelp__body{margin-top:12px;}
+
+/* Fit time/date inputs to content in list rows (prevents oversized controls) */
+.row__actions input[type="date"].input,
+.row__actions input[type="time"].input,
+.row__actions input[type="datetime-local"].input{
+  width:auto;
+  min-width:0;
+}
+
+/* Fit bulletin schedule fields to their content */
+#bulletinForm input[type="datetime-local"].input{
+  width:max-content;
+  max-width:100%;
 }

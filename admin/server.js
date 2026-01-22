@@ -22,6 +22,42 @@ const { maybeEncrypt, maybeDecrypt } = require('./lib/crypto');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// Optional Postgres (for announcements + bulletins)
+const POSTGRES_URL = String(process.env.POSTGRES_URL || process.env.DATABASE_URL || '').trim();
+let pgPool = null;
+if (POSTGRES_URL) {
+  try {
+    // eslint-disable-next-line global-require
+    const { Pool } = require('pg');
+    const sslMode = String(process.env.PGSSLMODE || process.env.PGSSL || '').trim().toLowerCase();
+    const ssl = ['1', 'true', 'yes', 'y', 'on', 'require'].includes(sslMode)
+      ? { rejectUnauthorized: false }
+      : undefined;
+    pgPool = new Pool({ connectionString: POSTGRES_URL, ssl });
+    console.log('[MMMBC Admin] Postgres enabled for announcements/bulletins');
+  } catch (err) {
+    console.warn('[MMMBC Admin] Postgres URL set but pg is not installed/usable. Falling back to JSON files.');
+    pgPool = null;
+  }
+}
+
+function hasPostgres() {
+  return Boolean(pgPool);
+}
+
+async function pgQuery(text, params) {
+  if (!pgPool) throw new Error('Postgres is not configured');
+  return pgPool.query(text, params);
+}
+
+function toIsoOrEmpty(v) {
+  if (!v) return '';
+  const d = v instanceof Date ? v : new Date(v);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return '';
+  return d.toISOString();
+}
+
 const ROOT_DIR = path.resolve(__dirname, '..');
 const ADMIN_DIR = path.resolve(__dirname);
 const DATA_DIR = process.env.ADMIN_DATA_DIR
@@ -1108,11 +1144,11 @@ app.delete('/api/gallery/:id', requireAuth, (req, res) => {
 });
 
 // ----------------- ANNOUNCEMENTS -----------------
-function loadAnnouncements() {
+function loadAnnouncementsFile() {
   const data = readJson(ANNOUNCEMENTS_DATA_PATH, { posts: [] });
   return pruneAndPersistAnnouncements(data);
 }
-function saveAnnouncements(data) {
+function saveAnnouncementsFile(data) {
   writeJsonAtomic(ANNOUNCEMENTS_DATA_PATH, data);
 }
 
@@ -1151,42 +1187,135 @@ function pruneAndPersistAnnouncements(data) {
   const next = posts.filter((p) => p && (p.title || p.body) && !isAnnouncementExpired(p));
   if (next.length !== posts.length) {
     const cleaned = { posts: next };
-    saveAnnouncements(cleaned);
+    saveAnnouncementsFile(cleaned);
     if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), cleaned);
     return cleaned;
   }
   return { posts };
 }
 
-app.get('/api/announcements', requireAuth, (req, res) => {
-  res.json(loadAnnouncements());
-});
+async function pruneExpiredAnnouncementsPg() {
+  if (!hasPostgres()) return;
+  await pgQuery('DELETE FROM announcements WHERE expires_at IS NOT NULL AND expires_at <= NOW()');
+}
 
-app.post('/api/announcements', requireAuth, (req, res) => {
-  const title = String(req.body.title || '').trim().slice(0, 120);
-  const body = String(req.body.body || '').trim().slice(0, 5000);
-  if (!title || !body) return res.status(400).json({ error: 'Title and body required' });
+function mapAnnouncementRow(row) {
+  return {
+    id: String(row.id),
+    title: String(row.title || ''),
+    body: String(row.body || ''),
+    createdAt: toIsoOrEmpty(row.created_at) || new Date().toISOString(),
+    startsAt: toIsoOrEmpty(row.starts_at) || undefined,
+    expiresAt: toIsoOrEmpty(row.expires_at) || undefined,
+    source: row.source ? String(row.source) : undefined
+  };
+}
 
-  const data = loadAnnouncements();
+async function loadAnnouncementsPg() {
+  await pruneExpiredAnnouncementsPg();
+  const r = await pgQuery(
+    'SELECT id, title, body, created_at, starts_at, expires_at, source FROM announcements ORDER BY created_at DESC'
+  );
+  const posts = (r.rows || []).map(mapAnnouncementRow);
+  return { posts };
+}
+
+async function loadAnnouncementsUnified() {
+  if (hasPostgres()) return loadAnnouncementsPg();
+  return loadAnnouncementsFile();
+}
+
+async function createAnnouncementUnified({ title, body, startsAt, expiresAt, source } = {}) {
+  const post = {
+    id: newId(),
+    title,
+    body,
+    createdAt: new Date().toISOString(),
+    startsAt: startsAt || undefined,
+    expiresAt: expiresAt || undefined,
+    source: source || undefined
+  };
+
+  if (hasPostgres()) {
+    await pgQuery(
+      'INSERT INTO announcements (id, title, body, created_at, starts_at, expires_at, source) VALUES ($1,$2,$3,NOW(),$4,$5,$6)',
+      [
+        post.id,
+        post.title,
+        post.body,
+        post.startsAt || null,
+        post.expiresAt || null,
+        post.source || null
+      ]
+    );
+    return post;
+  }
+
+  const data = loadAnnouncementsFile();
   const posts = Array.isArray(data.posts) ? data.posts : [];
-  const expiresAt = parseExpiresAtFromBody(req.body);
-  const post = { id: newId(), title, body, createdAt: new Date().toISOString(), expiresAt };
   posts.unshift(post);
-  const saved = pruneAndPersistAnnouncements({ posts });
+  pruneAndPersistAnnouncements({ posts });
+  return post;
+}
 
-  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), saved);
+async function deleteAnnouncementUnified(id) {
+  if (hasPostgres()) {
+    await pgQuery('DELETE FROM announcements WHERE id = $1', [String(id)]);
+    return;
+  }
+  const data = loadAnnouncementsFile();
+  const posts = Array.isArray(data.posts) ? data.posts : [];
+  const next = posts.filter((p) => p.id !== String(id));
+  saveAnnouncementsFile({ posts: next });
+}
 
-  res.json({ ok: true, post });
+async function exportAnnouncementsUnifiedToRoot() {
+  if (!ENABLE_EXPORTS) return;
+  const data = await loadAnnouncementsUnified();
+  writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), data);
+}
+
+app.get('/api/announcements', requireAuth, async (req, res) => {
+  try {
+    res.json(await loadAnnouncementsUnified());
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to load announcements' });
+  }
 });
 
-app.delete('/api/announcements/:id', requireAuth, (req, res) => {
-  const id = String(req.params.id);
-  const data = loadAnnouncements();
-  const posts = Array.isArray(data.posts) ? data.posts : [];
-  const next = posts.filter((p) => p.id !== id);
-  saveAnnouncements({ posts: next });
-  if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), { posts: next });
-  res.json({ ok: true });
+app.post('/api/announcements', requireAuth, async (req, res) => {
+  try {
+    const title = String(req.body.title || '').trim().slice(0, 120);
+    const body = String(req.body.body || '').trim().slice(0, 5000);
+    if (!title || !body) return res.status(400).json({ error: 'Title and body required' });
+
+    const startsAt = typeof req.body.startsAt === 'string' ? parseIsoMaybe(req.body.startsAt) : '';
+    const expiresAt = parseExpiresAtFromBody(req.body);
+
+    const post = await createAnnouncementUnified({
+      title,
+      body,
+      startsAt: startsAt || undefined,
+      expiresAt: expiresAt || undefined,
+      source: 'admin'
+    });
+
+    await exportAnnouncementsUnifiedToRoot();
+    res.json({ ok: true, post });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to create announcement' });
+  }
+});
+
+app.delete('/api/announcements/:id', requireAuth, async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    await deleteAnnouncementUnified(id);
+    await exportAnnouncementsUnifiedToRoot();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to delete announcement' });
+  }
 });
 
 // ----------------- EVENTS (exports to schedule.json) -----------------
@@ -1455,11 +1584,91 @@ function saveDocuments(data) {
 }
 
 // ----------------- BULLETINS -----------------
-function loadBulletins() {
+function loadBulletinsFile() {
   return readJson(BULLETINS_DATA_PATH, { bulletins: [] });
 }
-function saveBulletins(data) {
+function saveBulletinsFile(data) {
   writeJsonAtomic(BULLETINS_DATA_PATH, data);
+}
+
+function mapBulletinRow(row) {
+  return {
+    id: String(row.id),
+    title: String(row.title || 'Bulletin'),
+    originalName: row.original_name ? String(row.original_name) : '',
+    fileName: String(row.file_name || ''),
+    mimeType: row.mime_type ? String(row.mime_type) : '',
+    url: String(row.url || ''),
+    startsAt: toIsoOrEmpty(row.starts_at) || '',
+    endsAt: toIsoOrEmpty(row.ends_at) || '',
+    linkedAnnouncementId: row.linked_announcement_id ? String(row.linked_announcement_id) : '',
+    createdAt: toIsoOrEmpty(row.created_at) || new Date().toISOString()
+  };
+}
+
+async function loadBulletinsPg() {
+  const r = await pgQuery(
+    'SELECT id, title, original_name, file_name, mime_type, url, starts_at, ends_at, linked_announcement_id, created_at FROM bulletins ORDER BY created_at DESC'
+  );
+  const bulletins = (r.rows || []).map(mapBulletinRow);
+  return { bulletins };
+}
+
+async function loadBulletinsUnified() {
+  if (hasPostgres()) return loadBulletinsPg();
+  return loadBulletinsFile();
+}
+
+async function createBulletinUnified(bulletin) {
+  if (hasPostgres()) {
+    await pgQuery(
+      'INSERT INTO bulletins (id, title, original_name, file_name, mime_type, url, starts_at, ends_at, linked_announcement_id, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())',
+      [
+        bulletin.id,
+        bulletin.title,
+        bulletin.originalName || null,
+        bulletin.fileName,
+        bulletin.mimeType || null,
+        bulletin.url,
+        bulletin.startsAt,
+        bulletin.endsAt,
+        bulletin.linkedAnnouncementId || null
+      ]
+    );
+    return;
+  }
+
+  const data = loadBulletinsFile();
+  const bulletins = Array.isArray(data.bulletins) ? data.bulletins : [];
+  bulletins.unshift(bulletin);
+  saveBulletinsFile({ bulletins });
+}
+
+async function getBulletinByIdUnified(id) {
+  const key = String(id);
+  if (hasPostgres()) {
+    const r = await pgQuery(
+      'SELECT id, title, original_name, file_name, mime_type, url, starts_at, ends_at, linked_announcement_id, created_at FROM bulletins WHERE id = $1',
+      [key]
+    );
+    const row = r.rows?.[0];
+    return row ? mapBulletinRow(row) : null;
+  }
+  const data = loadBulletinsFile();
+  const bulletins = Array.isArray(data.bulletins) ? data.bulletins : [];
+  return bulletins.find((b) => String(b.id) === key) || null;
+}
+
+async function deleteBulletinByIdUnified(id) {
+  const key = String(id);
+  if (hasPostgres()) {
+    await pgQuery('DELETE FROM bulletins WHERE id = $1', [key]);
+    return;
+  }
+  const data = loadBulletinsFile();
+  const bulletins = Array.isArray(data.bulletins) ? data.bulletins : [];
+  const next = bulletins.filter((b) => String(b.id) !== key);
+  saveBulletinsFile({ bulletins: next });
 }
 
 function parseIsoMaybe(value) {
@@ -1478,6 +1687,12 @@ function exportBulletins(bulletins) {
   if (!ENABLE_EXPORTS) return;
   ensureRootBulletinsDir();
   writeJsonAtomic(path.join(ROOT_DIR, 'bulletins.json'), { bulletins });
+}
+
+async function exportBulletinsUnifiedToRoot() {
+  if (!ENABLE_EXPORTS) return;
+  const data = await loadBulletinsUnified();
+  exportBulletins(Array.isArray(data?.bulletins) ? data.bulletins : []);
 }
 
 function copyBulletinToRoot(fileName) {
@@ -1514,8 +1729,12 @@ const bulletinsUpload = multer({
   limits: { fileSize: 25 * 1024 * 1024 }
 });
 
-app.get('/api/bulletins', requireAuth, (req, res) => {
-  res.json(loadBulletins());
+app.get('/api/bulletins', requireAuth, async (req, res) => {
+  try {
+    res.json(await loadBulletinsUnified());
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to load bulletins' });
+  }
 });
 
 app.post('/api/bulletins/upload', requireAuth, bulletinsUpload.single('file'), (req, res) => {
@@ -1529,91 +1748,90 @@ app.post('/api/bulletins/upload', requireAuth, bulletinsUpload.single('file'), (
 
   const createAnnouncement = String(req.body.createAnnouncement || 'false').toLowerCase() === 'true';
 
-  const data = loadBulletins();
-  const bulletins = Array.isArray(data.bulletins) ? data.bulletins : [];
-
   let linkedAnnouncementId = '';
-  if (createAnnouncement) {
-    const aTitle = String(req.body.announcementTitle || '').trim().slice(0, 120) || `Bulletin: ${title}`;
-    const aBody = String(req.body.announcementBody || '').trim().slice(0, 5000) || 'A new bulletin has been posted. Click the bulletin frame on the homepage to view it.';
-
-    const announcementsData = loadAnnouncements();
-    const posts = Array.isArray(announcementsData.posts) ? announcementsData.posts : [];
-
-    const post = {
-      id: newId(),
-      title: aTitle,
-      body: aBody,
-      createdAt: new Date().toISOString(),
-      startsAt,
-      expiresAt: endsAt,
-      source: 'bulletin'
-    };
-
-    posts.unshift(post);
-    const saved = pruneAndPersistAnnouncements({ posts }, true);
-    linkedAnnouncementId = post.id;
-    if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), saved);
-  }
-
-  // Copy file into the public /bulletins/ folder (for static hosting) and point exported URLs there.
-  if (ENABLE_EXPORTS) copyBulletinToRoot(req.file.filename);
-
-  const url = ENABLE_EXPORTS ? `/bulletins/${req.file.filename}` : `/admin-uploads/bulletins/${req.file.filename}`;
-  const bulletin = {
-    id: newId(),
-    title,
-    originalName: req.file.originalname,
-    fileName: req.file.filename,
-    mimeType: req.file.mimetype,
-    url,
-    startsAt,
-    endsAt,
-    linkedAnnouncementId,
-    createdAt: new Date().toISOString()
+  const finalize = async (bulletin) => {
+    await createBulletinUnified(bulletin);
+    await exportBulletinsUnifiedToRoot();
+    await exportAnnouncementsUnifiedToRoot();
+    res.json({ ok: true, bulletin });
   };
 
-  bulletins.unshift(bulletin);
-  saveBulletins({ bulletins });
-  exportBulletins(bulletins);
+  const handle = async () => {
+    if (createAnnouncement) {
+      const aTitle = String(req.body.announcementTitle || '').trim().slice(0, 120) || `Bulletin: ${title}`;
+      const aBody = String(req.body.announcementBody || '').trim().slice(0, 5000)
+        || 'A new bulletin has been posted. Click the bulletin frame on the homepage to view it.';
 
-  res.json({ ok: true, bulletin });
+      const post = await createAnnouncementUnified({
+        title: aTitle,
+        body: aBody,
+        startsAt: startsAt || undefined,
+        expiresAt: endsAt || undefined,
+        source: 'bulletin'
+      });
+      linkedAnnouncementId = post.id;
+    }
+
+    // Copy file into the public /bulletins/ folder (for static hosting) and point exported URLs there.
+    if (ENABLE_EXPORTS) copyBulletinToRoot(req.file.filename);
+
+    const url = ENABLE_EXPORTS ? `/bulletins/${req.file.filename}` : `/admin-uploads/bulletins/${req.file.filename}`;
+    const bulletin = {
+      id: newId(),
+      title,
+      originalName: req.file.originalname,
+      fileName: req.file.filename,
+      mimeType: req.file.mimetype,
+      url,
+      startsAt,
+      endsAt,
+      linkedAnnouncementId,
+      createdAt: new Date().toISOString()
+    };
+
+    await finalize(bulletin);
+  };
+
+  handle().catch((err) => {
+    res.status(500).json({ error: err.message || 'Failed to upload bulletin' });
+  });
+
+  return;
+
 });
 
-app.delete('/api/bulletins/:id', requireAuth, (req, res) => {
-  const id = String(req.params.id);
-  const data = loadBulletins();
-  const bulletins = Array.isArray(data.bulletins) ? data.bulletins : [];
-  const bulletin = bulletins.find((b) => b.id === id);
-  const next = bulletins.filter((b) => b.id !== id);
-  saveBulletins({ bulletins: next });
-  exportBulletins(next);
-
-  // Remove uploaded file(s)
+app.delete('/api/bulletins/:id', requireAuth, async (req, res) => {
   try {
-    if (bulletin?.fileName) {
-      const abs = path.join(BULLETINS_UPLOADS_DIR, bulletin.fileName);
-      if (fs.existsSync(abs)) fs.unlinkSync(abs);
-      if (ENABLE_EXPORTS) deleteBulletinFromRoot(bulletin.fileName);
-    }
-  } catch {
-    // ignore
-  }
+    const id = String(req.params.id);
+    const bulletin = await getBulletinByIdUnified(id);
+    await deleteBulletinByIdUnified(id);
+    await exportBulletinsUnifiedToRoot();
 
-  // If this bulletin created a coordinated announcement, remove it too.
-  try {
-    if (bulletin?.linkedAnnouncementId) {
-      const aData = loadAnnouncements();
-      const posts = Array.isArray(aData.posts) ? aData.posts : [];
-      const filtered = posts.filter((p) => p.id !== bulletin.linkedAnnouncementId);
-      const saved = pruneAndPersistAnnouncements({ posts: filtered }, true);
-      if (ENABLE_EXPORTS) writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), saved);
+    // Remove uploaded file(s)
+    try {
+      if (bulletin?.fileName) {
+        const abs = path.join(BULLETINS_UPLOADS_DIR, bulletin.fileName);
+        if (fs.existsSync(abs)) fs.unlinkSync(abs);
+        if (ENABLE_EXPORTS) deleteBulletinFromRoot(bulletin.fileName);
+      }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
-  }
 
-  res.json({ ok: true });
+    // If this bulletin created a coordinated announcement, remove it too.
+    try {
+      if (bulletin?.linkedAnnouncementId) {
+        await deleteAnnouncementUnified(bulletin.linkedAnnouncementId);
+        await exportAnnouncementsUnifiedToRoot();
+      }
+    } catch {
+      // ignore
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to delete bulletin' });
+  }
 });
 
 const docsUpload = multer({
@@ -1806,39 +2024,43 @@ app.put('/api/settings', requireAuth, (req, res) => {
 });
 
 // ----------------- EXPORT ALL -----------------
-app.post('/api/export', requireAuth, (req, res) => {
-  if (!ENABLE_EXPORTS) return res.status(400).json({ error: 'Exports disabled' });
+app.post('/api/export', requireAuth, async (req, res) => {
+  try {
+    if (!ENABLE_EXPORTS) return res.status(400).json({ error: 'Exports disabled' });
 
-  const gallery = loadGallery();
-  writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), gallery);
+    const gallery = loadGallery();
+    writeJsonAtomic(path.join(ROOT_DIR, 'gallery.json'), gallery);
 
-  const announcements = loadAnnouncements();
-  writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), announcements);
+    const announcements = await loadAnnouncementsUnified();
+    writeJsonAtomic(path.join(ROOT_DIR, 'announcements.json'), announcements);
 
-  const documents = loadDocuments();
-  writeJsonAtomic(path.join(ROOT_DIR, 'documents.json'), documents);
+    const documents = loadDocuments();
+    writeJsonAtomic(path.join(ROOT_DIR, 'documents.json'), documents);
 
-  const bulletins = loadBulletins();
-  writeJsonAtomic(path.join(ROOT_DIR, 'bulletins.json'), bulletins);
-  // Ensure bulletin files are present in /bulletins
-  ensureRootBulletinsDir();
-  for (const b of (bulletins.bulletins || [])) {
-    if (b?.fileName) {
-      try { copyBulletinToRoot(b.fileName); } catch { /* ignore */ }
+    const bulletins = await loadBulletinsUnified();
+    writeJsonAtomic(path.join(ROOT_DIR, 'bulletins.json'), bulletins);
+    // Ensure bulletin files are present in /bulletins
+    ensureRootBulletinsDir();
+    for (const b of (bulletins.bulletins || [])) {
+      if (b?.fileName) {
+        try { copyBulletinToRoot(b.fileName); } catch { /* ignore */ }
+      }
     }
+
+    const settings = loadSettings();
+    writeJsonAtomic(path.join(ROOT_DIR, 'site-settings.json'), settings.social);
+    fs.writeFileSync(path.join(ROOT_DIR, 'theme.css'), buildThemeCss(settings.theme), 'utf8');
+
+    const events = loadEvents();
+    exportScheduleJson(events.events || []);
+
+    const livestream = loadLivestream();
+    writeJsonAtomic(path.join(ROOT_DIR, 'livestream.json'), livestream);
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Export failed' });
   }
-
-  const settings = loadSettings();
-  writeJsonAtomic(path.join(ROOT_DIR, 'site-settings.json'), settings.social);
-  fs.writeFileSync(path.join(ROOT_DIR, 'theme.css'), buildThemeCss(settings.theme), 'utf8');
-
-  const events = loadEvents();
-  exportScheduleJson(events.events || []);
-
-  const livestream = loadLivestream();
-  writeJsonAtomic(path.join(ROOT_DIR, 'livestream.json'), livestream);
-
-  res.json({ ok: true });
 });
 
 // ----------------- ERROR HANDLING -----------------

@@ -211,11 +211,39 @@
 
       <!-- Photo Gallery -->
       <section class="tabPanel" role="tabpanel" id="tab-photos" aria-labelledby="tabBtn-photos">
+        <div class="photosTabGrid">
+        <div class="photosTabMain">
         <div class="sectionHeader">
           <h2 class="sectionHeader__title">Photo Gallery</h2>
           <button class="btn" id="exportBtn" type="button">Export to Website</button>
         </div>
         <p class="muted">Upload photos and organize them by album. Tags help sorting and searching.</p>
+
+        <details class="card photosHelp photosHelp--collapsible" aria-label="Photo upload instructions">
+          <summary class="photosHelp__summary">Photo upload instructions</summary>
+
+          <div class="photosHelp__body">
+            <p class="muted">Use these steps when adding new albums and photos.</p>
+
+            <h3 class="photosHelp__heading">Step-by-step</h3>
+            <ol class="photosHelp__list">
+              <li>Enter an <strong>Album</strong> name (example: <code>Youth Ministry</code>, <code>Choir</code>, <code>2026 Revival</code>).</li>
+              <li>Add an optional <strong>Label</strong> (caption shown under the photo).</li>
+              <li>Add optional <strong>Tags</strong> (comma-separated), like <code>youth, choir, 2026</code>.</li>
+              <li>Select photos and click <strong>Upload</strong>.</li>
+              <li>(Optional) Use <strong>Arrange Album</strong> to manually order photos.</li>
+              <li>Click <strong>Export to Website</strong> so photos appear on the public gallery page.</li>
+            </ol>
+
+            <h3 class="photosHelp__heading">Tips</h3>
+            <ul class="photosHelp__list">
+              <li>Keep album names consistent to avoid duplicates (use <code>Youth Ministry</code> instead of both <code>Youth</code> and <code>Youth Ministry</code>).</li>
+              <li>Use tags for groups (<code>ushers</code>), events (<code>revival</code>), and years (<code>2026</code>).</li>
+            </ul>
+
+            <div class="photosHelp__tip">Tip: If you uploaded photos but don’t see them on the website yet, you probably need to export.</div>
+          </div>
+        </details>
 
         <form id="photoUploadForm" class="form form--row" enctype="multipart/form-data">
           <label class="label">
@@ -266,6 +294,9 @@
         </div>
 
         <div class="grid" id="photoGrid" aria-live="polite"></div>
+
+        </div>
+        </div>
       </section>
 
       <!-- Live Stream -->
@@ -437,12 +468,41 @@
               <h2 class="sectionHeader__title">Finances</h2>
 
               <div class="iconGroup noPrint" aria-label="Finance actions">
-                <button class="iconBtn" id="financePrintBtn" type="button" aria-label="Print" title="Print">
-                  <svg class="iconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M6 7V3h12v4H6zm12 2h1a3 3 0 0 1 3 3v5h-4v4H6v-4H2v-5a3 3 0 0 1 3-3h1V9h12v0zm-2 12v-6H8v6h8zm2-10a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
-                  </svg>
-                  <span class="srOnly">Print</span>
-                </button>
+                <details class="menu" id="financePrintMenu">
+                  <summary class="iconBtn" aria-label="Print" title="Print">
+                    <svg class="iconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path fill="currentColor" d="M6 7V3h12v4H6zm12 2h1a3 3 0 0 1 3 3v5h-4v4H6v-4H2v-5a3 3 0 0 1 3-3h1V9h12v0zm-2 12v-6H8v6h8zm2-10a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+                    </svg>
+                    <span class="srOnly">Print</span>
+                  </summary>
+                  <div class="menu__panel" role="menu" aria-label="Print reports">
+                    <div class="menu__title">Print reports</div>
+
+                    <button class="menu__item" id="printFinanceLedgerBtn" type="button" role="menuitem">Finance ledger (current filters)</button>
+
+                    <div class="menu__divider" role="separator" aria-hidden="true"></div>
+
+                    <div class="menu__title">Events</div>
+                    <button class="menu__item" id="printEventsAllBtn" type="button" role="menuitem">All events</button>
+
+                    <div class="menu__custom">
+                      <div class="formRow">
+                        <label class="label">
+                          Group (same title)
+                          <select class="select" id="printEventsGroupTitle"></select>
+                        </label>
+                        <button class="btn btn--primary" id="printEventsGroupBtn" type="button">Print group</button>
+                      </div>
+                      <div class="formRow">
+                        <label class="label">
+                          Single event
+                          <select class="select" id="printEventId"></select>
+                        </label>
+                        <button class="btn btn--primary" id="printEventBtn" type="button">Print event</button>
+                      </div>
+                    </div>
+                  </div>
+                </details>
                 <button class="iconBtn" id="financeExportCsvBtn" type="button" aria-label="Export CSV" title="Export CSV">
                   <svg class="iconBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path fill="currentColor" d="M5 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7l2 2h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5zm7-11v6.17l1.59-1.58L15 15l-3 3-3-3 1.41-1.41L12 15.17V9h0z"/>
@@ -534,14 +594,16 @@
           </div>
         </div>
 
-        <p class="muted">Add income and expenses, filter the ledger, export to CSV, and print cleanly.</p>
+        <p class="muted noPrint">Add income and expenses, filter the ledger, export to CSV, and print cleanly.</p>
 
         <div class="financePrintHeader printOnly" aria-label="Print header">
-          <div class="financePrintHeader__title">Mt. Moriah Missionary Baptist Church — Finance Ledger</div>
+          <div class="financePrintHeader__title" id="financePrintTitle">Mt. Moriah Missionary Baptist Church — Finance</div>
           <div class="financePrintHeader__meta" id="financePrintMeta"></div>
         </div>
 
-        <form id="financeEntryForm" class="form" aria-label="Add or edit ledger entry">
+        <div class="printOnly" id="adminPrintBody" aria-label="Print report body"></div>
+
+        <form id="financeEntryForm" class="form noPrint" aria-label="Add or edit ledger entry">
           <input id="financeEditId" type="hidden" />
 
           <div class="formRow">
@@ -655,26 +717,12 @@
         <div class="sectionHeader">
           <h2 class="sectionHeader__title">Settings</h2>
           <div class="tabs subTabs" role="tablist" aria-label="Settings sections">
-            <button class="tab tab--sub" role="tab" aria-selected="true" aria-controls="panel-settings-users" id="subTabBtn-settings-users" type="button">User accounts</button>
-            <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-settings-social" id="subTabBtn-settings-social" type="button">Social links</button>
+            <button class="tab tab--sub" role="tab" aria-selected="true" aria-controls="panel-settings-social" id="subTabBtn-settings-social" type="button">Social links</button>
             <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-settings-theme" id="subTabBtn-settings-theme" type="button">Theme</button>
           </div>
         </div>
 
-        <div class="subTabPanel" role="tabpanel" id="panel-settings-users" aria-labelledby="subTabBtn-settings-users">
-          <h3 class="srOnly">User accounts</h3>
-          <form id="userForm" class="form form--row">
-            <label class="label">
-              New admin email
-              <input class="input" name="email" type="email" required />
-            </label>
-            <button class="btn btn--primary" type="submit">Create Invite Link</button>
-            <div class="hint" id="userHint" aria-live="polite"></div>
-          </form>
-          <div class="list list--scroll5" id="userList"></div>
-        </div>
-
-        <div class="subTabPanel" role="tabpanel" id="panel-settings-social" aria-labelledby="subTabBtn-settings-social" hidden>
+        <div class="subTabPanel" role="tabpanel" id="panel-settings-social" aria-labelledby="subTabBtn-settings-social">
           <h3 class="srOnly">Social links</h3>
           <form id="socialForm" class="form form--row">
             <label class="label">Facebook URL <input class="input" name="facebook" type="url" /></label>

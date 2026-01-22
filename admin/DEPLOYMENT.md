@@ -42,6 +42,16 @@ Notes:
 - The admin server now exposes a cache-friendly path: `/cdn/ConImg/gallery/...` with `Cache-Control: public, max-age=31536000, immutable`.
 - Cloudflare is optional: you can put Cloudflare in front later and set `GALLERY_URL_PREFIX` to your CDN hostname.
 
+Optional (Postgres for announcements + bulletins):
+
+- `DATABASE_URL` (or `POSTGRES_URL`) = Postgres connection string
+- `PGSSL=true` (optional) if your provider requires TLS
+
+Notes:
+
+- Apply the schema in [admin/db/postgres_schema.sql](admin/db/postgres_schema.sql) to your database.
+- If `DATABASE_URL`/`POSTGRES_URL` is not set, the server continues using JSON files under `ADMIN_DATA_DIR`.
+
 ### 4) Persist data + uploads (important)
 
 Render’s filesystem is ephemeral unless you add a **Disk**. If you don’t add one, you’ll lose:

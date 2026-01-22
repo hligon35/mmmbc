@@ -10,70 +10,8 @@
     <link rel="stylesheet" href="../schedule_app.css">
     <title>Photo Gallery - Mt. Moriah Missionary Baptist Church</title>
     <style>
-        .photo-gallery-shell {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 340px;
-            gap: 24px;
-            align-items: start;
-            padding: 0 20px;
-        }
         .photo-gallery-section {
             padding: 20px;
-        }
-        .gallery-help {
-            position: sticky;
-            top: 120px; /* below fixed nav */
-            height: fit-content;
-            background: rgba(0, 0, 0, 0.55);
-            border: 2px solid rgba(255, 255, 255, 0.18);
-            border-radius: 12px;
-            padding: 16px 16px;
-            color: #ffffff;
-        }
-        .gallery-help h2 {
-            margin: 4px 0 10px;
-            font-size: 1.15em;
-        }
-        .gallery-help h3 {
-            margin: 14px 0 8px;
-            font-size: 1.02em;
-            color: #ffffff;
-        }
-        .gallery-help p {
-            margin: 0 0 10px;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.45;
-        }
-        .gallery-help ol,
-        .gallery-help ul {
-            margin: 0 0 10px 18px;
-            padding: 0;
-            color: rgba(255, 255, 255, 0.92);
-            line-height: 1.45;
-        }
-        .gallery-help code {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            padding: 2px 6px;
-            border-radius: 8px;
-        }
-        .gallery-help .tip {
-            margin-top: 12px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            background: rgba(196, 97, 35, 0.18);
-            border: 1px solid rgba(196, 97, 35, 0.45);
-        }
-
-        @media (max-width: 1100px) {
-            .photo-gallery-shell {
-                grid-template-columns: 1fr;
-                padding: 0 12px;
-            }
-            .gallery-help {
-                position: static;
-                top: auto;
-            }
         }
         .photo-grid {
             display: grid;
@@ -291,7 +229,6 @@
     </nav>
 
     <main>
-        <div class="photo-gallery-shell">
         <section class="photo-gallery-section">
             <h1>Photo Gallery</h1>
             <div class="gallery-controls" aria-label="Gallery controls">
@@ -325,39 +262,6 @@
                 <button id="nextPage">Next</button>
             </div>
         </section>
-        <aside class="gallery-help" aria-label="Photo upload instructions">
-            <h2>Upload & Categorize Photos</h2>
-            <p>These steps are for church admins adding new albums and photos.</p>
-
-            <h3>Step-by-step</h3>
-            <ol>
-                <li>Open the Admin dashboard and sign in.</li>
-                <li>Go to <strong>Photo Gallery</strong>.</li>
-                <li>Choose an <strong>Album</strong> name (example: <code>Youth Ministry</code>, <code>Choir</code>, <code>2026 Revival</code>).</li>
-                <li>Add an optional <strong>Label</strong> (short caption shown under the photo).</li>
-                <li>Add optional <strong>Tags</strong> (comma-separated), like <code>youth, choir, 2026</code>.</li>
-                <li>Select photos and upload.</li>
-                <li>(Optional) Arrange the album order using the admin “Arrange Album” tools.</li>
-                <li>Click <strong>Export to Website</strong> so photos appear here.</li>
-            </ol>
-
-            <h3>How albums work</h3>
-            <ul>
-                <li>Album names become the Album dropdown at the top of this page.</li>
-                <li>Keep names consistent to avoid duplicates (example: use <code>Youth Ministry</code>—not <code>Youth</code> and <code>Youth Ministry</code>).</li>
-            </ul>
-
-            <h3>How tags work</h3>
-            <ul>
-                <li>Tags power the “Search tags” box on this page.</li>
-                <li>Use simple keywords: groups (<code>ushers</code>), events (<code>revival</code>), years (<code>2026</code>).</li>
-            </ul>
-
-            <div class="tip">
-                Tip: If you uploaded photos but don’t see them here yet, the Admin dashboard probably hasn’t exported the latest gallery.
-            </div>
-        </aside>
-        </div>
     </main>
 
     <!-- Lightbox Structure -->

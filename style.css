@@ -195,13 +195,15 @@ body {
         position: static;
         width: 100%;
         height: 56px;
-        padding: 0 12px 6px 12px;
+        padding: 0 12px;
         background-color: transparent;
         border-top: none;
         border-radius: 0;
         box-sizing: border-box;
         min-width: 0; /* allow the grid item to shrink instead of forcing overflow */
         overflow-x: hidden;
+        max-height: none;
+        overflow-y: visible;
     }
 
     .nav-links a {

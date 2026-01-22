@@ -431,7 +431,7 @@ function applyHashNavigation() {
   if (h === 'finances' || h === 'finance') setTab('tab-finances');
   if (h === 'settings') {
     setTab('tab-settings');
-    setSettingsSubTab('panel-settings-users');
+    setSettingsSubTab('panel-settings-social');
   }
   if (h === 'account') setTab('tab-account');
 
@@ -743,7 +743,7 @@ function renderFinances() {
   const meta = $('financePrintMeta');
   if (meta) {
     const range = filters.from || filters.to ? `${filters.from || '…'} to ${filters.to || '…'}` : 'All dates';
-    meta.textContent = `${range} • ${rows.length} entries • Income ${formatMoneyCents(income)} • Expense ${formatMoneyCents(expense)} • Net ${formatMoneyCents(net)}`;
+    meta.textContent = `Printed: ${formatLocalTimestamp()} • Report: Finance ledger • ${range} • ${rows.length} entries • Income ${formatMoneyCents(income)} • Expense ${formatMoneyCents(expense)} • Net ${formatMoneyCents(net)}`;
   }
 
   const tbody = $('financeTableBody');
@@ -951,8 +951,8 @@ function setContentSubTab(panelId) {
 
 function setSettingsSubTab(panelId) {
   setSubTab(
-    ['subTabBtn-settings-users', 'subTabBtn-settings-social', 'subTabBtn-settings-theme'],
-    ['panel-settings-users', 'panel-settings-social', 'panel-settings-theme'],
+    ['subTabBtn-settings-social', 'subTabBtn-settings-theme'],
+    ['panel-settings-social', 'panel-settings-theme'],
     panelId
   );
 }
@@ -1229,6 +1229,161 @@ async function loadAnnouncements() {
 let events = [];
 let editingEventId = null;
 
+function formatLocalTimestamp(d = new Date()) {
+  try {
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch {
+    return d.toISOString();
+  }
+}
+
+function formatEventTime12h(timeStr) {
+  const t = String(timeStr || '').trim();
+  if (!t) return '';
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(t);
+  if (!m) return t;
+  let hh = Number(m[1]);
+  const mm = m[2];
+  const ap = hh >= 12 ? 'PM' : 'AM';
+  hh = hh % 12;
+  if (hh === 0) hh = 12;
+  return `${hh}:${mm} ${ap}`;
+}
+
+function normalizeTitle(t) {
+  return String(t || '').trim();
+}
+
+function setPrintMode(mode) {
+  document.body.dataset.printMode = String(mode || 'finance');
+  const body = $('adminPrintBody');
+  if (body) body.innerHTML = '';
+}
+
+function closeDetailsMenu(id) {
+  const el = $(id);
+  if (el && el.tagName === 'DETAILS') el.open = false;
+}
+
+function setFinancePrintHeader(reportLabel, extraMetaParts = []) {
+  const title = $('financePrintTitle');
+  if (title) title.textContent = 'Mt. Moriah Missionary Baptist Church — Finance';
+
+  const meta = $('financePrintMeta');
+  if (!meta) return;
+
+  const parts = [`Printed: ${formatLocalTimestamp()}`];
+  if (reportLabel) parts.push(`Report: ${reportLabel}`);
+  for (const p of extraMetaParts) {
+    if (p) parts.push(String(p));
+  }
+  meta.textContent = parts.join(' • ');
+}
+
+function refreshEventsPrintOptions() {
+  const groupSel = $('printEventsGroupTitle');
+  const eventSel = $('printEventId');
+  if (!groupSel || !eventSel) return;
+
+  const sorted = [...events].sort((a, b) => {
+    const ad = String(a?.date || '');
+    const bd = String(b?.date || '');
+    if (ad !== bd) return ad.localeCompare(bd);
+    const at = String(a?.time || '');
+    const bt = String(b?.time || '');
+    if (at !== bt) return at.localeCompare(bt);
+    return String(a?.title || '').localeCompare(String(b?.title || ''));
+  });
+
+  const titles = Array.from(new Set(sorted.map((e) => normalizeTitle(e?.title)).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+
+  groupSel.innerHTML = '';
+  const opt0 = document.createElement('option');
+  opt0.value = '';
+  opt0.textContent = 'Choose a title…';
+  groupSel.appendChild(opt0);
+  for (const t of titles) {
+    const o = document.createElement('option');
+    o.value = t;
+    o.textContent = t;
+    groupSel.appendChild(o);
+  }
+
+  eventSel.innerHTML = '';
+  const optE0 = document.createElement('option');
+  optE0.value = '';
+  optE0.textContent = 'Choose an event…';
+  eventSel.appendChild(optE0);
+  for (const ev of sorted) {
+    const o = document.createElement('option');
+    o.value = String(ev?.id || '');
+    const d = String(ev?.date || '').trim();
+    const t = formatEventTime12h(ev?.time);
+    const titleText = normalizeTitle(ev?.title) || 'Event';
+    o.textContent = `${d}${d ? ' • ' : ''}${t}${t ? ' • ' : ''}${titleText}`.trim();
+    eventSel.appendChild(o);
+  }
+}
+
+function renderEventsPrintReport(rows, reportTitle) {
+  const root = $('adminPrintBody');
+  if (!root) return;
+
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const sorted = [...safeRows].sort((a, b) => {
+    const ad = String(a?.date || '');
+    const bd = String(b?.date || '');
+    if (ad !== bd) return ad.localeCompare(bd);
+    const at = String(a?.time || '');
+    const bt = String(b?.time || '');
+    if (at !== bt) return at.localeCompare(bt);
+    return String(a?.title || '').localeCompare(String(b?.title || ''));
+  });
+
+  const h = document.createElement('div');
+  h.className = 'printReportTitle';
+  h.textContent = reportTitle || 'Events Report';
+  root.appendChild(h);
+
+  if (!sorted.length) {
+    const empty = document.createElement('div');
+    empty.className = 'printMuted';
+    empty.textContent = 'No events match your selection.';
+    root.appendChild(empty);
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'printTable';
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th style="width:120px">Date</th><th style="width:110px">Time</th><th>Title</th></tr>';
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  for (const ev of sorted) {
+    const tr = document.createElement('tr');
+    const tdDate = document.createElement('td');
+    tdDate.textContent = String(ev?.date || '');
+    const tdTime = document.createElement('td');
+    tdTime.textContent = formatEventTime12h(ev?.time);
+    const tdTitle = document.createElement('td');
+    tdTitle.textContent = normalizeTitle(ev?.title);
+    tr.appendChild(tdDate);
+    tr.appendChild(tdTime);
+    tr.appendChild(tdTitle);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  root.appendChild(table);
+}
+
 function normalizeTimeValue(value) {
   const t = String(value || '').trim();
   if (!t) return '';
@@ -1364,6 +1519,7 @@ async function loadEvents() {
     editingEventId = null;
   }
   renderEvents();
+  refreshEventsPrintOptions();
 }
 
 // -------- Bulletins --------
@@ -1653,7 +1809,6 @@ async function loadAll() {
     loadAnnouncements(),
     loadEvents(),
     loadBulletins(),
-    loadUsers(),
     loadLivestream(),
     loadFinances(),
     loadSettings()
@@ -1662,6 +1817,12 @@ async function loadAll() {
 
 // -------- Wire UI --------
 document.addEventListener('DOMContentLoaded', () => {
+  // Default print mode (prints are initiated from Finances).
+  setPrintMode('finance');
+  window.addEventListener('afterprint', () => {
+    try { setPrintMode('finance'); } catch { /* ignore */ }
+  });
+
   // Tabs
   $('tabBtn-photos').addEventListener('click', () => setTab('tab-photos'));
   $('tabBtn-stream').addEventListener('click', () => setTab('tab-stream'));
@@ -1673,7 +1834,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('tabBtn-finances').addEventListener('click', () => setTab('tab-finances'));
   $('tabBtn-settings').addEventListener('click', () => {
     setTab('tab-settings');
-    setSettingsSubTab('panel-settings-users');
+    setSettingsSubTab('panel-settings-social');
   });
   $('tabBtn-account').addEventListener('click', () => setTab('tab-account'));
 
@@ -1683,9 +1844,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if ($('subTabBtn-content-bulletins')) {
     $('subTabBtn-content-bulletins').addEventListener('click', () => setContentSubTab('panel-content-bulletins'));
-  }
-  if ($('subTabBtn-settings-users')) {
-    $('subTabBtn-settings-users').addEventListener('click', () => setSettingsSubTab('panel-settings-users'));
   }
   if ($('subTabBtn-settings-social')) {
     $('subTabBtn-settings-social').addEventListener('click', () => setSettingsSubTab('panel-settings-social'));
@@ -1938,8 +2096,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if ($('financePrintBtn')) {
-    $('financePrintBtn').addEventListener('click', () => {
+  if ($('printFinanceLedgerBtn')) {
+    $('printFinanceLedgerBtn').addEventListener('click', () => {
+      closeDetailsMenu('financePrintMenu');
+      setPrintMode('finance');
+      renderFinances();
+      window.print();
+    });
+  }
+
+  if ($('printEventsAllBtn')) {
+    $('printEventsAllBtn').addEventListener('click', async () => {
+      closeDetailsMenu('financePrintMenu');
+      if (!Array.isArray(events) || !events.length) {
+        try { await loadEvents(); } catch { /* ignore */ }
+      }
+      setPrintMode('events');
+      setFinancePrintHeader('Events report', [`All events (${events.length})`]);
+      renderEventsPrintReport(events, 'Events Report — All Events');
+      window.print();
+    });
+  }
+
+  if ($('printEventsGroupBtn')) {
+    $('printEventsGroupBtn').addEventListener('click', async () => {
+      const title = String($('printEventsGroupTitle')?.value || '').trim();
+      if (!title) return;
+      closeDetailsMenu('financePrintMenu');
+      if (!Array.isArray(events) || !events.length) {
+        try { await loadEvents(); } catch { /* ignore */ }
+      }
+      const rows = events.filter((e) => normalizeTitle(e?.title) === title);
+      setPrintMode('events');
+      setFinancePrintHeader('Events report', [`Group: ${title}`, `${rows.length} event(s)`]);
+      renderEventsPrintReport(rows, `Events Report — ${title}`);
+      window.print();
+    });
+  }
+
+  if ($('printEventBtn')) {
+    $('printEventBtn').addEventListener('click', async () => {
+      const id = String($('printEventId')?.value || '').trim();
+      if (!id) return;
+      closeDetailsMenu('financePrintMenu');
+      if (!Array.isArray(events) || !events.length) {
+        try { await loadEvents(); } catch { /* ignore */ }
+      }
+      const ev = events.find((e) => String(e?.id || '') === id);
+      const rows = ev ? [ev] : [];
+      const label = ev ? `${String(ev?.date || '')} ${formatEventTime12h(ev?.time)} ${normalizeTitle(ev?.title)}`.trim() : `Event ID: ${id}`;
+      setPrintMode('events');
+      setFinancePrintHeader('Events report', [`Single: ${label}`, `${rows.length} event(s)`]);
+      renderEventsPrintReport(rows, 'Events Report — Single Event');
       window.print();
     });
   }
@@ -2270,25 +2478,27 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadBulletins();
   });
 
-  // Users
-  $('userForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const hint = $('userHint');
+  // Users (Settings/User accounts removed from UI)
+  if ($('userForm')) {
+    $('userForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hint = $('userHint');
 
-    if (!confirmWrite('Create an admin invite link for this email?')) return;
+      if (!confirmWrite('Create an admin invite link for this email?')) return;
 
-    hint.textContent = 'Creating invite…';
+      hint.textContent = 'Creating invite…';
 
-    const fd = new FormData(e.currentTarget);
-    const res = await api('/api/users/invite', {
-      method: 'POST',
-      body: JSON.stringify({ email: String(fd.get('email') || '') })
+      const fd = new FormData(e.currentTarget);
+      const res = await api('/api/users/invite', {
+        method: 'POST',
+        body: JSON.stringify({ email: String(fd.get('email') || '') })
+      });
+
+      e.currentTarget.reset();
+      hint.textContent = `Invite link (expires ${new Date(res.expiresAt).toLocaleString()}): ${res.inviteLink}`;
+      await loadUsers();
     });
-
-    e.currentTarget.reset();
-    hint.textContent = `Invite link (expires ${new Date(res.expiresAt).toLocaleString()}): ${res.inviteLink}`;
-    await loadUsers();
-  });
+  }
 
   // Livestream controls
   $('goLiveBtn').addEventListener('click', async () => {
