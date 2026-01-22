@@ -233,6 +233,33 @@ async function handleGalleryDelete(request, env, id) {
   return json({ ok: true });
 }
 
+async function handleR2List(request, env) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const url = new URL(request.url);
+  const prefix = sanitizeSegment(url.searchParams.get('prefix') || 'gallery/') || 'gallery/';
+  const limitRaw = Number(url.searchParams.get('limit') || 50);
+  const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(1000, Math.trunc(limitRaw))) : 50;
+  const cursor = String(url.searchParams.get('cursor') || '').trim() || undefined;
+
+  const listed = await env.GALLERY_BUCKET.list({ prefix, limit, cursor });
+  return json({
+    ok: true,
+    prefix,
+    limit,
+    cursor: cursor || null,
+    truncated: Boolean(listed.truncated),
+    nextCursor: listed.truncated ? listed.cursor : null,
+    objects: (listed.objects || []).map((o) => ({
+      key: o.key,
+      size: o.size,
+      etag: o.etag,
+      uploaded: o.uploaded
+    }))
+  });
+}
+
 async function handleCdn(request, env) {
   const prefix = '/cdn/gallery/';
   const url = new URL(request.url);
@@ -291,6 +318,11 @@ export default {
 
     if (url.pathname === '/api/gallery/order' && request.method === 'PUT') {
       return handleGalleryOrder(request, env);
+    }
+
+    // Diagnostic: list objects in the configured R2 bucket (admin only)
+    if (url.pathname === '/api/gallery/r2list' && request.method === 'GET') {
+      return handleR2List(request, env);
     }
 
     if (url.pathname.startsWith('/api/gallery/') && request.method === 'DELETE') {

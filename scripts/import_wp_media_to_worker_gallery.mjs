@@ -268,7 +268,22 @@ async function main() {
       });
 
       imported += 1;
-      process.stdout.write(dryRun ? 'DRY RUN\n' : 'OK\n');
+      if (dryRun) {
+        process.stdout.write('DRY RUN\n');
+      } else {
+        const added = Array.isArray(result?.added) ? result.added : [];
+        const location = added[0]?.file || '';
+        if (location) {
+          process.stdout.write(`OK -> ${location}\n`);
+          if (!String(location).startsWith('/cdn/gallery/')) {
+            process.stdout.write(
+              `  WARNING: Response does not look like Worker R2 CDN path. Check TARGET_BASE_URL (may be pointing at the Node admin server).\n`
+            );
+          }
+        } else {
+          process.stdout.write('OK\n');
+        }
+      }
 
       if (sleepMs > 0) await sleep(sleepMs);
     }
