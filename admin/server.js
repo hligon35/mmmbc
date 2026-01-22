@@ -92,7 +92,9 @@ const ENFORCE_HTTPS = envBool('ENFORCE_HTTPS', process.env.NODE_ENV === 'product
 const ENABLE_CSP = String(process.env.ENABLE_CSP || '').toLowerCase() === 'true';
 const SESSIONS_DIR = process.env.SESSIONS_DIR
   ? path.resolve(process.env.SESSIONS_DIR)
-  : path.join(os.tmpdir(), 'mmmbc-admin-sessions');
+  : (process.platform === 'win32'
+      ? path.join(ADMIN_DIR, 'sessions')
+      : path.join(os.tmpdir(), 'mmmbc-admin-sessions'));
 
 function listenWithPortFallback(appInstance, startPort, { maxTries = 25, host } = {}) {
   return new Promise((resolve, reject) => {
@@ -385,6 +387,7 @@ app.get('/theme.css', (req, res) => {
 // Serve the existing site (repo root)
 app.use('/', express.static(ROOT_DIR, { extensions: ['html'] }));
 // Serve admin UI under /admin/
+app.get('/admin', (req, res) => res.redirect(302, '/admin/'));
 app.use('/admin', express.static(path.join(ADMIN_DIR, 'public'), { extensions: ['html'] }));
 
 // Expose gallery images and uploaded docs
@@ -2186,6 +2189,9 @@ app.post('/api/export', requireAuth, async (req, res) => {
 // ----------------- ERROR HANDLING -----------------
 app.use((err, req, res, next) => {
   if (!err) return next();
+
+  // If something already started sending a response, don't attempt to write headers/body again.
+  if (res.headersSent) return next(err);
 
   if (err.code === 'EBADCSRFTOKEN') {
     audit('csrf_rejected', { at: new Date().toISOString(), ip: req.ip, path: req.originalUrl });
