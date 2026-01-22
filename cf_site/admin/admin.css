@@ -253,9 +253,9 @@ body{
   display:flex;
   flex-wrap:nowrap;
   align-items:center;
-  gap:10px;
-  padding:10px 12px;
-  margin:10px 0 12px;
+  gap:5px;
+  padding:5px 6px;
+  margin:8px 0 10px;
   border:1px solid var(--border);
   border-radius:14px;
   background:rgba(255,255,255,.03);
@@ -266,13 +266,13 @@ body{
   font-weight:1000;
   letter-spacing:.2px;
   color:var(--muted);
-  margin-right:6px;
+  margin-right:3px;
 }
 
-.financeTopBar .statusChip{white-space:nowrap;}
+.financeTopBar .statusChip{white-space:nowrap;padding:4px 6px;}
 
-.financePeriodTabs{display:flex;gap:6px;align-items:center;}
-.miniTab--xs{padding:6px 10px;font-size:.95rem;}
+.financePeriodTabs{display:flex;gap:3px;align-items:center;}
+.miniTab--xs{padding:4px 7px;font-size:.95rem;}
 
 .financeHeaderTitleRow{display:flex;align-items:center;gap:12px;}
 
@@ -439,6 +439,13 @@ body{
 .dialog::backdrop{background:rgba(0,0,0,.55);}
 .dialog__inner{margin:0;}
 
+.dialog__backdrop{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
 /* Fallback overlay behavior (also OK with native dialog). */
 .dialog{display:none;}
 .dialog[open]{
@@ -452,6 +459,21 @@ body{
   background:rgba(0,0,0,.55);
 }
 .dialog[open] .dialog__inner{max-width:min(720px, calc(100vw - 32px)); width:100%;}
+.dialog[open] .dialog__backdrop{display:block;}
+
+/* No-JS fallback: opening via URL hash (#photoHelpDialog). */
+.dialog:target{
+  display:flex;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background:rgba(0,0,0,.55);
+}
+.dialog:target .dialog__inner{max-width:min(720px, calc(100vw - 32px)); width:100%;}
+.dialog:target .dialog__backdrop{display:block;}
 
 .toolbarGroup{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
 
@@ -699,6 +721,7 @@ body{
 .photosHelp__summary:hover{border-color:rgba(255,255,255,.35);}
 .photosHelp__summary::-webkit-details-marker{display:none;}
 .photosHelp__body{margin-top:12px;}
+.photosHelp code{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);padding:2px 6px;border-radius:8px;color:rgba(255,255,255,.92);}
 
 /* Fit time/date inputs to content in list rows (prevents oversized controls) */
 .row__actions input[type="date"].input,

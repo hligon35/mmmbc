@@ -190,16 +190,17 @@
             </div>
           </div>
           <div class="iconGroup" aria-label="Photo gallery actions">
-            <button class="iconBtn iconBtn--help" id="photoHelpBtn" type="button" aria-label="Photo upload instructions" title="Photo upload instructions">?</button>
+            <a class="iconBtn iconBtn--help" id="photoHelpBtn" href="#photoHelpDialog" aria-label="Photo upload instructions" title="Photo upload instructions">?</a>
             <button class="btn" id="exportBtn" type="button">Sync Gallery</button>
           </div>
         </div>
 
         <dialog class="dialog" id="photoHelpDialog" aria-label="Photo upload instructions">
-          <form method="dialog" class="card dialog__inner">
+          <a class="dialog__backdrop" href="#" aria-label="Close"></a>
+          <div class="card dialog__inner">
             <div class="sectionHeader sectionHeader--compact">
               <h3 class="sectionHeader__title">Photo upload instructions</h3>
-              <button class="btn" id="photoHelpCloseBtn" type="submit">Close</button>
+              <a class="btn" id="photoHelpCloseBtn" href="#" role="button">Close</a>
             </div>
 
             <p class="muted">Use these steps when adding new albums and photos.</p>
@@ -221,7 +222,7 @@
             </ul>
 
             <div class="photosHelp__tip">Tip: If you uploaded photos but don’t see them on the website yet, you probably need to sync.</div>
-          </form>
+          </div>
         </dialog>
 
         <div class="subTabPanel" role="tabpanel" id="panel-photos-manage" aria-labelledby="subTabBtn-photos-manage">

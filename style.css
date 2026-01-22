@@ -120,14 +120,14 @@ body {
     width: min(340px, calc(100vw - 20px)); /* Responsive dropdown width */
     background-color: rgba(0, 0, 0, 0.85);
     position: absolute;
-    top: 100px; /* Position below the nav bar (50px original + 50px additional) */
+    top: 70px; /* Position below the nav bar (give the menu more room) */
     left: auto; /* Remove left alignment */
     right: 10px; /* Keep some breathing room on small screens */
-    padding-bottom: 10px;
+    padding-bottom: 6px;
     z-index: 999; 
     box-sizing: border-box; /* Include padding and border in the element's total width and height */
     border-radius: 5px; /* Added rounded corners */
-    max-height: calc(100vh - 120px);
+    max-height: calc(100vh - 80px);
     overflow-y: auto;
 }
 
@@ -138,11 +138,11 @@ body {
 .nav-links a {
     color: white;
     text-decoration: none;
-    padding: 10px 5px; /* Reduced horizontal padding to fit better in 50px */
+    padding: 8px 4px; /* Tighter so menu fits without internal scroll */
     display: block;
     text-align: center; /* Centered text for dropdown items */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Separator for dropdown items */
-    font-size: 1em; /* Reduced font size */
+    font-size: 0.95em;
     white-space: normal; /* Allow full labels to wrap */
     overflow-wrap: anywhere;
     word-break: normal;
@@ -203,7 +203,7 @@ body {
         min-width: 0; /* allow the grid item to shrink instead of forcing overflow */
         overflow-x: hidden;
         max-height: none;
-        overflow-y: visible;
+        overflow-y: hidden;
     }
 
     .nav-links a {
@@ -226,9 +226,16 @@ body {
         white-space: normal; /* allow multi-line */
         overflow: hidden;
         text-overflow: clip;
-        line-height: 1.1;
-        font-size: 0.9em;
+        line-height: 1.05;
+        font-size: 0.82em;
         font-weight: 700;
+
+        /* Prevent long labels from pushing the tab bar taller (causing vertical scroll). */
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-box-pack: center;
+        -webkit-box-align: center;
+        -webkit-line-clamp: 2;
     }
 
     .nav-links a + a {

@@ -3194,7 +3194,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }, true);
     }
     if ($('photoHelpCloseBtn')) {
-      $('photoHelpCloseBtn').addEventListener('click', () => closeDlg());
+      $('photoHelpCloseBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        closeDlg();
+      });
     }
     dlg.addEventListener('click', (e) => {
       // Close when clicking the backdrop

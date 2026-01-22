@@ -394,7 +394,12 @@ app.get('/theme.css', (req, res) => {
 // Serve the existing site (repo root)
 app.use('/', express.static(ROOT_DIR, { extensions: ['html'] }));
 // Serve admin UI under /admin/
-app.get('/admin', (req, res) => res.redirect(302, '/admin/'));
+app.get('/admin', (req, res, next) => {
+  // Express routing matches both "/admin" and "/admin/" unless strict routing is enabled.
+  // Only redirect when the request is truly missing the trailing slash.
+  if (req.originalUrl === '/admin') return res.redirect(302, '/admin/');
+  return next();
+});
 app.use('/admin', express.static(path.join(ADMIN_DIR, 'public'), { extensions: ['html'] }));
 
 // Expose gallery images and uploaded docs

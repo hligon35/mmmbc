@@ -68,6 +68,25 @@ This Worker expects you to protect `/admin/*` and `/api/*` with **Cloudflare Acc
 Local dev only:
 - Set `DEV_BYPASS_AUTH=true` to skip Access checks.
 
+### Local admin bucket browsing (Node server → Worker)
+
+When using the local Node admin (`admin/server.js`) with the **R2 Bucket Browser**, the Node server proxies requests to the Worker.
+Because the Node server is not running behind Cloudflare Access, it cannot rely on Access cookies.
+
+Supported approach:
+
+- Set Worker secrets `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` (a Cloudflare Access **Service Token**).
+- Set the same values in the local Node admin `.env` so it can send `CF-Access-Client-Id` / `CF-Access-Client-Secret` headers.
+
+Commands:
+
+- `wrangler secret put CF_ACCESS_CLIENT_ID`
+- `wrangler secret put CF_ACCESS_CLIENT_SECRET`
+
+Then deploy the Worker:
+
+- `wrangler deploy`
+
 ## Build + deploy
 
 ### 1) Build the assets folder

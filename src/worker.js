@@ -89,19 +89,51 @@ function allowServiceTokenAdmin(env) {
   return ['1', 'true', 'yes', 'y', 'on'].includes(raw);
 }
 
+function getHeaderTrim(request, name) {
+  return String(request.headers.get(name) || '').trim();
+}
+
 function hasServiceTokenHeaders(request) {
   // Cloudflare Access service tokens are presented via these headers.
-  // Note: we do not validate values here; Access should gate requests at the edge.
-  const id = request.headers.get('CF-Access-Client-Id') || request.headers.get('cf-access-client-id') || '';
-  const secret = request.headers.get('CF-Access-Client-Secret') || request.headers.get('cf-access-client-secret') || '';
-  return Boolean(String(id).trim()) && Boolean(String(secret).trim());
+  const id = getHeaderTrim(request, 'CF-Access-Client-Id') || getHeaderTrim(request, 'cf-access-client-id');
+  const secret = getHeaderTrim(request, 'CF-Access-Client-Secret') || getHeaderTrim(request, 'cf-access-client-secret');
+  return Boolean(id) && Boolean(secret);
+}
+
+function hasValidServiceToken(request, env) {
+  // Support server-to-server auth for local admin proxying.
+  // If these are set as Worker secrets/vars, we validate and allow.
+  const expectedId = String(env.CF_ACCESS_CLIENT_ID || '').trim();
+  const expectedSecret = String(env.CF_ACCESS_CLIENT_SECRET || '').trim();
+  if (!expectedId || !expectedSecret) return false;
+
+  const id = getHeaderTrim(request, 'CF-Access-Client-Id') || getHeaderTrim(request, 'cf-access-client-id');
+  const secret = getHeaderTrim(request, 'CF-Access-Client-Secret') || getHeaderTrim(request, 'cf-access-client-secret');
+  if (!id || !secret) return false;
+
+  return id === expectedId && secret === expectedSecret;
+}
+
+function hasAccessJwtAssertion(request) {
+  return Boolean(
+    getHeaderTrim(request, 'cf-access-jwt-assertion')
+    || getHeaderTrim(request, 'Cf-Access-Jwt-Assertion')
+  );
 }
 
 function requireAdmin(request, env) {
   if (isDevBypass(env)) return { ok: true, email: 'dev@local' };
 
+  // Strong path: validate the service token headers against Worker secrets.
+  if (hasValidServiceToken(request, env)) {
+    return { ok: true, email: 'service-token@access' };
+  }
+
   // Allow Access Service Tokens (useful for automation/migrations) when enabled.
-  if (allowServiceTokenAdmin(env) && hasServiceTokenHeaders(request)) {
+  // NOTE: If Cloudflare Access is in front of this Worker, it will validate the
+  // service token at the edge and typically inject a JWT assertion header.
+  // In that case we can allow without having the token values in Worker env.
+  if (allowServiceTokenAdmin(env) && hasServiceTokenHeaders(request) && hasAccessJwtAssertion(request)) {
     return { ok: true, email: 'service-token@access' };
   }
 
