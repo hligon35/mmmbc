@@ -3161,14 +3161,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!window.__mmmbcPhotoHelpDelegated) {
       window.__mmmbcPhotoHelpDelegated = true;
-      document.addEventListener('click', (e) => {
+      const handler = (e) => {
         const btn = e.target?.closest ? e.target.closest('#photoHelpBtn') : null;
         if (!btn) return;
         e.preventDefault();
         if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
         if (typeof e.stopPropagation === 'function') e.stopPropagation();
         openDlg();
-      }, true);
+      };
+      document.addEventListener('click', handler, true);
+      document.addEventListener('pointerup', handler, true);
+      document.addEventListener('mouseup', handler, true);
     }
 
     if ($('photoHelpBtn')) {
@@ -3178,6 +3181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof e.stopPropagation === 'function') e.stopPropagation();
         openDlg();
       });
+
+      $('photoHelpBtn').addEventListener('keydown', (e) => {
+        const k = String(e.key || '').toLowerCase();
+        if (k !== 'enter' && k !== ' ') return;
+        e.preventDefault();
+        openDlg();
+      }, true);
     }
     if ($('photoHelpCloseBtn')) {
       $('photoHelpCloseBtn').addEventListener('click', () => closeDlg());
