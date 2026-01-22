@@ -2,10 +2,65 @@
   "name": "mmmbc",
   "compatibility_date": "2026-01-21",
 
+  // Worker entrypoint (Option B)
+  "main": "./src/worker.js",
+
   // Assets-only Worker deployment (static site)
   // This intentionally deploys ONLY the curated public-site files in ./cf_site
   // so that the admin server code and admin data are never published.
   "assets": {
     "directory": "./cf_site"
+  },
+
+  // Bindings (create these in Cloudflare, then fill in ids/names)
+  "r2_buckets": [
+    {
+      "binding": "GALLERY_BUCKET",
+      "bucket_name": "mmmbc-gallery"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mmdb",
+      "database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
+    }
+  ],
+  "vars": {
+    // Comma-separated emails allowed for admin API access (when Cloudflare Access is enabled).
+    // Example: "you@example.com,other@example.com"
+    "ADMIN_ALLOW_EMAILS": "",
+    // Set to true only for local development/testing.
+    "DEV_BYPASS_AUTH": "false"
+  },
+
+  // Optional parallel environment:
+  // - Deploy prod:    npx wrangler deploy
+  // - Deploy preview: npx wrangler deploy --env preview
+  "env": {
+    "preview": {
+      "name": "mmmbc-preview",
+      "main": "./src/worker.js",
+      "assets": {
+        "directory": "./cf_site"
+      },
+      "r2_buckets": [
+        {
+          "binding": "GALLERY_BUCKET",
+          "bucket_name": "mmmbc-gallery-preview"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "mmmbc-preview",
+          "database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
+        }
+      ],
+      "vars": {
+        "ADMIN_ALLOW_EMAILS": "",
+        "DEV_BYPASS_AUTH": "false"
+      }
+    }
   }
 }
