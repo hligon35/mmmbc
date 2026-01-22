@@ -13,13 +13,13 @@
 	"r2_buckets": [
 		{
 			"binding": "GALLERY_BUCKET",
-			"bucket_name": "mmmbc-gallery-preview"
+			"bucket_name": "mmmbc-gallery"
 		}
 	],
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "mmmbc-preview",
+			"database_name": "mmdb",
 			"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
 		}
 	],
@@ -51,7 +51,40 @@
 			"d1_databases": [
 				{
 					"binding": "DB",
-					"database_name": "mmmbc-preview",
+					"database_name": "mmdb",
+					"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
+				}
+			],
+			"vars": {
+				"ADMIN_ALLOW_EMAILS": "",
+				"ALLOW_SERVICE_TOKEN_ADMIN": "true",
+				"DEV_BYPASS_AUTH": "false"
+			}
+		},
+		"migrate": {
+			"name": "mmmbc-migrate",
+			"main": "./src/worker.js",
+			"assets": {
+				"directory": "./cf_site"
+			},
+			"r2_buckets": [
+				{
+					"binding": "GALLERY_BUCKET",
+					"bucket_name": "mmmbc-gallery"
+				},
+				{
+					"binding": "GALLERY_BUCKET_SRC",
+					"bucket_name": "mmmbc-gallery-preview"
+				},
+				{
+					"binding": "GALLERY_BUCKET_DST",
+					"bucket_name": "mmmbc-gallery"
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "mmdb",
 					"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
 				}
 			],

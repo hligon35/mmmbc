@@ -34,6 +34,16 @@ function sanitizeSegment(input) {
     .slice(0, 80);
 }
 
+function sanitizePrefix(input, { fallback = 'gallery/', ensureTrailingSlash = false } = {}) {
+  const raw = String(input || '').trim();
+  // Allow only path-ish characters; keep '/' so we can browse prefixes.
+  let cleaned = raw.replace(/[^a-zA-Z0-9/_-]/g, '');
+  cleaned = cleaned.replace(/^\/+/, '');
+  if (!cleaned) cleaned = fallback;
+  if (ensureTrailingSlash && !cleaned.endsWith('/')) cleaned += '/';
+  return cleaned;
+}
+
 function splitTags(raw) {
   return String(raw || '')
     .split(',')
@@ -102,6 +112,54 @@ function requireAdmin(request, env) {
   return { ok: true, email };
 }
 
+async function handleSupportMessage(request, env) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const body = await request.json().catch(() => null);
+  const subjectRaw = String(body?.subject || '').trim();
+  const messageRaw = String(body?.message || '').trim();
+  const replyToRaw = String(body?.replyTo || '').trim();
+
+  if (!subjectRaw || !messageRaw) return json({ error: 'Subject and message are required.' }, { status: 400 });
+
+  const subject = subjectRaw.slice(0, 140);
+  const message = messageRaw.slice(0, 5000);
+  const replyTo = replyToRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToRaw) ? replyToRaw : '';
+
+  const toEmail = String(env.SUPPORT_TO_EMAIL || 'hligon@getsparqd.com').trim();
+  const fromEmail = String(env.SUPPORT_FROM_EMAIL || 'no-reply@mmmbc.com').trim();
+  const fromName = String(env.SUPPORT_FROM_NAME || 'MMMBC Admin Support').trim() || 'MMMBC Admin Support';
+
+  const composedSubject = `[MMMBC Support] ${subject}`;
+  const textBody = [
+    `From (admin): ${auth.email}`,
+    replyTo ? `Reply-To: ${replyTo}` : 'Reply-To: (not provided)',
+    '',
+    message
+  ].join('\n');
+
+  const payload = {
+    personalizations: [{ to: [{ email: toEmail }], subject: composedSubject }],
+    from: { email: fromEmail, name: fromName },
+    ...(replyTo ? { reply_to: { email: replyTo } } : {}),
+    content: [{ type: 'text/plain', value: textBody }]
+  };
+
+  const res = await fetch('https://api.mailchannels.net/tx/v1/send', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return json({ error: `Email send failed (${res.status}). ${errText}`.trim() }, { status: 502 });
+  }
+
+  return json({ ok: true });
+}
+
 function guessContentType(key) {
   const k = String(key || '').toLowerCase();
   if (k.endsWith('.jpg') || k.endsWith('.jpeg')) return 'image/jpeg';
@@ -141,6 +199,175 @@ async function listGallery(env) {
   });
 
   return { items };
+}
+
+async function handlePublicGallery(request, env) {
+  // Public endpoint: drives the public photo gallery page.
+  // Note: if your Cloudflare Access policy currently protects ALL /api paths,
+  // we keep this under /public so it can remain unprotected.
+  const data = await listGallery(env);
+  return json(data, {
+    status: 200,
+    headers: {
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
+}
+
+function splitKeyUnderPrefix(key, prefix) {
+  const k = String(key || '');
+  const p = String(prefix || '');
+  if (!k.startsWith(p)) return null;
+  const rest = k.slice(p.length);
+  if (!rest) return null;
+  const first = rest.split('/')[0];
+  if (!first) return null;
+  const isFolder = rest.includes('/') && !rest.endsWith(first);
+  return { first, rest, isFolder };
+}
+
+async function handleR2Tree(request, env) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const url = new URL(request.url);
+  let prefix = sanitizePrefix(url.searchParams.get('prefix') || 'gallery/', {
+    fallback: 'gallery/',
+    ensureTrailingSlash: true
+  });
+  if (!prefix.startsWith('gallery/')) prefix = 'gallery/';
+  const limitRaw = Number(url.searchParams.get('limit') || 250);
+  const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(1000, Math.trunc(limitRaw))) : 250;
+  const cursor = String(url.searchParams.get('cursor') || '').trim() || undefined;
+
+  const listed = await env.GALLERY_BUCKET.list({ prefix, limit, cursor });
+  const folders = new Map();
+  const files = [];
+
+  for (const o of (listed.objects || [])) {
+    const parsed = splitKeyUnderPrefix(o.key, prefix);
+    if (!parsed) continue;
+    if (parsed.rest.includes('/')) {
+      const folderPrefix = `${prefix}${parsed.first}/`;
+      if (!folders.has(parsed.first)) {
+        folders.set(parsed.first, { name: parsed.first, prefix: folderPrefix });
+      }
+    } else {
+      files.push({
+        name: parsed.first,
+        key: o.key,
+        size: o.size,
+        etag: o.etag,
+        uploaded: o.uploaded
+      });
+    }
+  }
+
+  const folderList = Array.from(folders.values()).sort((a, b) => a.name.localeCompare(b.name));
+  files.sort((a, b) => a.name.localeCompare(b.name));
+
+  return json({
+    ok: true,
+    prefix,
+    limit,
+    cursor: cursor || null,
+    truncated: Boolean(listed.truncated),
+    nextCursor: listed.truncated ? listed.cursor : null,
+    folders: folderList,
+    files
+  });
+}
+
+async function handleR2DeleteObject(request, env) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const url = new URL(request.url);
+  const key = String(url.searchParams.get('key') || '').trim();
+  if (!key) return json({ error: 'key is required' }, { status: 400 });
+  if (!key.startsWith('gallery/')) return json({ error: 'Only gallery/ keys can be deleted here.' }, { status: 400 });
+
+  await env.GALLERY_BUCKET.delete(key);
+
+  // Keep DB in sync if this key had a record.
+  try {
+    await env.DB.prepare(
+      'DELETE FROM gallery_items WHERE file_key=? OR thumb_key=?'
+    ).bind(key, key).run();
+  } catch {
+    // ignore
+  }
+
+  return json({ ok: true, deleted: key });
+}
+
+async function handleGallerySyncFromR2(request, env) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const url = new URL(request.url);
+  let prefix = sanitizePrefix(url.searchParams.get('prefix') || 'gallery/', {
+    fallback: 'gallery/',
+    ensureTrailingSlash: false
+  });
+  if (!prefix.startsWith('gallery/')) prefix = 'gallery/';
+  const limitRaw = Number(url.searchParams.get('limit') || 250);
+  const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(1000, Math.trunc(limitRaw))) : 250;
+  const cursor = String(url.searchParams.get('cursor') || '').trim() || undefined;
+
+  const listed = await env.GALLERY_BUCKET.list({ prefix, limit, cursor });
+  const objects = listed.objects || [];
+
+  let added = 0;
+  let existing = 0;
+
+  for (const o of objects) {
+    const key = String(o.key || '');
+    if (!key || key.endsWith('/')) continue;
+    if (!key.startsWith('gallery/')) continue;
+
+    const found = await env.DB.prepare(
+      'SELECT id FROM gallery_items WHERE file_key=? LIMIT 1'
+    ).bind(key).first();
+
+    if (found?.id) {
+      existing += 1;
+      continue;
+    }
+
+    const parts = key.split('/');
+    const album = sanitizeSegment(parts[1] || 'General') || 'General';
+    const originalName = String(parts[parts.length - 1] || 'image');
+    const createdAt = (() => {
+      try {
+        const d = o.uploaded ? new Date(o.uploaded) : new Date();
+        return d.toISOString();
+      } catch {
+        return new Date().toISOString();
+      }
+    })();
+
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO gallery_items (id, album, label, tags_json, file_key, thumb_key, original_name, created_at, position)
+       VALUES (?, ?, '', '[]', ?, NULL, ?, ?, NULL)`
+    ).bind(id, album, key, originalName, createdAt).run();
+
+    added += 1;
+  }
+
+  return json({
+    ok: true,
+    prefix,
+    limit,
+    cursor: cursor || null,
+    processed: objects.length,
+    added,
+    existing,
+    truncated: Boolean(listed.truncated),
+    nextCursor: listed.truncated ? listed.cursor : null
+  });
 }
 
 async function handleGalleryUpload(request, env) {
@@ -231,6 +458,41 @@ async function handleGalleryOrder(request, env) {
   return json({ ok: true });
 }
 
+async function handleGalleryUpdate(request, env, id) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const body = await request.json().catch(() => ({}));
+  const label = sanitizeSegment(body?.label || '') || '';
+  const tags = splitTags(body?.tags || '');
+
+  const existing = await env.DB.prepare(
+    `SELECT id, album, label, tags_json, file_key, thumb_key, original_name, created_at, position
+     FROM gallery_items WHERE id=?`
+  ).bind(String(id)).first();
+
+  if (!existing) return json({ error: 'Not found' }, { status: 404 });
+
+  await env.DB.prepare(
+    `UPDATE gallery_items SET label=?, tags_json=? WHERE id=?`
+  ).bind(label, JSON.stringify(tags), String(id)).run();
+
+  return json({
+    ok: true,
+    item: {
+      id: existing.id,
+      album: existing.album,
+      label,
+      tags,
+      file: `/cdn/gallery/${encodeURI(existing.file_key)}`,
+      thumb: existing.thumb_key ? `/cdn/gallery/${encodeURI(existing.thumb_key)}` : `/cdn/gallery/${encodeURI(existing.file_key)}`,
+      originalName: existing.original_name,
+      createdAt: existing.created_at,
+      position: existing.position
+    }
+  });
+}
+
 async function handleGalleryDelete(request, env, id) {
   const auth = requireAdmin(request, env);
   if (!auth.ok) return json({ error: auth.error }, { status: 401 });
@@ -257,7 +519,8 @@ async function handleR2List(request, env) {
   if (!auth.ok) return json({ error: auth.error }, { status: 401 });
 
   const url = new URL(request.url);
-  const prefix = sanitizeSegment(url.searchParams.get('prefix') || 'gallery/') || 'gallery/';
+  let prefix = sanitizePrefix(url.searchParams.get('prefix') || 'gallery/', { fallback: 'gallery/', ensureTrailingSlash: false });
+  if (!prefix.startsWith('gallery/')) prefix = 'gallery/';
   const limitRaw = Number(url.searchParams.get('limit') || 50);
   const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(1000, Math.trunc(limitRaw))) : 50;
   const cursor = String(url.searchParams.get('cursor') || '').trim() || undefined;
@@ -276,6 +539,84 @@ async function handleR2List(request, env) {
       etag: o.etag,
       uploaded: o.uploaded
     }))
+  });
+}
+
+async function handleR2Migrate(request, env) {
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) return json({ error: auth.error }, { status: 401 });
+
+  const src = env.GALLERY_BUCKET_SRC;
+  const dst = env.GALLERY_BUCKET_DST;
+  if (!src || !dst || typeof src.list !== 'function' || typeof src.get !== 'function' || typeof dst.put !== 'function') {
+    return json({
+      error: 'Migration buckets not configured. Bind GALLERY_BUCKET_SRC and GALLERY_BUCKET_DST in wrangler.jsonc.'
+    }, { status: 500 });
+  }
+
+  const url = new URL(request.url);
+  let prefix = sanitizePrefix(url.searchParams.get('prefix') || 'gallery/', { fallback: 'gallery/', ensureTrailingSlash: false });
+  if (!prefix.startsWith('gallery/')) prefix = 'gallery/';
+  const limitRaw = Number(url.searchParams.get('limit') || 100);
+  const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(500, Math.trunc(limitRaw))) : 100;
+  const cursor = String(url.searchParams.get('cursor') || '').trim() || undefined;
+
+  const overwrite = ['1', 'true', 'yes', 'y', 'on'].includes(String(url.searchParams.get('overwrite') || '').trim().toLowerCase());
+  const dryRun = ['1', 'true', 'yes', 'y', 'on'].includes(String(url.searchParams.get('dryRun') || '').trim().toLowerCase());
+
+  const listed = await src.list({ prefix, limit, cursor });
+  const objects = listed.objects || [];
+
+  let copied = 0;
+  let skipped = 0;
+  let missing = 0;
+  const errors = [];
+
+  for (const obj of objects) {
+    const key = obj.key;
+    try {
+      if (!overwrite) {
+        const existing = await dst.head(key);
+        if (existing) {
+          skipped += 1;
+          continue;
+        }
+      }
+
+      if (dryRun) {
+        copied += 1;
+        continue;
+      }
+
+      const srcObj = await src.get(key);
+      if (!srcObj) {
+        missing += 1;
+        continue;
+      }
+
+      await dst.put(key, srcObj.body, {
+        httpMetadata: srcObj.httpMetadata,
+        customMetadata: srcObj.customMetadata
+      });
+      copied += 1;
+    } catch (e) {
+      const msg = (e && (e.stack || e.message)) ? String(e.stack || e.message) : String(e);
+      errors.push({ key, error: msg.slice(0, 500) });
+    }
+  }
+
+  return json({
+    ok: true,
+    prefix,
+    limit,
+    cursor: cursor || null,
+    processed: objects.length,
+    copied,
+    skipped,
+    missing,
+    errors,
+    truncated: Boolean(listed.truncated),
+    nextCursor: listed.truncated ? listed.cursor : null
   });
 }
 
@@ -313,6 +654,11 @@ export default {
       return Response.redirect(`${url.origin}/admin/login.html`, 302);
     }
 
+    // Public gallery feed (used by the public Photo Gallery page)
+    if ((url.pathname === '/public/gallery.json' || url.pathname === '/public/gallery') && request.method === 'GET') {
+      return handlePublicGallery(request, env);
+    }
+
     // CDN endpoint for gallery objects in R2
     if (url.pathname.startsWith('/cdn/gallery/')) {
       return handleCdn(request, env);
@@ -339,9 +685,35 @@ export default {
       return handleGalleryOrder(request, env);
     }
 
+    if (url.pathname.startsWith('/api/gallery/') && request.method === 'PUT') {
+      const id = url.pathname.split('/').pop();
+      return handleGalleryUpdate(request, env, id);
+    }
+
     // Diagnostic: list objects in the configured R2 bucket (admin only)
     if (url.pathname === '/api/gallery/r2list' && request.method === 'GET') {
       return handleR2List(request, env);
+    }
+
+    // Admin-only: browse R2 objects by "folder" prefix
+    if (url.pathname === '/api/gallery/r2tree' && request.method === 'GET') {
+      return handleR2Tree(request, env);
+    }
+
+    // Admin-only: delete an R2 object by key (and remove DB row if any)
+    if (url.pathname === '/api/gallery/r2object' && request.method === 'DELETE') {
+      return handleR2DeleteObject(request, env);
+    }
+
+    // Admin-only: sync D1 gallery rows from current R2 contents (paginated)
+    if (url.pathname === '/api/gallery/sync' && request.method === 'POST') {
+      return handleGallerySyncFromR2(request, env);
+    }
+
+    // Admin-only: migrate/copy objects between two R2 buckets (paginated)
+    // Requires wrangler bindings: GALLERY_BUCKET_SRC (source) and GALLERY_BUCKET_DST (destination)
+    if (url.pathname === '/api/gallery/r2migrate' && request.method === 'GET') {
+      return handleR2Migrate(request, env);
     }
 
     if (url.pathname.startsWith('/api/gallery/') && request.method === 'DELETE') {
@@ -354,6 +726,11 @@ export default {
       const auth = requireAdmin(request, env);
       if (!auth.ok) return json({ error: auth.error }, { status: 401 });
       return json({ ok: true, time: new Date().toISOString() });
+    }
+
+    // Support messages (admin only)
+    if (url.pathname === '/api/support/message' && request.method === 'POST') {
+      return handleSupportMessage(request, env);
     }
 
     // Static assets (public site + admin UI) from ./cf_site

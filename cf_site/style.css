@@ -41,7 +41,7 @@ body {
 .top-nav {
     background-color: rgba(0, 0, 0, 0.3);
     height: 100px;
-    padding: 0 10px; /* Handles margins for logo and button */
+    padding: 0 8px; /* Handles margins for logo and button */
     display: flex;
     align-items: center;
     justify-content: space-between; /* Ensures logo and menu button are spaced out */

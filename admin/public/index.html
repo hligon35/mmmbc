@@ -19,9 +19,6 @@
     </div>
     <div class="header__right">
       <span class="status" id="authStatus" aria-live="polite">Checking login…</span>
-      <button class="avatarBtn" id="accountBtn" type="button" aria-label="Account" hidden>
-        <span class="avatarBtn__text" id="avatarText">A</span>
-      </button>
       <button class="btn" id="logoutBtn" type="button" hidden>Log out</button>
     </div>
   </header>
@@ -52,10 +49,6 @@
               </svg>
             </button>
           </div>
-        </label>
-        <label class="label">
-          2FA code (if enabled)
-          <input class="input" name="twoFactorCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" />
         </label>
         <button class="btn btn--primary" type="submit">Sign in</button>
         <button class="linkBtn" id="forgotToggle" type="button">Forgot login?</button>
@@ -115,21 +108,6 @@
       <h1 class="card__title">Finish account setup</h1>
       <p class="muted" id="inviteEmail">Loading invite…</p>
 
-      <div class="card invite2fa" aria-label="Two-factor authentication">
-        <div class="invite2fa__title">Set up 2FA (required)</div>
-        <div class="muted">Scan the QR code with Google Authenticator / Microsoft Authenticator, then enter the 6-digit code below.</div>
-        <div class="invite2fa__grid">
-          <div class="invite2fa__qrWrap">
-            <img id="inviteQr" class="invite2fa__qr" alt="2FA QR code" />
-          </div>
-          <div class="invite2fa__meta">
-            <div class="label">Manual setup key</div>
-            <div class="monoBox" id="inviteSecret" aria-label="2FA secret"></div>
-            <button class="btn" id="copySecretBtn" type="button">Copy key</button>
-          </div>
-        </div>
-      </div>
-
       <form id="inviteForm" class="form">
         <label class="label">
           Your name
@@ -167,12 +145,6 @@
             </button>
           </div>
         </label>
-
-        <label class="label">
-          2FA code (6 digits)
-          <input class="input" name="twoFactorCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required />
-        </label>
-
         <button class="btn btn--primary" type="submit">Complete setup</button>
         <div class="error" id="inviteError" role="alert" hidden></div>
         <div class="hint" id="inviteHint" aria-live="polite"></div>
@@ -199,178 +171,138 @@
       <div class="adminLayout">
         <nav class="sideNav" role="tablist" aria-label="Admin sections">
           <button class="tab tab--nav" role="tab" aria-selected="true" aria-controls="tab-photos" id="tabBtn-photos">Photo Gallery</button>
-          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-stream" id="tabBtn-stream">Live Stream</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-events" id="tabBtn-events">Events</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-content" id="tabBtn-content">Announcements</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-finances" id="tabBtn-finances">Finances</button>
-          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-settings" id="tabBtn-settings">Settings</button>
-          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-account" id="tabBtn-account">Account</button>
+          <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-support" id="tabBtn-support">Support</button>
         </nav>
 
         <div class="adminMain">
 
       <!-- Photo Gallery -->
       <section class="tabPanel" role="tabpanel" id="tab-photos" aria-labelledby="tabBtn-photos">
-        <div class="photosTabGrid">
-        <div class="photosTabMain">
         <div class="sectionHeader">
-          <h2 class="sectionHeader__title">Photo Gallery</h2>
-          <button class="btn" id="exportBtn" type="button">Export to Website</button>
+          <div class="sectionHeader__left">
+            <h2 class="sectionHeader__title">Photo Gallery</h2>
+            <div class="tabs subTabs photoSubTabs" role="tablist" aria-label="Photo gallery sections">
+              <button class="tab tab--sub" role="tab" aria-selected="true" aria-controls="panel-photos-manage" id="subTabBtn-photos-manage" type="button">Upload</button>
+              <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-photos-bucket" id="subTabBtn-photos-bucket" type="button">Browse Bucket</button>
+            </div>
+          </div>
+          <div class="iconGroup" aria-label="Photo gallery actions">
+            <button class="iconBtn iconBtn--help" id="photoHelpBtn" type="button" aria-label="Photo upload instructions" title="Photo upload instructions">?</button>
+            <button class="btn" id="exportBtn" type="button">Sync Gallery</button>
+          </div>
         </div>
-        <p class="muted">Upload photos and organize them by album. Tags help sorting and searching.</p>
 
-        <details class="card photosHelp photosHelp--collapsible" aria-label="Photo upload instructions">
-          <summary class="photosHelp__summary">Photo upload instructions</summary>
+        <dialog class="dialog" id="photoHelpDialog" aria-label="Photo upload instructions">
+          <form method="dialog" class="card dialog__inner">
+            <div class="sectionHeader sectionHeader--compact">
+              <h3 class="sectionHeader__title">Photo upload instructions</h3>
+              <button class="btn" id="photoHelpCloseBtn" type="submit">Close</button>
+            </div>
 
-          <div class="photosHelp__body">
             <p class="muted">Use these steps when adding new albums and photos.</p>
 
-            <h3 class="photosHelp__heading">Step-by-step</h3>
+            <h4 class="photosHelp__heading">Step-by-step</h4>
             <ol class="photosHelp__list">
               <li>Enter an <strong>Album</strong> name (example: <code>Youth Ministry</code>, <code>Choir</code>, <code>2026 Revival</code>).</li>
               <li>Add an optional <strong>Label</strong> (caption shown under the photo).</li>
               <li>Add optional <strong>Tags</strong> (comma-separated), like <code>youth, choir, 2026</code>.</li>
               <li>Select photos and click <strong>Upload</strong>.</li>
               <li>(Optional) Use <strong>Arrange Album</strong> to manually order photos.</li>
-              <li>Click <strong>Export to Website</strong> so photos appear on the public gallery page.</li>
+              <li>Click <strong>Sync Gallery</strong> so photos appear on the public gallery page.</li>
             </ol>
 
-            <h3 class="photosHelp__heading">Tips</h3>
+            <h4 class="photosHelp__heading">Tips</h4>
             <ul class="photosHelp__list">
               <li>Keep album names consistent to avoid duplicates (use <code>Youth Ministry</code> instead of both <code>Youth</code> and <code>Youth Ministry</code>).</li>
               <li>Use tags for groups (<code>ushers</code>), events (<code>revival</code>), and years (<code>2026</code>).</li>
             </ul>
 
-            <div class="photosHelp__tip">Tip: If you uploaded photos but don’t see them on the website yet, you probably need to export.</div>
+            <div class="photosHelp__tip">Tip: If you uploaded photos but don’t see them on the website yet, you probably need to sync.</div>
+          </form>
+        </dialog>
+
+        <div class="subTabPanel" role="tabpanel" id="panel-photos-manage" aria-labelledby="subTabBtn-photos-manage">
+          <p class="muted">Upload photos and organize them by album. Tags help sorting and searching.</p>
+
+          <form id="photoUploadForm" class="form form--row" enctype="multipart/form-data">
+            <label class="label">
+              Album (Events, Choir, Youth Ministry)
+              <input class="input" name="album" type="text" placeholder="Events" />
+            </label>
+            <label class="label">
+              Label (shown as text)
+              <input class="input" name="label" type="text" placeholder="Youth Ministry" />
+            </label>
+            <label class="label">
+              Tags (comma-separated)
+              <input class="input" name="tags" type="text" placeholder="revival, 2026, sunday" />
+            </label>
+            <label class="label">
+              Select photos
+              <input class="input" name="images" type="file" accept="image/*" multiple required />
+            </label>
+            <button class="btn btn--primary" type="submit">Upload</button>
+            <div class="hint" id="photoUploadHint" aria-live="polite"></div>
+          </form>
+
+          <div class="toolbar toolbar--nowrap" aria-label="Photo sorting and filters">
+            <label class="label label--inline">
+              Sort
+              <select class="select" id="photoSort">
+                <option value="date-desc">Date (newest)</option>
+                <option value="date-asc">Date (oldest)</option>
+                <option value="name-asc">Name (A–Z)</option>
+                <option value="name-desc">Name (Z–A)</option>
+                <option value="manual">Manual (arranged)</option>
+              </select>
+            </label>
+            <label class="label label--inline">
+              Arrange Album
+              <select class="select" id="photoArrangeAlbum">
+                <option value="">(Pick an album)</option>
+              </select>
+            </label>
+            <label class="label label--inline">
+              Filter Album
+              <input class="input" id="photoAlbumFilter" type="text" placeholder="Events" />
+            </label>
+            <label class="label label--inline">
+              Search tags
+              <input class="input" id="photoTagFilter" type="text" placeholder="youth" />
+            </label>
           </div>
-        </details>
 
-        <form id="photoUploadForm" class="form form--row" enctype="multipart/form-data">
-          <label class="label">
-            Album (Events, Choir, Youth Ministry)
-            <input class="input" name="album" type="text" placeholder="Events" />
-          </label>
-          <label class="label">
-            Label (shown as text)
-            <input class="input" name="label" type="text" placeholder="Youth Ministry" />
-          </label>
-          <label class="label">
-            Tags (comma-separated)
-            <input class="input" name="tags" type="text" placeholder="revival, 2026, sunday" />
-          </label>
-          <label class="label">
-            Select photos
-            <input class="input" name="images" type="file" accept="image/*" multiple required />
-          </label>
-          <button class="btn btn--primary" type="submit">Upload</button>
-          <div class="hint" id="photoUploadHint" aria-live="polite"></div>
-        </form>
-
-        <div class="toolbar toolbar--nowrap" aria-label="Photo sorting and filters">
-          <label class="label label--inline">
-            Sort
-            <select class="select" id="photoSort">
-              <option value="date-desc">Date (newest)</option>
-              <option value="date-asc">Date (oldest)</option>
-              <option value="name-asc">Name (A–Z)</option>
-              <option value="name-desc">Name (Z–A)</option>
-              <option value="manual">Manual (arranged)</option>
-            </select>
-          </label>
-          <label class="label label--inline">
-            Arrange Album
-            <select class="select" id="photoArrangeAlbum">
-              <option value="">(Pick an album)</option>
-            </select>
-          </label>
-          <label class="label label--inline">
-            Filter Album
-            <input class="input" id="photoAlbumFilter" type="text" placeholder="Events" />
-          </label>
-          <label class="label label--inline">
-            Search tags
-            <input class="input" id="photoTagFilter" type="text" placeholder="youth" />
-          </label>
+          <div class="grid" id="photoGrid" aria-live="polite"></div>
         </div>
 
-        <div class="grid" id="photoGrid" aria-live="polite"></div>
-
-        </div>
-        </div>
-      </section>
-
-      <!-- Live Stream -->
-      <section class="tabPanel" role="tabpanel" id="tab-stream" aria-labelledby="tabBtn-stream" hidden>
-        <h2>Live Stream</h2>
-        <p class="muted">This controls which embed the website shows and whether the site displays Live/Offline. Starting the stream itself still happens on YouTube/Facebook.</p>
-
-        <div class="form form--row">
-          <label class="label">
-            YouTube embed URL (or iframe src)
-            <input class="input" id="ytEmbed" type="url" placeholder="https://www.youtube.com/embed/..." />
-          </label>
-          <label class="label">
-            Facebook embed URL
-            <input class="input" id="fbEmbed" type="url" placeholder="https://www.facebook.com/plugins/video.php?..." />
-          </label>
-          <label class="label">
-            Website player embed URL
-            <input class="input" id="siteEmbed" type="url" placeholder="https://..." />
-          </label>
-        </div>
-
-        <div class="toolbar">
-          <label class="label label--inline">
-            Website player shows
-            <select class="select" id="activePlatform">
-              <option value="website">Website</option>
-              <option value="youtube">YouTube</option>
-              <option value="facebook">Facebook</option>
-            </select>
-          </label>
-
-          <fieldset class="fieldset" aria-label="Platforms to go live on">
-            <legend>Go live on</legend>
-            <div class="checkRow">
-              <label class="label label--inline"><input class="checkbox" type="checkbox" name="livePlatforms" value="website" checked />Website</label>
-              <label class="label label--inline"><input class="checkbox" type="checkbox" name="livePlatforms" value="youtube" />YouTube</label>
-              <label class="label label--inline"><input class="checkbox" type="checkbox" name="livePlatforms" value="facebook" />Facebook</label>
+        <div class="subTabPanel" role="tabpanel" id="panel-photos-bucket" aria-labelledby="subTabBtn-photos-bucket" hidden>
+          <div class="card r2BrowserCard" aria-label="Bucket browser">
+            <div class="sectionHeader sectionHeader--compact">
+              <h3 class="sectionHeader__title">Bucket Browser</h3>
+              <button class="btn" id="r2RefreshBtn" type="button">Refresh</button>
             </div>
-          </fieldset>
+            <p class="muted">Browse and manage objects under <code>gallery/</code> in the R2 bucket.</p>
 
-          <button class="btn" id="saveLivestreamBtn" type="button">Save</button>
-          <button class="btn" id="goOfflineBtn" type="button">Set Offline</button>
-          <span class="statusChip" id="liveStatus" aria-live="polite">Offline</span>
-          <button class="btn btn--primary" id="goLiveBtn" type="button">Go Live</button>
+            <label class="label">
+              Prefix
+              <input class="input" id="r2PrefixInput" type="text" value="gallery/" />
+            </label>
+
+            <div class="inlineRow" aria-label="Bucket actions">
+              <button class="btn" id="r2GoBtn" type="button">Go</button>
+              <button class="btn" id="r2UpBtn" type="button">Up</button>
+              <button class="btn btn--primary" id="r2SyncFolderBtn" type="button">Sync This Folder</button>
+            </div>
+
+            <div class="hint" id="r2Status" aria-live="polite"></div>
+            <div class="r2Breadcrumb" id="r2Breadcrumb" aria-label="Bucket breadcrumb"></div>
+            <div class="r2Tree" id="r2Tree" aria-live="polite"></div>
+          </div>
         </div>
 
-        <h3>Recurring streams</h3>
-        <form id="recurringForm" class="form form--row">
-          <label class="label">
-            Day
-            <select class="select" name="day">
-              <option>Sunday</option>
-              <option>Monday</option>
-              <option>Tuesday</option>
-              <option>Wednesday</option>
-              <option>Thursday</option>
-              <option>Friday</option>
-              <option>Saturday</option>
-            </select>
-          </label>
-          <label class="label">
-            Time
-            <div class="timePicker" id="recurringTimePicker" data-time-picker="required"></div>
-            <input class="input" id="recurringTime" name="time" type="hidden" required />
-          </label>
-          <label class="label">
-            Label
-            <input class="input" name="label" type="text" placeholder="Sunday Service" required />
-          </label>
-          <button class="btn btn--primary" type="submit">Add</button>
-        </form>
-
-        <div class="list" id="recurringList"></div>
       </section>
 
       <!-- Content -->
@@ -712,151 +644,31 @@
         <div class="list list--scrollEvents" id="eventList"></div>
       </section>
 
-      <!-- Settings -->
-      <section class="tabPanel" role="tabpanel" id="tab-settings" aria-labelledby="tabBtn-settings" hidden>
-        <div class="sectionHeader">
-          <h2 class="sectionHeader__title">Settings</h2>
-          <div class="tabs subTabs" role="tablist" aria-label="Settings sections">
-            <button class="tab tab--sub" role="tab" aria-selected="true" aria-controls="panel-settings-social" id="subTabBtn-settings-social" type="button">Social links</button>
-            <button class="tab tab--sub" role="tab" aria-selected="false" aria-controls="panel-settings-theme" id="subTabBtn-settings-theme" type="button">Theme</button>
-          </div>
-        </div>
+      <!-- Support -->
+      <section class="tabPanel" role="tabpanel" id="tab-support" aria-labelledby="tabBtn-support" hidden>
+        <h2>Support</h2>
+        <p class="muted">Send a message to support. This will email <strong>hligon@getsparqd.com</strong>.</p>
 
-        <div class="subTabPanel" role="tabpanel" id="panel-settings-social" aria-labelledby="subTabBtn-settings-social">
-          <h3 class="srOnly">Social links</h3>
-          <form id="socialForm" class="form form--row">
-            <label class="label">Facebook URL <input class="input" name="facebook" type="url" /></label>
-            <label class="label">YouTube URL <input class="input" name="youtube" type="url" /></label>
-            <label class="label">Email <input class="input" name="email" type="email" /></label>
-            <label class="label">Phone <input class="input" name="phone" type="tel" /></label>
-            <label class="label">Address <input class="input" name="address" type="text" /></label>
-            <button class="btn btn--primary" type="submit">Save Social Links</button>
-            <div class="hint" id="socialHint" aria-live="polite"></div>
-          </form>
-        </div>
-
-        <div class="subTabPanel" role="tabpanel" id="panel-settings-theme" aria-labelledby="subTabBtn-settings-theme" hidden>
-          <h3 class="srOnly">Theme</h3>
-          <form id="themeForm" class="form">
-            <div class="themeGrid">
-              <div class="themeRow">
-                <label class="label" for="themeAccent">Accent color</label>
-                <div class="colorRow">
-                  <input class="colorPicker" id="themeAccent" name="accent" type="color" value="#c46123" />
-                  <input class="input colorHex" id="themeAccentHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#c46123" />
-                </div>
-              </div>
-
-              <div class="themeRow">
-                <label class="label" for="themeText">Text color</label>
-                <div class="colorRow">
-                  <input class="colorPicker" id="themeText" name="text" type="color" value="#ffffff" />
-                  <input class="input colorHex" id="themeTextHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#ffffff" />
-                </div>
-              </div>
-
-              <div class="themeRow">
-                <label class="label" for="themeBackground">Background color</label>
-                <div class="colorRow">
-                  <input class="colorPicker" id="themeBackground" name="background" type="color" value="#000000" />
-                  <input class="input colorHex" id="themeBackgroundHex" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="#000000" />
-                </div>
-              </div>
-            </div>
-
-            <div class="toolbar">
-              <button class="btn" id="previewThemeBtn" type="button">Preview Theme</button>
-              <button class="btn" id="clearThemePreviewBtn" type="button">Clear Preview</button>
-              <button class="btn btn--primary" type="submit">Save Theme</button>
-            </div>
-
-            <div class="hint" id="themeHint" aria-live="polite"></div>
-          </form>
-
-          <div class="card themePreview" id="themePreviewCard" aria-label="Theme preview">
-            <div class="themePreview__title">Preview</div>
-            <div class="themePreview__body">This is what your accent + text + background will look like.</div>
-            <div class="themePreview__actions">
-              <button class="btn btn--primary" type="button">Primary button</button>
-              <button class="btn" type="button">Secondary</button>
-            </div>
-          </div>
-
-          <div class="toolbar">
-            <button class="btn" id="exportAllBtn" type="button">Export Everything to Website</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Account -->
-      <section class="tabPanel" role="tabpanel" id="tab-account" aria-labelledby="tabBtn-account" hidden>
-        <h2>Account</h2>
-        <p class="muted" id="accountNote">Update your profile and password.</p>
-
-        <h3>Personal info</h3>
-        <form id="accountForm" class="form form--row">
+        <form id="supportForm" class="form">
           <label class="label">
-            Name
-            <input class="input" name="name" type="text" autocomplete="name" />
+            Subject
+            <input class="input" name="subject" type="text" maxlength="140" placeholder="Need help with the admin" required />
           </label>
           <label class="label">
-            Email
-            <input class="input" name="email" type="email" autocomplete="username" required />
+            Message
+            <textarea class="textarea" name="message" rows="6" maxlength="5000" placeholder="Describe what you need help with…" required></textarea>
           </label>
-          <button class="btn btn--primary" type="submit">Save Profile</button>
-          <div class="hint" id="accountHint" aria-live="polite"></div>
-        </form>
-
-        <h3>Change password</h3>
-        <form id="passwordForm" class="form">
           <label class="label">
-            Current password
-            <div class="inputGroup">
-              <input class="input" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
-              <button class="peekBtn" type="button" data-peek-target="currentPassword" aria-label="Show password" aria-pressed="false">
-                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
-                </svg>
-              </button>
-            </div>
+            Your email (optional)
+            <input class="input" name="replyTo" type="email" maxlength="254" placeholder="you@example.com" />
           </label>
-
-          <label class="label">
-            New password
-            <div class="inputGroup">
-              <input class="input" id="newPassword" name="newPassword" type="password" autocomplete="new-password" required />
-              <button class="peekBtn" type="button" data-peek-target="newPassword" aria-label="Show password" aria-pressed="false">
-                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
-                </svg>
-              </button>
-            </div>
-            <div class="pwHelp" id="accountPwHelp">
-              <div class="pwHelp__row"><meter class="pwMeter" id="accountPwMeter" min="0" max="4" value="0"></meter><span class="pwMeter__text" id="accountPwText">Password strength</span></div>
-              <ul class="pwRules" aria-label="Password requirements">
-                <li>At least 8 characters</li>
-                <li>At least 1 capital letter</li>
-                <li>At least 1 special character</li>
-              </ul>
-            </div>
-          </label>
-
-          <label class="label">
-            Confirm new password
-            <div class="inputGroup">
-              <input class="input" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
-              <button class="peekBtn" type="button" data-peek-target="confirmPassword" aria-label="Show password" aria-pressed="false">
-                <svg class="peekBtn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path fill="currentColor" d="M12 5c-5.5 0-9.6 4.2-11 7 1.4 2.8 5.5 7 11 7s9.6-4.2 11-7c-1.4-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/>
-                </svg>
-              </button>
-            </div>
-          </label>
-
-          <button class="btn btn--primary" type="submit">Update Password</button>
-          <div class="hint" id="passwordHint" aria-live="polite"></div>
+          <button class="btn btn--primary" type="submit">Send to support</button>
+          <div class="hint" id="supportHint" aria-live="polite"></div>
+          <div class="error" id="supportError" role="alert" hidden></div>
         </form>
       </section>
+
+
 
         </div>
       </div>

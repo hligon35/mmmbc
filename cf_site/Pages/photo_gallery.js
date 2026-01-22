@@ -141,7 +141,7 @@
       const empty = document.createElement('div');
       empty.style.color = '#fff';
       empty.style.textAlign = 'center';
-      empty.textContent = 'No photos yet. (The admin dashboard exports photos to gallery.json.)';
+      empty.textContent = 'No photos yet. (Ask an admin to sync the gallery.)';
       photoGrid.appendChild(empty);
       return;
     }
@@ -178,8 +178,11 @@
 
   async function loadGalleryJson() {
     try {
-      const res = await fetch('../gallery.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error('gallery.json not found');
+      // Prefer the live Worker feed (no more exporting files).
+      // Fallback to the legacy static file for older deployments.
+      let res = await fetch('/public/gallery.json', { cache: 'no-store' });
+      if (!res.ok) res = await fetch('../gallery.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Gallery feed not found');
       const data = await res.json();
       allItems = normalizeItems(data.items || []);
     } catch {

@@ -124,6 +124,7 @@ function initTimePicker(pickerId, hiddenInputId, { required, defaultValue } = {}
   hour.setAttribute('aria-label', 'H');
   hour.setAttribute('inputmode', 'numeric');
   hour.setAttribute('autocomplete', 'off');
+  hour.setAttribute('size', '2');
   hour.placeholder = required ? 'H' : 'Hour';
 
   const minute = document.createElement('input');
@@ -131,12 +132,14 @@ function initTimePicker(pickerId, hiddenInputId, { required, defaultValue } = {}
   minute.setAttribute('aria-label', 'M');
   minute.setAttribute('inputmode', 'numeric');
   minute.setAttribute('autocomplete', 'off');
+  minute.setAttribute('size', '2');
   minute.placeholder = required ? 'M' : 'Min';
 
   const ampm = document.createElement('input');
   ampm.className = 'select';
   ampm.setAttribute('aria-label', 'A/P');
   ampm.setAttribute('autocomplete', 'off');
+  ampm.setAttribute('size', '4');
   ampm.placeholder = required ? 'AM/PM' : 'AM/PM';
 
   const hoursListId = `${pickerId}__hours`;
@@ -286,21 +289,17 @@ function wirePasswordMeter(inputId, meterId, textId) {
 function setTab(activeId) {
   const tabButtons = [
     $('tabBtn-photos'),
-    $('tabBtn-stream'),
     $('tabBtn-events'),
     $('tabBtn-content'),
     $('tabBtn-finances'),
-    $('tabBtn-settings'),
-    $('tabBtn-account')
+    $('tabBtn-support')
   ];
   const panels = [
     $('tab-photos'),
-    $('tab-stream'),
     $('tab-events'),
     $('tab-content'),
     $('tab-finances'),
-    $('tab-settings'),
-    $('tab-account')
+    $('tab-support')
   ];
 
   tabButtons.forEach((b) => {
@@ -312,7 +311,7 @@ function setTab(activeId) {
   });
 
   const financeTopBar = $('financeTopBar');
-  if (financeTopBar) financeTopBar.hidden = activeId !== 'tab-finances';
+  if (financeTopBar) financeTopBar.hidden = false;
 }
 
 async function refreshAuthUI() {
@@ -331,7 +330,6 @@ async function refreshAuthUI() {
   $('loginCard').hidden = loggedIn || inInviteFlow;
   $('dashboardCard').hidden = !loggedIn || inInviteFlow;
   $('logoutBtn').hidden = !loggedIn;
-  $('accountBtn').hidden = !loggedIn;
 
   // Option B (Workers): use a custom login page that triggers Cloudflare Access.
   // The legacy password form is not used in Workers deployments.
@@ -347,20 +345,10 @@ async function refreshAuthUI() {
 
   if (loggedIn) {
     $('salutation').textContent = `Welcome, ${me.user.name || me.user.email}`;
-    $('avatarText').textContent = getInitials(me.user);
-
-    const accountForm = $('accountForm');
-    if (accountForm) {
-      accountForm.elements.namedItem('name').value = String(me.user.name || '');
-      accountForm.elements.namedItem('email').value = String(me.user.email || '');
-    }
-
-    const accountNote = $('accountNote');
-    if (accountNote) {
-      accountNote.textContent = me.user.isMaster
-        ? 'Master admin email/password are controlled by server environment variables.'
-        : 'Update your profile and password.';
-    }
+    const avatarText = $('avatarText');
+    if (avatarText) avatarText.textContent = getInitials(me.user);
+    const financeTopBar = $('financeTopBar');
+    if (financeTopBar) financeTopBar.hidden = false;
   }
 
   if (loggedIn) {
@@ -375,18 +363,16 @@ async function refreshAuthUI() {
   }
 }
 
-async function login(email, password, twoFactorCode) {
+async function login(email, password) {
   if (isWorkersDeployment()) {
     // In Option B, Access is the auth layer (no password login endpoint).
     throw new Error('This admin uses Cloudflare Access. Use Access login, then refresh.');
   }
-  const code = String(twoFactorCode || '').trim();
   await api('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({
       email,
-      password,
-      ...(code ? { twoFactorCode: code } : {})
+      password
     })
   });
 
@@ -422,18 +408,13 @@ function applyHashNavigation() {
   if (/invite=/.test(h)) return;
 
   if (h === 'photos') setTab('tab-photos');
-  if (h === 'stream') setTab('tab-stream');
   if (h === 'events') setTab('tab-events');
   if (h === 'content') {
     setTab('tab-content');
     setContentSubTab('panel-content-announcements');
   }
   if (h === 'finances' || h === 'finance') setTab('tab-finances');
-  if (h === 'settings') {
-    setTab('tab-settings');
-    setSettingsSubTab('panel-settings-social');
-  }
-  if (h === 'account') setTab('tab-account');
+  if (h === 'support') setTab('tab-support');
 
   if (h === 'announcements') {
     setTab('tab-content');
@@ -957,6 +938,19 @@ function setSettingsSubTab(panelId) {
   );
 }
 
+function setPhotosSubTab(panelId) {
+  setSubTab(
+    ['subTabBtn-photos-manage', 'subTabBtn-photos-bucket'],
+    ['panel-photos-manage', 'panel-photos-bucket'],
+    panelId
+  );
+
+  if (panelId === 'panel-photos-bucket') {
+    // Lazy refresh when switching to the bucket browser.
+    loadR2Tree(r2Prefix).catch(() => {});
+  }
+}
+
 let inviteLoadedToken = '';
 async function loadInvite(token) {
   if (!token) return;
@@ -971,8 +965,9 @@ async function loadInvite(token) {
     $('inviteEmail').textContent = `Setting up: ${data.email}`;
     const qr = $('inviteQr');
     if (qr && data.twoFactor?.qrDataUrl) qr.src = data.twoFactor.qrDataUrl;
-    $('inviteSecret').textContent = String(data.twoFactor?.secret || '');
-    $('inviteHint').textContent = 'Scan the QR code, then complete the form.';
+    const secret = $('inviteSecret');
+    if (secret) secret.textContent = String(data.twoFactor?.secret || '');
+    $('inviteHint').textContent = 'Complete the form to finish setup.';
     wirePasswordMeter('inviteNewPassword', 'invitePwMeter', 'invitePwText');
   } catch (err) {
     $('inviteError').textContent = err.message;
@@ -1100,6 +1095,31 @@ function renderPhotoGrid(items) {
     const actions = document.createElement('div');
     actions.className = 'row__actions';
 
+    const view = document.createElement('a');
+    view.className = 'btn';
+    view.href = item.file || item.thumb || '#';
+    view.target = '_blank';
+    view.rel = 'noopener noreferrer';
+    view.textContent = 'View';
+    actions.appendChild(view);
+
+    const edit = document.createElement('button');
+    edit.className = 'btn';
+    edit.type = 'button';
+    edit.textContent = 'Edit';
+    edit.addEventListener('click', async () => {
+      const nextLabel = prompt('Label', String(item.label || ''));
+      if (nextLabel === null) return;
+      const nextTags = prompt('Tags (comma-separated)', (item.tags || []).join(', '));
+      if (nextTags === null) return;
+      await api(`/api/gallery/${item.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ label: nextLabel, tags: nextTags })
+      });
+      await loadGallery();
+    });
+    actions.appendChild(edit);
+
     if (isManualMode()) {
       const up = document.createElement('button');
       up.className = 'btn';
@@ -1166,6 +1186,254 @@ async function loadGallery() {
   galleryItems = data.items || [];
   renderArrangeAlbumOptions();
   applyPhotoFilters();
+}
+
+// -------- R2 Bucket Browser (gallery/ only) --------
+let r2Prefix = 'gallery/';
+
+function normalizeR2Prefix(raw) {
+  let p = String(raw || '').trim();
+  p = p.replace(/\\/g, '/');
+  p = p.replace(/^\/+/, '');
+  // Force under gallery/
+  if (!p || !p.startsWith('gallery/')) p = 'gallery/';
+  // Normalize double slashes
+  p = p.replace(/\/{2,}/g, '/');
+  // Basic traversal prevention (server enforces too)
+  if (p.includes('..')) p = 'gallery/';
+  return p;
+}
+
+function parentR2Prefix(prefix) {
+  const p = normalizeR2Prefix(prefix);
+  if (p === 'gallery/') return 'gallery/';
+  const trimmed = p.endsWith('/') ? p.slice(0, -1) : p;
+  const parts = trimmed.split('/');
+  if (parts.length <= 2) return 'gallery/';
+  return `${parts.slice(0, -1).join('/')}/`;
+}
+
+function setR2Status(message) {
+  const el = $('r2Status');
+  if (el) el.textContent = String(message || '');
+}
+
+function setR2UiBusy(busy) {
+  const ids = ['r2RefreshBtn', 'r2GoBtn', 'r2UpBtn', 'r2SyncFolderBtn', 'r2PrefixInput', 'exportBtn'];
+  for (const id of ids) {
+    const el = $(id);
+    if (!el) continue;
+    if (el.tagName === 'INPUT') el.disabled = Boolean(busy);
+    else el.disabled = Boolean(busy);
+  }
+}
+
+function renderR2Breadcrumb(prefix) {
+  const root = $('r2Breadcrumb');
+  if (!root) return;
+  root.innerHTML = '';
+
+  const p = normalizeR2Prefix(prefix);
+  const afterGallery = p.slice('gallery/'.length);
+  const segments = afterGallery.split('/').filter(Boolean);
+
+  const makeCrumb = (label, targetPrefix) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'r2Crumb';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      loadR2Tree(targetPrefix).catch((e) => setR2Status(e.message));
+    });
+    return btn;
+  };
+
+  root.appendChild(makeCrumb('gallery/', 'gallery/'));
+
+  let running = 'gallery/';
+  for (const s of segments) {
+    running = `${running}${s}/`;
+    const sep = document.createElement('span');
+    sep.className = 'r2CrumbSep';
+    sep.textContent = ' / ';
+    root.appendChild(sep);
+    root.appendChild(makeCrumb(s, running));
+  }
+}
+
+function formatBytes(n) {
+  const num = Number(n);
+  if (!Number.isFinite(num) || num < 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let v = num;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i += 1;
+  }
+  const digits = i === 0 ? 0 : (v < 10 ? 2 : 1);
+  return `${v.toFixed(digits)} ${units[i]}`;
+}
+
+function renderR2Tree(prefix, data) {
+  const tree = $('r2Tree');
+  if (!tree) return;
+  tree.innerHTML = '';
+
+  const folders = data?.folders || [];
+  const files = data?.files || [];
+
+  if (!folders.length && !files.length) {
+    tree.innerHTML = '<div class="muted">No objects under this prefix.</div>';
+    return;
+  }
+
+  for (const f of folders) {
+    const row = document.createElement('div');
+    row.className = 'r2Row';
+
+    const main = document.createElement('div');
+    main.className = 'r2Row__main';
+    const title = document.createElement('div');
+    title.className = 'r2Row__title';
+    title.textContent = `${f.name}/`;
+    const meta = document.createElement('div');
+    meta.className = 'r2Row__meta muted';
+    meta.textContent = f.prefix;
+
+    main.appendChild(title);
+    main.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'r2Row__actions';
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'btn';
+    openBtn.textContent = 'Open';
+    openBtn.addEventListener('click', () => {
+      loadR2Tree(f.prefix).catch((e) => setR2Status(e.message));
+    });
+    actions.appendChild(openBtn);
+
+    row.appendChild(main);
+    row.appendChild(actions);
+    tree.appendChild(row);
+  }
+
+  for (const o of files) {
+    const row = document.createElement('div');
+    row.className = 'r2Row';
+
+    const main = document.createElement('div');
+    main.className = 'r2Row__main';
+    const title = document.createElement('div');
+    title.className = 'r2Row__title';
+    title.textContent = o.name;
+    const meta = document.createElement('div');
+    meta.className = 'r2Row__meta muted';
+    const when = o.uploaded ? ` • ${formatDate(o.uploaded)}` : '';
+    meta.textContent = `${formatBytes(o.size)}${when}`.trim();
+
+    main.appendChild(title);
+    main.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'r2Row__actions';
+
+    const viewBtn = document.createElement('button');
+    viewBtn.type = 'button';
+    viewBtn.className = 'btn';
+    viewBtn.textContent = 'View';
+    viewBtn.addEventListener('click', () => {
+      const key = String(o.key || '');
+      if (!key) return;
+      window.open(`/cdn/gallery/${encodeURI(key)}`, '_blank');
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', async () => {
+      const key = String(o.key || '');
+      if (!key) return;
+      if (!confirmWrite(`Delete this object from R2?\n\n${key}`)) return;
+      setR2UiBusy(true);
+      setR2Status('Deleting…');
+      try {
+        await api(`/api/gallery/r2object?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+        await loadR2Tree(r2Prefix);
+        await loadGallery();
+        setR2Status('Deleted.');
+      } catch (e) {
+        setR2Status(e.message);
+      } finally {
+        setR2UiBusy(false);
+      }
+    });
+
+    actions.appendChild(viewBtn);
+    actions.appendChild(delBtn);
+
+    row.appendChild(main);
+    row.appendChild(actions);
+    tree.appendChild(row);
+  }
+}
+
+async function loadR2Tree(prefix) {
+  if (!$('r2Tree')) return;
+
+  r2Prefix = normalizeR2Prefix(prefix);
+  const prefixInput = $('r2PrefixInput');
+  if (prefixInput) prefixInput.value = r2Prefix;
+
+  setR2Status('Loading…');
+  renderR2Breadcrumb(r2Prefix);
+
+  try {
+    const data = await api(`/api/gallery/r2tree?prefix=${encodeURIComponent(r2Prefix)}&limit=1000`, { method: 'GET' });
+    renderR2Tree(r2Prefix, data);
+    setR2Status(data?.truncated ? 'Showing first page (use narrower prefix for faster browsing).' : '');
+  } catch (e) {
+    const msg = String(e?.message || e || 'Unable to load bucket listing.');
+    setR2Status(msg);
+    throw e;
+  }
+}
+
+async function syncFromR2(prefix) {
+  const p = normalizeR2Prefix(prefix);
+  if (!confirmWrite(`Sync D1 gallery records from R2 under:\n\n${p}\n\nThis updates what the public Photo Gallery shows.`)) return;
+
+  setR2UiBusy(true);
+  setR2Status('Syncing…');
+
+  let cursor = null;
+  let totalAdded = 0;
+  let totalExisting = 0;
+  let totalProcessed = 0;
+
+  try {
+    while (true) {
+      const qs = new URLSearchParams({ prefix: p, limit: '1000' });
+      if (cursor) qs.set('cursor', cursor);
+      const res = await api(`/api/gallery/sync?${qs.toString()}`, { method: 'POST', body: '{}' });
+      totalAdded += Number(res.added || 0);
+      totalExisting += Number(res.existing || 0);
+      totalProcessed += Number(res.processed || 0);
+      setR2Status(`Syncing… processed ${totalProcessed} (added ${totalAdded}, existing ${totalExisting})`);
+      cursor = res.nextCursor;
+      if (!cursor) break;
+    }
+    setR2Status(`Sync complete. Added ${totalAdded} item(s).`);
+    await loadGallery();
+    await loadR2Tree(p);
+  } catch (e) {
+    setR2Status(e.message);
+  } finally {
+    setR2UiBusy(false);
+  }
 }
 
 // -------- Announcements --------
@@ -1750,6 +2018,7 @@ async function saveLivestream() {
 let settings = null;
 
 async function loadSettings() {
+  if (!$('socialForm') || !$('themeForm')) return;
   settings = await api('/api/settings', { method: 'GET' });
 
   $('socialForm').facebook.value = settings?.social?.facebook || '';
@@ -1804,15 +2073,24 @@ function applyThemePreviewCard(theme) {
 
 // -------- Load everything --------
 async function loadAll() {
-  await Promise.all([
+  const results = await Promise.allSettled([
     loadGallery(),
     loadAnnouncements(),
     loadEvents(),
     loadBulletins(),
-    loadLivestream(),
     loadFinances(),
-    loadSettings()
   ]);
+
+  // Keep bucket browsing non-blocking so a missing endpoint can't break login.
+  try {
+    await loadR2Tree(r2Prefix);
+  } catch {
+    // loadR2Tree reports status in the UI.
+  }
+
+  for (const r of results) {
+    if (r.status === 'rejected') throw r.reason;
+  }
 }
 
 // -------- Wire UI --------
@@ -1825,18 +2103,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Tabs
   $('tabBtn-photos').addEventListener('click', () => setTab('tab-photos'));
-  $('tabBtn-stream').addEventListener('click', () => setTab('tab-stream'));
   $('tabBtn-events').addEventListener('click', () => setTab('tab-events'));
   $('tabBtn-content').addEventListener('click', () => {
     setTab('tab-content');
     setContentSubTab('panel-content-announcements');
   });
   $('tabBtn-finances').addEventListener('click', () => setTab('tab-finances'));
-  $('tabBtn-settings').addEventListener('click', () => {
-    setTab('tab-settings');
-    setSettingsSubTab('panel-settings-social');
-  });
-  $('tabBtn-account').addEventListener('click', () => setTab('tab-account'));
+  if ($('tabBtn-support')) $('tabBtn-support').addEventListener('click', () => setTab('tab-support'));
 
   // Sub-tabs
   if ($('subTabBtn-content-announcements')) {
@@ -1845,18 +2118,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('subTabBtn-content-bulletins')) {
     $('subTabBtn-content-bulletins').addEventListener('click', () => setContentSubTab('panel-content-bulletins'));
   }
+
+  if ($('subTabBtn-photos-manage')) {
+    $('subTabBtn-photos-manage').addEventListener('click', () => setPhotosSubTab('panel-photos-manage'));
+  }
+  if ($('subTabBtn-photos-bucket')) {
+    $('subTabBtn-photos-bucket').addEventListener('click', () => setPhotosSubTab('panel-photos-bucket'));
+  }
+  // Default Photo Gallery view
+  if ($('panel-photos-manage') && $('panel-photos-bucket')) {
+    setPhotosSubTab('panel-photos-bucket');
+  }
   if ($('subTabBtn-settings-social')) {
     $('subTabBtn-settings-social').addEventListener('click', () => setSettingsSubTab('panel-settings-social'));
   }
   if ($('subTabBtn-settings-theme')) {
     $('subTabBtn-settings-theme').addEventListener('click', () => setSettingsSubTab('panel-settings-theme'));
   }
-
-  // Header avatar
-  $('accountBtn').addEventListener('click', () => {
-    setTab('tab-account');
-    window.location.hash = '#account';
-  });
 
   // Finances
   if ($('financeEntryForm')) {
@@ -2173,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fd = new FormData(e.currentTarget);
     try {
-      await login(String(fd.get('email')), String(fd.get('password')), String(fd.get('twoFactorCode') || ''));
+      await login(String(fd.get('email')), String(fd.get('password')));
       await refreshAuthUI();
     } catch (err) {
       $('loginError').textContent = err.message;
@@ -2182,15 +2460,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Invite onboarding
-  $('copySecretBtn').addEventListener('click', async () => {
-    const text = String($('inviteSecret').textContent || '');
-    try {
-      await navigator.clipboard.writeText(text);
-      $('inviteHint').textContent = 'Copied.';
-    } catch {
-      $('inviteHint').textContent = 'Copy failed. You can select and copy manually.';
-    }
-  });
+  if ($('copySecretBtn') && $('inviteSecret')) {
+    $('copySecretBtn').addEventListener('click', async () => {
+      const text = String($('inviteSecret').textContent || '');
+      try {
+        await navigator.clipboard.writeText(text);
+        $('inviteHint').textContent = 'Copied.';
+      } catch {
+        $('inviteHint').textContent = 'Copy failed. You can select and copy manually.';
+      }
+    });
+  }
 
   $('inviteForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -2223,8 +2503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         body: JSON.stringify({
           name: String(fd.get('name') || ''),
-          newPassword,
-          twoFactorCode: String(fd.get('twoFactorCode') || '')
+          newPassword
         })
       });
       window.location.hash = '';
@@ -2236,6 +2515,40 @@ document.addEventListener('DOMContentLoaded', () => {
       hint.textContent = '';
     }
   });
+
+  // Support
+  if ($('supportForm')) {
+    $('supportForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hint = $('supportHint');
+      const errEl = $('supportError');
+      if (errEl) errEl.hidden = true;
+      if (hint) hint.textContent = '';
+
+      const fd = new FormData(e.currentTarget);
+      const subject = String(fd.get('subject') || '').trim();
+      const message = String(fd.get('message') || '').trim();
+      const replyTo = String(fd.get('replyTo') || '').trim();
+
+      if (!subject || !message) return;
+
+      if (hint) hint.textContent = 'Sending…';
+      try {
+        await api('/api/support/message', {
+          method: 'POST',
+          body: JSON.stringify({ subject, message, replyTo })
+        });
+        if (hint) hint.textContent = 'Sent.';
+        e.currentTarget.reset();
+      } catch (err) {
+        if (errEl) {
+          errEl.textContent = err.message;
+          errEl.hidden = false;
+        }
+        if (hint) hint.textContent = '';
+      }
+    });
+  }
 
   // Forgot login (recovery)
   $('forgotToggle').addEventListener('click', () => {
@@ -2390,10 +2703,68 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('exportBtn').addEventListener('click', async () => {
-    if (!confirmWrite('Export current content to website files now?')) return;
-    await api('/api/export', { method: 'POST', body: '{}' });
-    alert('Exported to website files (gallery.json, schedule.json, theme.css, etc).');
+    await syncFromR2('gallery/');
   });
+
+  // Photo upload instructions help dialog
+  if ($('photoHelpBtn') && $('photoHelpDialog')) {
+    const dlg = $('photoHelpDialog');
+    const closeDlg = () => {
+      try {
+        if (typeof dlg.close === 'function') dlg.close();
+        else dlg.removeAttribute('open');
+      } catch {
+        dlg.removeAttribute('open');
+      }
+    };
+
+    $('photoHelpBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof dlg.showModal === 'function') {
+        dlg.showModal();
+      } else {
+        // Fallback for browsers without <dialog> support.
+        dlg.setAttribute('open', '');
+      }
+    });
+    if ($('photoHelpCloseBtn')) {
+      $('photoHelpCloseBtn').addEventListener('click', () => closeDlg());
+    }
+    dlg.addEventListener('click', (e) => {
+      // Close when clicking the backdrop
+      if (e.target === dlg) closeDlg();
+    });
+  }
+
+  if ($('r2GoBtn')) {
+    $('r2GoBtn').addEventListener('click', () => {
+      const raw = $('r2PrefixInput') ? $('r2PrefixInput').value : 'gallery/';
+      loadR2Tree(raw).catch((e) => setR2Status(e.message));
+    });
+  }
+  if ($('r2UpBtn')) {
+    $('r2UpBtn').addEventListener('click', () => {
+      loadR2Tree(parentR2Prefix(r2Prefix)).catch((e) => setR2Status(e.message));
+    });
+  }
+  if ($('r2RefreshBtn')) {
+    $('r2RefreshBtn').addEventListener('click', () => {
+      loadR2Tree(r2Prefix).catch((e) => setR2Status(e.message));
+    });
+  }
+  if ($('r2SyncFolderBtn')) {
+    $('r2SyncFolderBtn').addEventListener('click', async () => {
+      await syncFromR2(r2Prefix);
+    });
+  }
+  if ($('r2PrefixInput')) {
+    $('r2PrefixInput').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const raw = $('r2PrefixInput').value;
+      loadR2Tree(raw).catch((err) => setR2Status(err.message));
+    });
+  }
 
   // Announcements
   $('announceForm').addEventListener('submit', async (e) => {
@@ -2501,91 +2872,103 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Livestream controls
-  $('goLiveBtn').addEventListener('click', async () => {
-    if (!confirmWrite('Set livestream status to LIVE now?')) return;
-    const platform = $('activePlatform').value;
-    const platforms = getSelectedLivePlatforms();
-    const nextPlatforms = platforms.length ? platforms : [platform];
-    if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
-    livestream.active = { platform, platforms: nextPlatforms, status: 'live' };
-    await saveLivestream();
-  });
-  $('goOfflineBtn').addEventListener('click', async () => {
-    if (!confirmWrite('Set livestream status to OFFLINE now?')) return;
-    const platform = $('activePlatform').value;
-    const platforms = getSelectedLivePlatforms();
-    const nextPlatforms = platforms.length ? platforms : [platform];
-    if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
-    livestream.active = { platform, platforms: nextPlatforms, status: 'offline' };
-    await saveLivestream();
-  });
-  $('saveLivestreamBtn').addEventListener('click', async () => {
-    if (!confirmWrite('Save livestream settings?')) return;
-    const platform = $('activePlatform').value;
-    const platforms = getSelectedLivePlatforms();
-    const nextPlatforms = platforms.length ? platforms : [platform];
-    if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
-    livestream.active = { platform, platforms: nextPlatforms, status: livestream.active?.status || 'offline' };
-    await saveLivestream();
-    alert('Saved livestream settings.');
-  });
+  if ($('goLiveBtn')) {
+    $('goLiveBtn').addEventListener('click', async () => {
+      if (!confirmWrite('Set livestream status to LIVE now?')) return;
+      const platform = $('activePlatform').value;
+      const platforms = getSelectedLivePlatforms();
+      const nextPlatforms = platforms.length ? platforms : [platform];
+      if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
+      livestream.active = { platform, platforms: nextPlatforms, status: 'live' };
+      await saveLivestream();
+    });
+  }
+  if ($('goOfflineBtn')) {
+    $('goOfflineBtn').addEventListener('click', async () => {
+      if (!confirmWrite('Set livestream status to OFFLINE now?')) return;
+      const platform = $('activePlatform').value;
+      const platforms = getSelectedLivePlatforms();
+      const nextPlatforms = platforms.length ? platforms : [platform];
+      if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
+      livestream.active = { platform, platforms: nextPlatforms, status: 'offline' };
+      await saveLivestream();
+    });
+  }
+  if ($('saveLivestreamBtn')) {
+    $('saveLivestreamBtn').addEventListener('click', async () => {
+      if (!confirmWrite('Save livestream settings?')) return;
+      const platform = $('activePlatform').value;
+      const platforms = getSelectedLivePlatforms();
+      const nextPlatforms = platforms.length ? platforms : [platform];
+      if (!nextPlatforms.includes(platform)) nextPlatforms.unshift(platform);
+      livestream.active = { platform, platforms: nextPlatforms, status: livestream.active?.status || 'offline' };
+      await saveLivestream();
+      alert('Saved livestream settings.');
+    });
+  }
 
-  $('recurringForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  if ($('recurringForm')) {
+    $('recurringForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    if (!confirmWrite('Add this recurring stream?')) return;
+      if (!confirmWrite('Add this recurring stream?')) return;
 
-    const fd = new FormData(e.currentTarget);
-    const item = {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      day: String(fd.get('day')),
-      time: String(fd.get('time')),
-      label: String(fd.get('label'))
-    };
-    livestream.recurring = [...(livestream.recurring || []), item];
-    await saveLivestream();
-    e.currentTarget.reset();
-  });
+      const fd = new FormData(e.currentTarget);
+      const item = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        day: String(fd.get('day')),
+        time: String(fd.get('time')),
+        label: String(fd.get('label'))
+      };
+      livestream.recurring = [...(livestream.recurring || []), item];
+      await saveLivestream();
+      e.currentTarget.reset();
+    });
+  }
 
   // Social settings
-  $('socialForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const hint = $('socialHint');
+  if ($('socialForm')) {
+    $('socialForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hint = $('socialHint');
 
-    if (!confirmWrite('Save social links?')) return;
+      if (!confirmWrite('Save social links?')) return;
 
-    hint.textContent = 'Saving…';
-    const fd = new FormData(e.currentTarget);
-    await saveSettingsPatch({
-      social: {
-        facebook: String(fd.get('facebook') || ''),
-        youtube: String(fd.get('youtube') || ''),
-        email: String(fd.get('email') || ''),
-        phone: String(fd.get('phone') || ''),
-        address: String(fd.get('address') || '')
-      }
+      hint.textContent = 'Saving…';
+      const fd = new FormData(e.currentTarget);
+      await saveSettingsPatch({
+        social: {
+          facebook: String(fd.get('facebook') || ''),
+          youtube: String(fd.get('youtube') || ''),
+          email: String(fd.get('email') || ''),
+          phone: String(fd.get('phone') || ''),
+          address: String(fd.get('address') || '')
+        }
+      });
+      hint.textContent = 'Saved.';
     });
-    hint.textContent = 'Saved.';
-  });
+  }
 
   // Theme settings
-  $('themeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const hint = $('themeHint');
+  if ($('themeForm')) {
+    $('themeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hint = $('themeHint');
 
-    if (!confirmWrite('Save theme settings?')) return;
+      if (!confirmWrite('Save theme settings?')) return;
 
-    hint.textContent = 'Saving…';
-    const fd = new FormData(e.currentTarget);
-    await saveSettingsPatch({
-      theme: {
-        accent: String(fd.get('accent') || '#c46123'),
-        text: String(fd.get('text') || '#ffffff'),
-        background: String(fd.get('background') || '#000000')
-      }
+      hint.textContent = 'Saving…';
+      const fd = new FormData(e.currentTarget);
+      await saveSettingsPatch({
+        theme: {
+          accent: String(fd.get('accent') || '#c46123'),
+          text: String(fd.get('text') || '#ffffff'),
+          background: String(fd.get('background') || '#000000')
+        }
+      });
+      hint.textContent = 'Saved (theme.css updated if exports enabled).';
     });
-    hint.textContent = 'Saved (theme.css updated if exports enabled).';
-  });
+  }
 
   // Theme: hex input syncing
   const syncHex = (colorInputId, hexInputId) => {

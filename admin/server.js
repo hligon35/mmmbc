@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const os = require('os');
+const https = require('https');
 const express = require('express');
 const compression = require('compression');
 const session = require('express-session');
@@ -186,6 +187,33 @@ function isInviteValid(user) {
 
 function normalizeTotp(code) {
   return String(code || '').replace(/\s+/g, '');
+}
+
+function mailchannelsSend(payload) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const req = https.request(
+      {
+        method: 'POST',
+        hostname: 'api.mailchannels.net',
+        path: '/tx/v1/send',
+        headers: {
+          'content-type': 'application/json',
+          'content-length': Buffer.byteLength(body)
+        }
+      },
+      (resp) => {
+        let data = '';
+        resp.on('data', (chunk) => { data += chunk; });
+        resp.on('end', () => {
+          resolve({ status: resp.statusCode || 0, body: data });
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
 }
 
 function sanitizeSegment(input) {
@@ -603,7 +631,6 @@ app.get('/api/admin/logs', requireAuth, (req, res) => {
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
   const email = String(req.body.email || '').toLowerCase().trim();
   const password = String(req.body.password || '');
-  const twoFactorCode = normalizeTotp(req.body.twoFactorCode || '');
   const usersData = loadUsers();
   const user = (usersData.users || []).find((u) => String(u.email).toLowerCase() === email);
   if (!user) {
@@ -622,19 +649,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  if (user.twoFactorEnabled) {
-    if (!twoFactorCode) return res.status(401).json({ error: '2FA code required' });
-    const verified = speakeasy.totp.verify({
-      secret: String(user.twoFactorSecret || ''),
-      encoding: 'base32',
-      token: twoFactorCode,
-      window: 1
-    });
-    if (!verified) {
-      audit('auth_login_failed', { at: new Date().toISOString(), email, ip: req.ip, reason: 'bad_2fa' });
-      return res.status(401).json({ error: 'Invalid 2FA code' });
-    }
-  }
+  // 2FA is disabled in this admin build (UI removed).
 
   // Prevent session fixation by regenerating the session on login.
   req.session.regenerate((err) => {
@@ -650,7 +665,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
       name: user.name || '',
       isMaster: !!user.isMaster,
       mustOnboard: !!user.mustOnboard,
-      twoFactorEnabled: !!user.twoFactorEnabled
+      twoFactorEnabled: false
     };
     audit('auth_login_success', { at: new Date().toISOString(), email, ip: req.ip, userId: user.id });
     res.json({ ok: true });
@@ -687,6 +702,48 @@ app.post('/api/auth/recover', async (req, res) => {
 
 app.post('/api/auth/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
+});
+
+// ----------------- SUPPORT -----------------
+app.post('/api/support/message', requireAuth, async (req, res) => {
+  const subjectRaw = String(req.body?.subject || '').trim();
+  const messageRaw = String(req.body?.message || '').trim();
+  const replyToRaw = String(req.body?.replyTo || '').trim();
+  if (!subjectRaw || !messageRaw) return res.status(400).json({ error: 'Subject and message are required.' });
+
+  const subject = subjectRaw.slice(0, 140);
+  const message = messageRaw.slice(0, 5000);
+  const replyTo = replyToRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToRaw) ? replyToRaw : '';
+
+  const toEmail = String(process.env.SUPPORT_TO_EMAIL || 'hligon@getsparqd.com').trim();
+  const fromEmail = String(process.env.SUPPORT_FROM_EMAIL || 'no-reply@mmmbc.com').trim();
+  const fromName = String(process.env.SUPPORT_FROM_NAME || 'MMMBC Admin Support').trim() || 'MMMBC Admin Support';
+
+  const composedSubject = `[MMMBC Support] ${subject}`;
+  const textBody = [
+    `From (admin): ${String(req.session?.user?.email || '')}`,
+    replyTo ? `Reply-To: ${replyTo}` : 'Reply-To: (not provided)',
+    '',
+    message
+  ].join('\n');
+
+  try {
+    const payload = {
+      personalizations: [{ to: [{ email: toEmail }], subject: composedSubject }],
+      from: { email: fromEmail, name: fromName },
+      ...(replyTo ? { reply_to: { email: replyTo } } : {}),
+      content: [{ type: 'text/plain', value: textBody }]
+    };
+    const out = await mailchannelsSend(payload);
+    if (out.status < 200 || out.status >= 300) {
+      logger.error('support_email_failed', { status: out.status, body: String(out.body || '').slice(0, 2000) });
+      return res.status(502).json({ error: `Email send failed (${out.status}).` });
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    logger.error('support_email_error', { err: e });
+    res.status(502).json({ error: 'Email send failed.' });
+  }
 });
 
 // ----------------- USERS (admin) -----------------
@@ -774,7 +831,7 @@ app.post('/api/users/invite', requireAuth, async (req, res) => {
   res.json({ ok: true, inviteLink, expiresAt });
 });
 
-// Invite details + 2FA setup payload
+// Invite details
 app.get('/api/invites/:token', async (req, res) => {
   const token = String(req.params.token || '').trim();
   if (!token) return res.status(400).json({ error: 'Missing token' });
@@ -784,41 +841,17 @@ app.get('/api/invites/:token', async (req, res) => {
   const user = findUserByInviteToken(users, token);
   if (!user || !isInviteValid(user)) return res.status(404).json({ error: 'Invite link is invalid or expired.' });
 
-  if (!user.twoFactorPendingSecret) {
-    const secret = speakeasy.generateSecret({
-      name: `MMMBC Admin (${user.email})`,
-      length: 20
-    });
-    user.twoFactorPendingSecret = secret.base32;
-    saveUsers({ users });
-  }
-
-  const otpauthUrl = speakeasy.otpauthURL({
-    secret: user.twoFactorPendingSecret,
-    label: `MMMBC Admin:${user.email}`,
-    issuer: 'MMMBC Admin',
-    encoding: 'base32'
-  });
-
-  const qrDataUrl = await qrcode.toDataURL(otpauthUrl, { margin: 1, scale: 6 });
-
   res.json({
     email: user.email,
-    expiresAt: user.inviteExpiresAt,
-    twoFactor: {
-      secret: user.twoFactorPendingSecret,
-      otpauthUrl,
-      qrDataUrl
-    }
+    expiresAt: user.inviteExpiresAt
   });
 });
 
-// Complete onboarding (name + password + confirm 2FA)
+// Complete onboarding (name + password)
 app.post('/api/invites/:token/complete', async (req, res) => {
   const token = String(req.params.token || '').trim();
   const name = String(req.body?.name || '').trim();
   const newPassword = String(req.body?.newPassword || '');
-  const twoFactorCode = normalizeTotp(req.body?.twoFactorCode || '');
   if (!token) return res.status(400).json({ error: 'Missing token' });
 
   const usersData = loadUsers();
@@ -832,24 +865,12 @@ app.post('/api/invites/:token/complete', async (req, res) => {
     return res.status(e.statusCode || 400).json({ error: e.message || 'Invalid password.' });
   }
 
-  const pending = String(user.twoFactorPendingSecret || '');
-  if (!pending) return res.status(400).json({ error: '2FA setup not initialized. Refresh and try again.' });
-  if (!twoFactorCode) return res.status(400).json({ error: '2FA code is required.' });
-
-  const verified = speakeasy.totp.verify({
-    secret: pending,
-    encoding: 'base32',
-    token: twoFactorCode,
-    window: 1
-  });
-  if (!verified) return res.status(400).json({ error: 'Invalid 2FA code. Check your authenticator app and try again.' });
-
   user.name = name;
   user.passwordHash = await bcrypt.hash(newPassword, 12);
   user.mustOnboard = false;
   user.onboardedAt = new Date().toISOString();
-  user.twoFactorEnabled = true;
-  user.twoFactorSecret = pending;
+  user.twoFactorEnabled = false;
+  user.twoFactorSecret = '';
   user.twoFactorPendingSecret = '';
   user.inviteTokenHash = '';
   user.inviteExpiresAt = '';
@@ -864,7 +885,7 @@ app.post('/api/invites/:token/complete', async (req, res) => {
     name: user.name || '',
     isMaster: !!user.isMaster,
     mustOnboard: !!user.mustOnboard,
-    twoFactorEnabled: !!user.twoFactorEnabled
+    twoFactorEnabled: false
   };
 
   res.json({ ok: true });
@@ -966,6 +987,62 @@ const galleryUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024, files: 20 }
 });
+
+function proxyToWorker(req, res) {
+  const base = String(process.env.WORKER_ORIGIN || '').trim().replace(/\/$/, '');
+  if (!base) {
+    return res.status(501).json({
+      error: 'R2 bucket browsing is provided by the Cloudflare Worker. Set WORKER_ORIGIN to your Worker URL (and optionally CF_ACCESS_CLIENT_ID/CF_ACCESS_CLIENT_SECRET for Access-protected Workers).'
+    });
+  }
+
+  const target = new URL(req.originalUrl, `${base}/`);
+  const method = String(req.method || 'GET').toUpperCase();
+
+  const headers = {
+    accept: 'application/json'
+  };
+
+  const id = String(process.env.CF_ACCESS_CLIENT_ID || '').trim();
+  const secret = String(process.env.CF_ACCESS_CLIENT_SECRET || '').trim();
+  if (id && secret) {
+    headers['CF-Access-Client-Id'] = id;
+    headers['CF-Access-Client-Secret'] = secret;
+  }
+
+  let body = null;
+  if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+    headers['content-type'] = 'application/json';
+    body = JSON.stringify(req.body ?? {});
+    headers['content-length'] = Buffer.byteLength(body);
+  }
+
+  const proxyReq = https.request(
+    {
+      method,
+      hostname: target.hostname,
+      path: `${target.pathname}${target.search}`,
+      headers
+    },
+    (proxyRes) => {
+      res.status(proxyRes.statusCode || 502);
+      const ct = proxyRes.headers['content-type'];
+      if (ct) res.setHeader('content-type', ct);
+      proxyRes.pipe(res);
+    }
+  );
+  proxyReq.on('error', (e) => {
+    logger.error('worker_proxy_failed', { err: e, url: target.toString() });
+    res.status(502).json({ error: 'Proxy to Worker failed.' });
+  });
+  if (body) proxyReq.write(body);
+  proxyReq.end();
+}
+
+// Worker-backed R2 gallery APIs (for bucket browsing/sync)
+app.get('/api/gallery/r2tree', requireAuth, (req, res) => proxyToWorker(req, res));
+app.delete('/api/gallery/r2object', requireAuth, (req, res) => proxyToWorker(req, res));
+app.post('/api/gallery/sync', requireAuth, (req, res) => proxyToWorker(req, res));
 
 app.get('/api/gallery', requireAuth, (req, res) => {
   res.json(loadGallery());
@@ -1342,6 +1419,31 @@ function normalizeAndSortScheduleLike(events) {
     .sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
 }
 
+function isPastEvent(ev, now) {
+  const date = String(ev?.date || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+
+  // If time is blank, keep the event visible until the end of that day.
+  const time = normalizeTimeValue(ev?.time) || '23:59';
+  const t = Date.parse(`${date}T${time}:00`);
+  if (Number.isNaN(t)) return false;
+  return t < now.getTime();
+}
+
+function prunePastEvents(events) {
+  const now = new Date();
+  const kept = [];
+  let removed = 0;
+  for (const ev of (events || [])) {
+    if (isPastEvent(ev, now)) {
+      removed += 1;
+      continue;
+    }
+    kept.push(ev);
+  }
+  return { kept, removed };
+}
+
 function loadEvents() {
   const stored = readJson(EVENTS_DATA_PATH, { events: [] });
   const storedEvents = Array.isArray(stored.events) ? stored.events : [];
@@ -1379,6 +1481,14 @@ function loadEvents() {
 
   if (storedComparable !== mergedComparable) {
     saveEvents({ events: merged });
+  }
+
+  const { kept, removed } = prunePastEvents(merged);
+  if (removed) {
+    saveEvents({ events: kept });
+    // Keep the public scheduler in sync when it exists (or when exports are enabled).
+    if (ENABLE_EXPORTS || fs.existsSync(schedulePath)) exportScheduleJson(kept);
+    return { events: kept };
   }
 
   return { events: merged };
@@ -1421,11 +1531,12 @@ app.post('/api/events', requireAuth, (req, res) => {
   const ev = { id: newId(), title, date, time, createdAt: new Date().toISOString() };
   events.push(ev);
   events.sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
-  saveEvents({ events });
 
-  if (ENABLE_EXPORTS) exportScheduleJson(events);
+  const pruned = prunePastEvents(events);
+  saveEvents({ events: pruned.kept });
+  if (ENABLE_EXPORTS) exportScheduleJson(pruned.kept);
 
-  res.json({ ok: true, event: ev, events });
+  res.json({ ok: true, event: ev, events: pruned.kept });
 });
 
 app.put('/api/events/:id', requireAuth, (req, res) => {
@@ -1446,10 +1557,12 @@ app.put('/api/events/:id', requireAuth, (req, res) => {
   ev.updatedAt = new Date().toISOString();
 
   events.sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
-  saveEvents({ events });
-  if (ENABLE_EXPORTS) exportScheduleJson(events);
 
-  res.json({ ok: true, event: ev, events });
+  const pruned = prunePastEvents(events);
+  saveEvents({ events: pruned.kept });
+  if (ENABLE_EXPORTS) exportScheduleJson(pruned.kept);
+
+  res.json({ ok: true, event: ev, events: pruned.kept });
 });
 
 app.delete('/api/events/:id', requireAuth, (req, res) => {
@@ -1457,8 +1570,9 @@ app.delete('/api/events/:id', requireAuth, (req, res) => {
   const data = loadEvents();
   const events = Array.isArray(data.events) ? data.events : [];
   const next = events.filter((e) => e.id !== id);
-  saveEvents({ events: next });
-  if (ENABLE_EXPORTS) exportScheduleJson(next);
+  const pruned = prunePastEvents(next);
+  saveEvents({ events: pruned.kept });
+  if (ENABLE_EXPORTS) exportScheduleJson(pruned.kept);
   res.json({ ok: true });
 });
 
