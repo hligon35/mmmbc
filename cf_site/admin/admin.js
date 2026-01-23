@@ -28,6 +28,11 @@ async function api(path, options = {}) {
 
   if (needsCsrf) {
     await csrfReady;
+    // If the page hasn't fetched a token yet (or it was cleared), fetch now.
+    if (!csrfToken) {
+      csrfReady = fetchCsrfToken();
+      await csrfReady;
+    }
   }
 
   const headers = {
@@ -36,21 +41,80 @@ async function api(path, options = {}) {
   };
   if (needsCsrf && csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
-  const res = await fetch(url, {
-    headers,
-    credentials: 'same-origin',
-    ...options
-  });
-  const isJson = (res.headers.get('content-type') || '').includes('application/json');
-  const data = isJson ? await res.json() : null;
-  if (!res.ok) {
-    const msg = data?.error || `Request failed: ${res.status}`;
+  const doRequest = async () => {
+    const res = await fetch(url, {
+      headers,
+      credentials: 'same-origin',
+      ...options
+    });
+    const isJson = (res.headers.get('content-type') || '').includes('application/json');
+    const data = isJson ? await res.json() : null;
+    return { res, data };
+  };
+
+  let out = await doRequest();
+
+  // If the session rotated, CSRF tokens can become invalid. Refresh once and retry.
+  if (needsCsrf && !out.res.ok && out.res.status === 403) {
+    const errMsg = String(out.data?.error || '');
+    if (/csrf/i.test(errMsg)) {
+      csrfReady = fetchCsrfToken();
+      await csrfReady;
+      if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+      out = await doRequest();
+    }
+  }
+
+  if (!out.res.ok) {
+    const msg = out.data?.error || `Request failed: ${out.res.status}`;
     throw new Error(msg);
   }
-  return data;
+
+  return out.data;
 }
 
 function $(id) { return document.getElementById(id); }
+
+function safeResetForm(e) {
+  const form = e?.currentTarget || e?.target?.closest?.('form');
+  if (form && typeof form.reset === 'function') form.reset();
+}
+
+function showToast(message, { variant = 'success', timeoutMs = 3500 } = {}) {
+  const text = String(message || '').trim();
+  if (!text) return;
+
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toastContainer';
+    container.setAttribute('aria-live', 'polite');
+    container.setAttribute('aria-relevant', 'additions');
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${variant}`;
+  toast.setAttribute('role', 'status');
+  toast.textContent = text;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('toast--show'));
+
+  const remove = () => {
+    toast.classList.remove('toast--show');
+    setTimeout(() => {
+      try { toast.remove(); } catch { /* ignore */ }
+      if (container && container.childElementCount === 0) {
+        try { container.remove(); } catch { /* ignore */ }
+      }
+    }, 220);
+  };
+
+  setTimeout(remove, Math.max(500, Number(timeoutMs) || 0));
+  toast.addEventListener('click', remove);
+}
 
 function confirmWrite(message) {
   return confirm(message || 'Save changes?');
@@ -1409,6 +1473,7 @@ async function loadR2Tree(prefix) {
   } catch (e) {
     const msg = String(e?.message || e || 'Unable to load bucket listing.');
     setR2Status(msg);
+    showToast(msg, { variant: 'danger' });
     throw e;
   }
 }
@@ -1438,10 +1503,12 @@ async function syncFromR2(prefix) {
       if (!cursor) break;
     }
     setR2Status(`Sync complete. Added ${totalAdded} item(s).`);
+    showToast(`Gallery synced. Added ${totalAdded} item(s).`, { variant: 'success' });
     await loadGallery();
     await loadR2Tree(p);
   } catch (e) {
     setR2Status(e.message);
+    showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
   } finally {
     setR2UiBusy(false);
   }
@@ -2972,14 +3039,16 @@ document.addEventListener('DOMContentLoaded', () => {
           method: 'POST',
           body: JSON.stringify({ subject, message, replyTo })
         });
-        if (hint) hint.textContent = 'Sent.';
-        e.currentTarget.reset();
+        if (hint) hint.textContent = '';
+        showToast('Email sent to support.', { variant: 'success' });
+        safeResetForm(e);
       } catch (err) {
         if (errEl) {
           errEl.textContent = err.message;
           errEl.hidden = false;
         }
         if (hint) hint.textContent = '';
+        showToast(`Email failed: ${String(err?.message || 'Unable to send email.')}`, { variant: 'danger' });
       }
     });
   }
@@ -3021,7 +3090,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       hint.textContent = 'Password updated. You can sign in now.';
-      e.currentTarget.reset();
+      safeResetForm(e);
       $('forgotPanel').hidden = true;
     } catch (err) {
       hint.textContent = err.message;
@@ -3085,7 +3154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       hint.textContent = 'Password updated.';
-      e.currentTarget.reset();
+      safeResetForm(e);
       wirePasswordMeter('newPassword', 'accountPwMeter', 'accountPwText');
     } catch (err) {
       hint.textContent = err.message;
@@ -3118,7 +3187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     hint.textContent = `Uploaded ${data.added?.length || 0} photo(s).`;
-    form.reset();
+    if (form && typeof form.reset === 'function') form.reset();
     await loadGallery();
   });
 
@@ -3137,7 +3206,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('exportBtn').addEventListener('click', async () => {
-    await syncFromR2('gallery/');
+    try {
+      await syncFromR2('gallery/');
+    } catch (e) {
+      showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
+    }
   });
 
   // Photo upload instructions help dialog
@@ -3224,7 +3297,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if ($('r2RefreshBtn')) {
     $('r2RefreshBtn').addEventListener('click', () => {
-      loadR2Tree(r2Prefix).catch((e) => setR2Status(e.message));
+      const raw = $('r2PrefixInput') ? $('r2PrefixInput').value : r2Prefix;
+      loadR2Tree(raw).catch((e) => setR2Status(e.message));
     });
   }
   if ($('r2SyncFolderBtn')) {
@@ -3262,7 +3336,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     });
 
-    e.currentTarget.reset();
+    safeResetForm(e);
     hint.textContent = 'Posted.';
     await loadAnnouncements();
   });
@@ -3287,7 +3361,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({ title: fd.get('title'), date: fd.get('date'), time: fd.get('time') })
     });
 
-    e.currentTarget.reset();
+    safeResetForm(e);
     hint.textContent = 'Saved.';
     await loadEvents();
   });
@@ -3320,7 +3394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     hint.textContent = 'Scheduled.';
-    e.currentTarget.reset();
+    safeResetForm(e);
     await loadBulletins();
   });
 
@@ -3340,7 +3414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ email: String(fd.get('email') || '') })
       });
 
-      e.currentTarget.reset();
+      safeResetForm(e);
       hint.textContent = `Invite link (expires ${new Date(res.expiresAt).toLocaleString()}): ${res.inviteLink}`;
       await loadUsers();
     });
@@ -3397,7 +3471,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       livestream.recurring = [...(livestream.recurring || []), item];
       await saveLivestream();
-      e.currentTarget.reset();
+      safeResetForm(e);
     });
   }
 
@@ -3420,7 +3494,7 @@ document.addEventListener('DOMContentLoaded', () => {
           address: String(fd.get('address') || '')
         }
       });
-      hint.textContent = 'Saved.';
+        safeResetForm(e);
     });
   }
 

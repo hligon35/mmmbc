@@ -37,6 +37,9 @@
 		"ALLOW_SERVICE_TOKEN_ADMIN": "false",
 		// Set to true only for local development/testing.
 		"DEV_BYPASS_AUTH": "false"
+		,
+		"SUPPORT_TO_EMAIL": "support@hldesignedit.com",
+		"SUPPORT_EMAIL_DESTINATION": "hligon@getsparqd.com"
 	},
 	// Optional parallel environment:
 	// - Deploy prod:    npx wrangler deploy
@@ -70,7 +73,9 @@
 			"vars": {
 				"ADMIN_ALLOW_EMAILS": "",
 				"ALLOW_SERVICE_TOKEN_ADMIN": "true",
-				"DEV_BYPASS_AUTH": "false"
+				"DEV_BYPASS_AUTH": "false",
+				"SUPPORT_TO_EMAIL": "support@hldesignedit.com",
+				"SUPPORT_EMAIL_DESTINATION": "hligon@getsparqd.com"
 			}
 		},
 		"migrate": {
@@ -109,7 +114,9 @@
 			"vars": {
 				"ADMIN_ALLOW_EMAILS": "",
 				"ALLOW_SERVICE_TOKEN_ADMIN": "true",
-				"DEV_BYPASS_AUTH": "false"
+				"DEV_BYPASS_AUTH": "false",
+				"SUPPORT_TO_EMAIL": "support@hldesignedit.com",
+				"SUPPORT_EMAIL_DESTINATION": "hligon@getsparqd.com"
 			}
 		}
 	}

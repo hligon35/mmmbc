@@ -162,6 +162,10 @@ async function handleSupportMessage(request, env) {
   const replyTo = replyToRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToRaw) ? replyToRaw : '';
 
   const toEmail = String(env.SUPPORT_TO_EMAIL || 'support@hldesignedit.com').trim();
+  // Cloudflare send_email requires the destination address to be verified and it must
+  // match the binding's destination_address. Use SUPPORT_EMAIL_DESTINATION for actual
+  // delivery, while keeping the visible "To:" header as SUPPORT_TO_EMAIL.
+  const deliveryToEmail = String(env.SUPPORT_EMAIL_DESTINATION || toEmail).trim();
   const fromEmail = String(env.SUPPORT_FROM_EMAIL || 'no-reply@mmmbc.com').trim();
   const fromName = String(env.SUPPORT_FROM_NAME || 'MMMBC Admin Support').trim() || 'MMMBC Admin Support';
 
@@ -182,12 +186,34 @@ async function handleSupportMessage(request, env) {
     const fromHeader = `${fromHeaderName}<${fromEmail}>`;
     const replyToHeader = replyTo ? `Reply-To: ${replyTo}\r\n` : '';
 
+    const messageIdDomain = (() => {
+      const pick = (addr) => {
+        const m = String(addr || '').match(/@([^>\s]+)$/);
+        return m ? m[1] : '';
+      };
+      return pick(toEmail) || pick(fromEmail) || 'mmmbc.local';
+    })();
+
+    const messageId = (() => {
+      try {
+        // crypto.randomUUID is available in Workers.
+        return `<${crypto.randomUUID()}@${messageIdDomain}>`;
+      } catch {
+        const rand = Math.random().toString(16).slice(2);
+        return `<${Date.now().toString(16)}.${rand}@${messageIdDomain}>`;
+      }
+    })();
+
+    const dateHeader = new Date().toUTCString();
+
     // Minimal RFC-5322-ish message. Good enough for plain-text support emails.
     const raw = [
       `To: ${toEmail}`,
       `From: ${fromHeader}`,
       replyToHeader.trimEnd(),
       `Subject: ${composedSubject}`,
+      `Date: ${dateHeader}`,
+      `Message-ID: ${messageId}`,
       'MIME-Version: 1.0',
       'Content-Type: text/plain; charset=utf-8',
       '',
@@ -195,7 +221,7 @@ async function handleSupportMessage(request, env) {
     ].filter(Boolean).join('\r\n');
 
     try {
-      const msg = new EmailMessage(fromEmail, toEmail, raw);
+      const msg = new EmailMessage(fromEmail, deliveryToEmail, raw);
       await env.SUPPORT_EMAIL.send(msg);
       return json({ ok: true });
     } catch (e) {
@@ -206,17 +232,24 @@ async function handleSupportMessage(request, env) {
       if (/destination address is not a verified address/i.test(emailRoutingError)) {
         return json(
           {
-            error: 'Email send failed (Email Routing): SUPPORT_TO_EMAIL is not a verified destination in Cloudflare Email Routing. Add/verify the destination address in Cloudflare Dashboard → Email → Email Routing, then retry.'
+            error: 'Email send failed (Email Routing): the delivery destination is not verified. Verify the destination_address for the SUPPORT_EMAIL binding (or set SUPPORT_EMAIL_DESTINATION to a verified address) in Cloudflare Dashboard → Email → Email Routing.'
           },
           { status: 502 }
         );
       }
+
+      // When SUPPORT_EMAIL is configured, do not fall back to MailChannels.
+      // MailChannels frequently rejects non-Cloudflare origins and can mask the real error.
+      return json(
+        { error: `Email send failed (Email Routing). ${emailRoutingError}`.slice(0, 2000) },
+        { status: 502 }
+      );
     }
   }
 
   // Fallback: MailChannels (legacy). This may return 401/403 depending on current policy.
   const payload = {
-    personalizations: [{ to: [{ email: toEmail }], subject: composedSubject }],
+    personalizations: [{ to: [{ email: deliveryToEmail }], subject: composedSubject }],
     from: { email: fromEmail, name: fromName },
     ...(replyTo ? { reply_to: { email: replyTo } } : {}),
     content: [{ type: 'text/plain', value: textBody }]

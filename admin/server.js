@@ -92,9 +92,7 @@ const ENFORCE_HTTPS = envBool('ENFORCE_HTTPS', process.env.NODE_ENV === 'product
 const ENABLE_CSP = String(process.env.ENABLE_CSP || '').toLowerCase() === 'true';
 const SESSIONS_DIR = process.env.SESSIONS_DIR
   ? path.resolve(process.env.SESSIONS_DIR)
-  : (process.platform === 'win32'
-      ? path.join(ADMIN_DIR, 'sessions')
-      : path.join(os.tmpdir(), 'mmmbc-admin-sessions'));
+  : path.join(os.tmpdir(), 'mmmbc-admin-sessions');
 
 function listenWithPortFallback(appInstance, startPort, { maxTries = 25, host } = {}) {
   return new Promise((resolve, reject) => {
@@ -1123,16 +1121,105 @@ function proxyToWorker(req, res) {
   proxyReq.end();
 }
 
+function proxyToWorkerStream(req, res, { forceAccept } = {}) {
+  const base = String(process.env.WORKER_ORIGIN || '').trim().replace(/\/$/, '');
+  if (!base) {
+    res.status(501);
+    res.setHeader('content-type', 'text/plain; charset=utf-8');
+    res.end('This endpoint is provided by the Cloudflare Worker. Set WORKER_ORIGIN to your Worker URL.');
+    return;
+  }
+
+  const target = new URL(`${base}${req.originalUrl}`);
+  const method = String(req.method || 'GET').toUpperCase();
+
+  const headers = {};
+  const accept = String(forceAccept || req.headers.accept || '').trim();
+  if (accept) headers.accept = accept;
+
+  const passReqHeaders = ['content-type', 'content-length', 'range', 'if-none-match', 'if-modified-since'];
+  for (const h of passReqHeaders) {
+    const v = req.headers[h];
+    if (v) headers[h] = v;
+  }
+
+  const id = String(process.env.CF_ACCESS_CLIENT_ID || '').trim();
+  const secret = String(process.env.CF_ACCESS_CLIENT_SECRET || '').trim();
+  if (id && secret) {
+    headers['CF-Access-Client-Id'] = id;
+    headers['CF-Access-Client-Secret'] = secret;
+  }
+
+  const client = target.protocol === 'http:' ? http : https;
+  const proxyReq = client.request(
+    {
+      method,
+      hostname: target.hostname,
+      port: target.port || (target.protocol === 'http:' ? 80 : 443),
+      path: `${target.pathname}${target.search}`,
+      headers
+    },
+    (proxyRes) => {
+      res.status(proxyRes.statusCode || 502);
+
+      const passResHeaders = [
+        'content-type',
+        'content-length',
+        'cache-control',
+        'etag',
+        'last-modified',
+        'accept-ranges',
+        'content-range',
+        'content-disposition',
+        'cross-origin-resource-policy',
+        'access-control-allow-origin'
+      ];
+      for (const h of passResHeaders) {
+        const v = proxyRes.headers[h];
+        if (v) res.setHeader(h, v);
+      }
+
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.on('error', (e) => {
+    logger.error('worker_proxy_failed', { err: e, url: target.toString() });
+    res.status(502);
+    res.setHeader('content-type', 'text/plain; charset=utf-8');
+    res.end('Proxy to Worker failed.');
+  });
+
+  if (method === 'GET' || method === 'HEAD') {
+    proxyReq.end();
+    return;
+  }
+
+  req.pipe(proxyReq);
+}
+
 // Worker-backed R2 gallery APIs (for bucket browsing/sync)
 app.get('/api/gallery/r2tree', requireAuth, (req, res) => proxyToWorker(req, res));
 app.delete('/api/gallery/r2object', requireAuth, (req, res) => proxyToWorker(req, res));
 app.post('/api/gallery/sync', requireAuth, (req, res) => proxyToWorker(req, res));
 
+// Worker-backed CDN gallery objects (for previewing /cdn/gallery/* when running locally)
+app.use('/cdn/gallery', (req, res) => proxyToWorkerStream(req, res));
+
 app.get('/api/gallery', requireAuth, (req, res) => {
-  res.json(loadGallery());
+  if (String(process.env.WORKER_ORIGIN || '').trim()) return proxyToWorker(req, res);
+  return res.json(loadGallery());
 });
 
-app.post('/api/gallery/upload', requireAuth, galleryUpload.array('images', 20), async (req, res) => {
+app.post(
+  '/api/gallery/upload',
+  requireAuth,
+  (req, res, next) => {
+    if (String(process.env.WORKER_ORIGIN || '').trim()) return proxyToWorkerStream(req, res, { forceAccept: 'application/json' });
+    return next();
+  },
+  galleryUpload.array('images', 20),
+  async (req, res) => {
   const album = sanitizeSegment(req.body.album || 'General') || 'General';
   const label = sanitizeSegment(req.body.label || '') || '';
   const tagsRaw = String(req.body.tags || '');
@@ -1209,9 +1296,11 @@ app.post('/api/gallery/upload', requireAuth, galleryUpload.array('images', 20), 
   }
 
   res.json({ ok: true, added });
-});
+  }
+);
 
 app.put('/api/gallery/order', requireAuth, (req, res) => {
+  if (String(process.env.WORKER_ORIGIN || '').trim()) return proxyToWorker(req, res);
   const album = sanitizeSegment(req.body?.album || '');
   const orderedIds = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds.map((x) => String(x)) : [];
   if (!album) return res.status(400).json({ error: 'Album is required.' });
@@ -1251,6 +1340,7 @@ app.put('/api/gallery/order', requireAuth, (req, res) => {
 });
 
 app.put('/api/gallery/:id', requireAuth, (req, res) => {
+  if (String(process.env.WORKER_ORIGIN || '').trim()) return proxyToWorker(req, res);
   const id = String(req.params.id);
   const gallery = loadGallery();
   const items = Array.isArray(gallery.items) ? gallery.items : [];
@@ -1275,6 +1365,7 @@ app.put('/api/gallery/:id', requireAuth, (req, res) => {
 });
 
 app.delete('/api/gallery/:id', requireAuth, (req, res) => {
+  if (String(process.env.WORKER_ORIGIN || '').trim()) return proxyToWorker(req, res);
   const id = String(req.params.id);
   const gallery = loadGallery();
   const items = Array.isArray(gallery.items) ? gallery.items : [];
