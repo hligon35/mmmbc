@@ -161,7 +161,7 @@ async function handleSupportMessage(request, env) {
   const message = messageRaw.slice(0, 5000);
   const replyTo = replyToRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToRaw) ? replyToRaw : '';
 
-  const toEmail = String(env.SUPPORT_TO_EMAIL || 'hligon@getsparqd.com').trim();
+  const toEmail = String(env.SUPPORT_TO_EMAIL || 'support@hldesignedit.com').trim();
   const fromEmail = String(env.SUPPORT_FROM_EMAIL || 'no-reply@mmmbc.com').trim();
   const fromName = String(env.SUPPORT_FROM_NAME || 'MMMBC Admin Support').trim() || 'MMMBC Admin Support';
 
@@ -202,6 +202,15 @@ async function handleSupportMessage(request, env) {
       // Common Cloudflare Email Routing error: destination address not verified.
       // Fall back to MailChannels when possible.
       emailRoutingError = (e && (e.stack || e.message)) ? String(e.stack || e.message) : String(e);
+
+      if (/destination address is not a verified address/i.test(emailRoutingError)) {
+        return json(
+          {
+            error: 'Email send failed (Email Routing): SUPPORT_TO_EMAIL is not a verified destination in Cloudflare Email Routing. Add/verify the destination address in Cloudflare Dashboard → Email → Email Routing, then retry.'
+          },
+          { status: 502 }
+        );
+      }
     }
   }
 

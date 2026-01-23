@@ -794,7 +794,7 @@ app.post('/api/support/message', (req, res, next) => {
   const message = messageRaw.slice(0, 5000);
   const replyTo = replyToRaw && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyToRaw) ? replyToRaw : '';
 
-  const toEmail = String(process.env.SUPPORT_TO_EMAIL || 'hligon@getsparqd.com').trim();
+  const toEmail = String(process.env.SUPPORT_TO_EMAIL || 'support@hldesignedit.com').trim();
   const fromEmail = String(process.env.SUPPORT_FROM_EMAIL || 'no-reply@mmmbc.com').trim();
   const fromName = String(process.env.SUPPORT_FROM_NAME || 'MMMBC Admin Support').trim() || 'MMMBC Admin Support';
 
