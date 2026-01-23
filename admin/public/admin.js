@@ -75,6 +75,26 @@ async function api(path, options = {}) {
 
 function $(id) { return document.getElementById(id); }
 
+function setSyncProgress({ visible, indeterminate, value, max, text } = {}) {
+  const wrap = $('syncProgressWrap');
+  const meter = $('syncProgressMeter');
+  const label = $('syncProgressText');
+
+  if (wrap) wrap.hidden = !visible;
+  if (label) label.textContent = String(text || '');
+  if (!meter) return;
+
+  if (indeterminate) {
+    try { meter.removeAttribute('value'); } catch { /* ignore */ }
+    return;
+  }
+
+  const m = Number(max);
+  const v = Number(value);
+  if (Number.isFinite(m) && m > 0) meter.max = m;
+  if (Number.isFinite(v) && v >= 0) meter.value = v;
+}
+
 function safeResetForm(e) {
   const form = e?.currentTarget || e?.target?.closest?.('form');
   if (form && typeof form.reset === 'function') form.reset();
@@ -379,6 +399,18 @@ function setTab(activeId) {
     p.hidden = p.id !== activeId;
   });
 
+  // Keep Photo Gallery bulk actions scoped to the Photo tab.
+  if (activeId !== 'tab-photos') {
+    try { photoSelectedIds.clear(); } catch { /* ignore */ }
+    try {
+      const bar = $('photoBulkBar');
+      if (bar) {
+        bar.hidden = true;
+        bar.dataset.stickyTopSet = '0';
+      }
+    } catch { /* ignore */ }
+  }
+
   const financeTopBar = $('financeTopBar');
   if (financeTopBar) financeTopBar.hidden = false;
 }
@@ -553,6 +585,30 @@ function financeApplyKindToForm(kind) {
   const catEl = $('financeCategory');
   const isEditing = !!String($('financeEditId')?.value || '').trim();
 
+  const ensureSelectOption = (sel, value) => {
+    if (!(sel instanceof HTMLSelectElement)) return;
+    const v = String(value || '').trim();
+    if (!v) return;
+    if (Array.from(sel.options).some((o) => String(o.value) === v)) return;
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    // Insert after the leading blank option if present.
+    const first = sel.options?.[0];
+    if (first) sel.insertBefore(opt, first.nextSibling);
+    else sel.appendChild(opt);
+  };
+
+  const typeLabel = $('financeTypeLabelText');
+  if (typeLabel) typeLabel.textContent = 'Type';
+
+  const catLabel = $('financeCategoryLabelText');
+  if (catLabel) {
+    if (kind === 'tithes') catLabel.textContent = 'Tithes';
+    else if (kind === 'offerings') catLabel.textContent = 'Offering';
+    else catLabel.textContent = 'Category';
+  }
+
   if (typeEl) {
     typeEl.disabled = true;
     typeEl.value = (kind === 'expense') ? 'expense' : 'income';
@@ -560,9 +616,11 @@ function financeApplyKindToForm(kind) {
 
   if (catEl) {
     if (kind === 'tithes') {
+      ensureSelectOption(catEl, 'Tithes');
       if (!isEditing) catEl.value = 'Tithes';
       catEl.disabled = true;
     } else if (kind === 'offerings') {
+      ensureSelectOption(catEl, 'Offerings');
       if (!isEditing) catEl.value = 'Offerings';
       catEl.disabled = true;
     } else {
@@ -706,23 +764,82 @@ function financeEntryMatches(entry, filters) {
 }
 
 function populateFinanceDatalists() {
-  const catList = $('financeCategoriesList');
-  const fundList = $('financeFundsList');
-  if (catList) {
-    catList.innerHTML = '';
-    for (const c of (finances?.meta?.categories || [])) {
+  const catSel = $('financeCategory');
+  const fundSel = $('financeFund');
+
+  const categories = Array.isArray(finances?.meta?.categories) ? finances.meta.categories : [];
+  const funds = Array.isArray(finances?.meta?.funds) ? finances.meta.funds : [];
+
+  const setOptions = (sel, values, { required = false } = {}) => {
+    if (!(sel instanceof HTMLSelectElement)) return;
+    const current = String(sel.value || '');
+    sel.innerHTML = '';
+
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = required ? '(Pick one)' : '(None)';
+    sel.appendChild(blank);
+
+    const unique = Array.from(new Set(values.map((v) => String(v || '').trim()).filter(Boolean)));
+    unique.sort((a, b) => a.localeCompare(b));
+
+    // Ensure current value remains selectable even if it isn't in meta.
+    if (current && !unique.includes(current) && current !== FIN_CREATE_VALUE) unique.unshift(current);
+
+    for (const v of unique) {
       const opt = document.createElement('option');
-      opt.value = String(c || '');
-      catList.appendChild(opt);
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
     }
-  }
-  if (fundList) {
-    fundList.innerHTML = '';
-    for (const f of (finances?.meta?.funds || [])) {
-      const opt = document.createElement('option');
-      opt.value = String(f || '');
-      fundList.appendChild(opt);
-    }
+
+    const createOpt = document.createElement('option');
+    createOpt.value = FIN_CREATE_VALUE;
+    createOpt.textContent = 'Create…';
+    sel.appendChild(createOpt);
+
+    if (current && Array.from(sel.options).some((o) => o.value === current)) sel.value = current;
+  };
+
+  setOptions(catSel, categories, { required: true });
+  setOptions(fundSel, funds, { required: false });
+}
+
+function normalizeFinanceName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+async function financeHandleCreateSelect(kind) {
+  const sel = kind === 'fund' ? $('financeFund') : $('financeCategory');
+  if (!(sel instanceof HTMLSelectElement)) return;
+  if (String(sel.value || '') !== FIN_CREATE_VALUE) return;
+
+  // Reset immediately so cancel doesn't leave it stuck on the sentinel.
+  sel.value = '';
+
+  const label = kind === 'fund' ? 'fund' : 'category';
+  const next = normalizeFinanceName(prompt(`Create new ${label} name`));
+  if (!next) return;
+
+  const currentCats = Array.isArray(finances?.meta?.categories) ? finances.meta.categories : [];
+  const currentFunds = Array.isArray(finances?.meta?.funds) ? finances.meta.funds : [];
+
+  const cats = (kind === 'category') ? Array.from(new Set([...currentCats, next])) : currentCats;
+  const funds = (kind === 'fund') ? Array.from(new Set([...currentFunds, next])) : currentFunds;
+
+  setFinanceHint('Saving…');
+  try {
+    const res = await api('/api/finances/meta', {
+      method: 'PUT',
+      body: JSON.stringify({ categories: cats, funds })
+    });
+    finances = res.data;
+    populateFinanceDatalists();
+    if (kind === 'category') $('financeCategory').value = next;
+    else $('financeFund').value = next;
+    setFinanceHint('Saved.');
+  } catch (e) {
+    setFinanceHint(String(e?.message || e || 'Unable to save.'));
   }
 }
 
@@ -1058,6 +1175,71 @@ async function loadInvite(token) {
 // -------- Photo Gallery --------
 let galleryItems = [];
 let photoArrangeAlbum = '';
+let photoSelectedIds = new Set();
+let photoFilteredItems = [];
+let photoCurrentPage = 1;
+const PHOTO_ROWS_PER_PAGE = 6;
+
+const FIN_CREATE_VALUE = '__CREATE__';
+
+function photoGetColumns() {
+  const grid = $('photoGrid');
+  if (!grid) return 1;
+  try {
+    const tpl = String(getComputedStyle(grid).gridTemplateColumns || '').trim();
+    const cols = tpl.split(' ').filter(Boolean).length;
+    return Math.max(1, cols || 1);
+  } catch {
+    return 1;
+  }
+}
+
+function photoPageSize() {
+  return photoGetColumns() * PHOTO_ROWS_PER_PAGE;
+}
+
+function photoUpdateBulkBar() {
+  const bar = $('photoBulkBar');
+  const count = $('photoBulkCount');
+  if (!bar) return;
+  const n = photoSelectedIds.size;
+  bar.hidden = n === 0;
+  if (count) count.textContent = n ? `${n} selected` : '';
+
+  // Stick the bulk controls in-view while scrolling down, but never let them
+  // move higher than where they first appeared.
+  if (n > 0 && bar.dataset.stickyTopSet !== '1') {
+    requestAnimationFrame(() => {
+      if (bar.hidden) return;
+      try {
+        const r = bar.getBoundingClientRect();
+        const top = Math.max(0, Math.round(r.top));
+        bar.style.setProperty('--photo-bulk-top', `${top}px`);
+        bar.dataset.stickyTopSet = '1';
+      } catch {
+        // ignore
+      }
+    });
+  }
+}
+
+function photoUpdatePager() {
+  const pager = $('photoPager');
+  const info = $('photoPageInfo');
+  const prev = $('photoPrevPageBtn');
+  const next = $('photoNextPageBtn');
+  const pageSize = photoPageSize();
+  const total = photoFilteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  if (photoCurrentPage > totalPages) photoCurrentPage = totalPages;
+  if (photoCurrentPage < 1) photoCurrentPage = 1;
+
+  if (pager) pager.hidden = total <= pageSize;
+  if (info) info.textContent = total ? `Page ${photoCurrentPage} of ${totalPages} • ${total} photo(s)` : '';
+  if (prev) prev.disabled = photoCurrentPage <= 1;
+  if (next) next.disabled = photoCurrentPage >= totalPages;
+}
 
 function toNumberOrNull(v) {
   const n = Number(v);
@@ -1090,7 +1272,7 @@ function isManualMode() {
   return $('photoSort')?.value === 'manual' && String(photoArrangeAlbum || '').trim();
 }
 
-function applyPhotoFilters() {
+function applyPhotoFilters({ resetPage = true } = {}) {
   const sort = $('photoSort').value;
   const albumFilter = $('photoAlbumFilter').value.trim().toLowerCase();
   const tagFilter = $('photoTagFilter').value.trim().toLowerCase();
@@ -1120,7 +1302,14 @@ function applyPhotoFilters() {
     });
   }
 
-  renderPhotoGrid(items);
+  photoFilteredItems = items;
+  if (resetPage) photoCurrentPage = 1;
+
+  const pageSize = photoPageSize();
+  const start = (photoCurrentPage - 1) * pageSize;
+  const pageItems = items.slice(start, start + pageSize);
+  photoUpdatePager();
+  renderPhotoGrid(pageItems);
 }
 
 async function saveManualOrder(album, orderedIds) {
@@ -1149,6 +1338,33 @@ function renderPhotoGrid(items) {
   for (const item of items) {
     const card = document.createElement('div');
     card.className = 'thumb';
+    card.setAttribute('data-photo-id', String(item.id || ''));
+
+    const selectWrap = document.createElement('label');
+    selectWrap.className = 'thumb__select';
+    selectWrap.title = 'Select photo';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'thumb__check';
+    cb.setAttribute('data-photo-id', String(item.id || ''));
+    cb.checked = photoSelectedIds.has(String(item.id || ''));
+    if (cb.checked) card.classList.add('thumb--selected');
+    cb.addEventListener('click', (e) => {
+      try { e.stopPropagation(); } catch { /* ignore */ }
+    });
+    cb.addEventListener('change', () => {
+      const id = String(item.id || '');
+      if (!id) return;
+      if (cb.checked) {
+        photoSelectedIds.add(id);
+        card.classList.add('thumb--selected');
+      } else {
+        photoSelectedIds.delete(id);
+        card.classList.remove('thumb--selected');
+      }
+      photoUpdateBulkBar();
+    });
+    selectWrap.appendChild(cb);
 
     const img = document.createElement('img');
     img.className = 'thumb__img';
@@ -1187,13 +1403,15 @@ function renderPhotoGrid(items) {
     edit.type = 'button';
     edit.textContent = 'Edit';
     edit.addEventListener('click', async () => {
-      const nextLabel = prompt('Label', String(item.label || ''));
+      const nextLabel = prompt('Name/Label', String(item.label || ''));
       if (nextLabel === null) return;
+      const nextAlbum = prompt('Album', String(item.album || 'General'));
+      if (nextAlbum === null) return;
       const nextTags = prompt('Tags (comma-separated)', (item.tags || []).join(', '));
       if (nextTags === null) return;
       await api(`/api/gallery/${item.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ label: nextLabel, tags: nextTags })
+        body: JSON.stringify({ label: nextLabel, album: String(nextAlbum || '').trim() || 'General', tags: nextTags })
       });
       await loadGallery();
     });
@@ -1255,9 +1473,14 @@ function renderPhotoGrid(items) {
 
     card.appendChild(img);
     card.appendChild(meta);
+    card.appendChild(selectWrap);
+
+    if (photoSelectedIds.has(String(item.id || ''))) card.classList.add('thumb--selected');
 
     grid.appendChild(card);
   }
+
+  photoUpdateBulkBar();
 }
 
 async function loadGallery() {
@@ -1495,30 +1718,63 @@ async function syncFromR2(prefix, { confirm: shouldConfirm = true } = {}) {
   setR2UiBusy(true);
   setR2Status('Syncing…');
 
+  setSyncProgress({ visible: true, indeterminate: true, text: 'Starting sync…' });
+
   let cursor = null;
+  const seenCursors = new Set();
+  let loops = 0;
   let totalAdded = 0;
   let totalExisting = 0;
   let totalProcessed = 0;
 
   try {
     while (true) {
+      loops += 1;
+      if (loops > 500) throw new Error('Sync aborted: too many pages (possible cursor loop).');
+
+      setSyncProgress({
+        visible: true,
+        indeterminate: false,
+        max: 500,
+        value: loops,
+        text: `Syncing… page ${loops} • processed ${totalProcessed} (added ${totalAdded}, existing ${totalExisting})`
+      });
       const qs = new URLSearchParams({ prefix: p, limit: '1000' });
       if (cursor) qs.set('cursor', cursor);
-      const res = await api(`/api/gallery/sync?${qs.toString()}`, { method: 'POST', body: '{}' });
+      const controller = new AbortController();
+      const t = window.setTimeout(() => controller.abort(), 60_000);
+      let res;
+      try {
+        res = await api(`/api/gallery/sync?${qs.toString()}`, { method: 'POST', body: '{}', signal: controller.signal });
+      } finally {
+        window.clearTimeout(t);
+      }
       totalAdded += Number(res.added || 0);
       totalExisting += Number(res.existing || 0);
       totalProcessed += Number(res.processed || 0);
       setR2Status(`Syncing… processed ${totalProcessed} (added ${totalAdded}, existing ${totalExisting})`);
+
+      setSyncProgress({
+        visible: true,
+        indeterminate: false,
+        max: 500,
+        value: loops,
+        text: `Syncing… page ${loops} • processed ${totalProcessed} (added ${totalAdded}, existing ${totalExisting})`
+      });
       cursor = res.nextCursor;
       if (!cursor) break;
+      if (seenCursors.has(String(cursor))) throw new Error('Sync aborted: pagination cursor repeated (possible server cursor bug).');
+      seenCursors.add(String(cursor));
     }
     setR2Status(`Sync complete. Added ${totalAdded} item(s).`);
+    setSyncProgress({ visible: true, indeterminate: false, max: 500, value: Math.min(500, loops), text: `Sync complete. Added ${totalAdded} item(s).` });
     showToast(`Gallery synced. Added ${totalAdded} item(s).`, { variant: 'success' });
     await loadGallery();
     await loadR2Tree(p);
     return { ok: true, added: totalAdded, existing: totalExisting, processed: totalProcessed };
   } catch (e) {
     setR2Status(e.message);
+    setSyncProgress({ visible: true, indeterminate: false, max: 500, value: Math.min(500, loops || 0), text: `Sync failed: ${String(e?.message || e || 'Unknown error')}` });
     showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
     return { ok: false, error: String(e?.message || e || 'Unknown error') };
   } finally {
@@ -2619,6 +2875,14 @@ document.addEventListener('DOMContentLoaded', () => {
         setFinanceHint(err.message);
       }
     });
+
+    // “Create …” option handling for Category/Fund dropdowns
+    if ($('financeCategory')) {
+      $('financeCategory').addEventListener('change', () => financeHandleCreateSelect('category'));
+    }
+    if ($('financeFund')) {
+      $('financeFund').addEventListener('change', () => financeHandleCreateSelect('fund'));
+    }
   }
 
   if ($('financeCancelEditBtn')) {
@@ -3227,6 +3491,113 @@ document.addEventListener('DOMContentLoaded', () => {
     applyPhotoFilters();
   });
 
+  // Photo paging (6 rows at a time)
+  if ($('photoPrevPageBtn')) {
+    $('photoPrevPageBtn').addEventListener('click', () => {
+      photoCurrentPage = Math.max(1, Number(photoCurrentPage || 1) - 1);
+      applyPhotoFilters({ resetPage: false });
+    });
+  }
+  if ($('photoNextPageBtn')) {
+    $('photoNextPageBtn').addEventListener('click', () => {
+      photoCurrentPage = Math.max(1, Number(photoCurrentPage || 1) + 1);
+      applyPhotoFilters({ resetPage: false });
+    });
+  }
+
+  // Bulk actions
+  if ($('photoBulkEditBtn')) {
+    $('photoBulkEditBtn').addEventListener('click', async () => {
+      const ids = Array.from(photoSelectedIds);
+      if (!ids.length) return;
+
+      const nextAlbum = prompt('Album (leave blank to keep unchanged)', '');
+      if (nextAlbum === null) return;
+      const nextTags = prompt('Tags (comma-separated) (leave blank to keep unchanged)', '');
+      if (nextTags === null) return;
+
+      const payload = {};
+      const a = String(nextAlbum || '').trim();
+      const t = String(nextTags || '').trim();
+      if (a) payload.album = a;
+      if (t) payload.tags = t;
+
+      if (Object.keys(payload).length === 0) {
+        showToast('No changes entered.', { variant: 'danger' });
+        return;
+      }
+
+      if (!confirmWrite(`Apply changes to ${ids.length} selected photo(s)?`)) return;
+
+      const btn = $('photoBulkEditBtn');
+      const prevText = btn?.textContent;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Editing…';
+      }
+
+      try {
+        let ok = 0;
+        for (const id of ids) {
+          await api(`/api/gallery/${encodeURIComponent(String(id))}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+          });
+          ok += 1;
+        }
+        photoSelectedIds.clear();
+        if ($('photoBulkBar')) {
+          $('photoBulkBar').dataset.stickyTopSet = '0';
+        }
+        await loadGallery();
+        showToast(`Updated ${ok} photo(s).`, { variant: 'success' });
+      } catch (e) {
+        showToast(`Bulk edit failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText || 'Edit selected';
+        }
+      }
+    });
+  }
+
+  if ($('photoBulkDeleteBtn')) {
+    $('photoBulkDeleteBtn').addEventListener('click', async () => {
+      const ids = Array.from(photoSelectedIds);
+      if (!ids.length) return;
+      if (!confirmWrite(`Delete ${ids.length} selected photo(s)?\n\nThis cannot be undone.`)) return;
+
+      const btn = $('photoBulkDeleteBtn');
+      const prevText = btn?.textContent;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Deleting…';
+      }
+
+      try {
+        let ok = 0;
+        for (const id of ids) {
+          await api(`/api/gallery/${encodeURIComponent(String(id))}`, { method: 'DELETE' });
+          ok += 1;
+        }
+        photoSelectedIds.clear();
+        if ($('photoBulkBar')) {
+          $('photoBulkBar').dataset.stickyTopSet = '0';
+        }
+        await loadGallery();
+        showToast(`Deleted ${ok} photo(s).`, { variant: 'success' });
+      } catch (e) {
+        showToast(`Bulk delete failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText || 'Delete selected';
+        }
+      }
+    });
+  }
+
   $('exportBtn').addEventListener('click', async () => {
     const btn = $('exportBtn');
     const prevText = btn ? btn.textContent : '';
@@ -3234,6 +3605,18 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = true;
       btn.textContent = 'Syncing…';
     }
+
+    // Failsafe: never leave the UI stuck forever.
+    const watchdog = window.setTimeout(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = prevText || 'Sync Gallery';
+      }
+      setR2UiBusy(false);
+      setR2Status('Sync timed out.');
+      showToast('Gallery sync timed out. Please try again.', { variant: 'danger' });
+    }, 120_000);
+
     try {
       // Avoid confirm() here: some embedded browsers/policies block dialogs,
       // which makes the button appear to do nothing.
@@ -3242,6 +3625,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
     } finally {
+      window.clearTimeout(watchdog);
       if (btn) {
         btn.disabled = false;
         btn.textContent = prevText || 'Sync Gallery';

@@ -1495,21 +1495,34 @@ async function syncFromR2(prefix, { confirm: shouldConfirm = true } = {}) {
   setR2Status('Syncing…');
 
   let cursor = null;
+  const seenCursors = new Set();
+  let loops = 0;
   let totalAdded = 0;
   let totalExisting = 0;
   let totalProcessed = 0;
 
   try {
     while (true) {
+      loops += 1;
+      if (loops > 500) throw new Error('Sync aborted: too many pages (possible cursor loop).');
       const qs = new URLSearchParams({ prefix: p, limit: '1000' });
       if (cursor) qs.set('cursor', cursor);
-      const res = await api(`/api/gallery/sync?${qs.toString()}`, { method: 'POST', body: '{}' });
+      const controller = new AbortController();
+      const t = window.setTimeout(() => controller.abort(), 60_000);
+      let res;
+      try {
+        res = await api(`/api/gallery/sync?${qs.toString()}`, { method: 'POST', body: '{}', signal: controller.signal });
+      } finally {
+        window.clearTimeout(t);
+      }
       totalAdded += Number(res.added || 0);
       totalExisting += Number(res.existing || 0);
       totalProcessed += Number(res.processed || 0);
       setR2Status(`Syncing… processed ${totalProcessed} (added ${totalAdded}, existing ${totalExisting})`);
       cursor = res.nextCursor;
       if (!cursor) break;
+      if (seenCursors.has(String(cursor))) throw new Error('Sync aborted: pagination cursor repeated (possible server cursor bug).');
+      seenCursors.add(String(cursor));
     }
     setR2Status(`Sync complete. Added ${totalAdded} item(s).`);
     showToast(`Gallery synced. Added ${totalAdded} item(s).`, { variant: 'success' });
@@ -3233,6 +3246,18 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = true;
       btn.textContent = 'Syncing…';
     }
+
+    // Failsafe: never leave the UI stuck forever.
+    const watchdog = window.setTimeout(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = prevText || 'Sync Gallery';
+      }
+      setR2UiBusy(false);
+      setR2Status('Sync timed out.');
+      showToast('Gallery sync timed out. Please try again.', { variant: 'danger' });
+    }, 120_000);
+
     try {
       // Avoid confirm() here: some embedded browsers/policies block dialogs,
       // which makes the button appear to do nothing.
@@ -3241,6 +3266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
     } finally {
+      window.clearTimeout(watchdog);
       if (btn) {
         btn.disabled = false;
         btn.textContent = prevText || 'Sync Gallery';

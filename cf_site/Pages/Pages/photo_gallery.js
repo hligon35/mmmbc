@@ -28,6 +28,16 @@
     return String(input || '').trim();
   }
 
+  function absolutizeAssetUrl(url, baseOrigin) {
+    const u = safeText(url);
+    const base = safeText(baseOrigin).replace(/\/$/, '');
+    if (!u) return '';
+    if (!base) return u;
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.startsWith('/')) return `${base}${u}`;
+    return u;
+  }
+
   function normalizeItems(items) {
     return (items || []).map((it) => ({
       id: it.id || '',
@@ -180,11 +190,28 @@
     try {
       // Prefer the live Worker feed (no more exporting files).
       // Fallback to the legacy static file for older deployments.
+      let assetBase = '';
       let res = await fetch('/public/gallery.json', { cache: 'no-store' });
+      if (!res.ok) {
+        const meta = document.querySelector('meta[name="mmmbc-worker-origin"]');
+        const workerOrigin = meta ? safeText(meta.getAttribute('content') || '') : '';
+        if (workerOrigin) {
+          const base = workerOrigin.replace(/\/$/, '');
+          assetBase = base;
+          res = await fetch(`${base}/public/gallery.json`, { cache: 'no-store' });
+        }
+      }
       if (!res.ok) res = await fetch('../gallery.json', { cache: 'no-store' });
       if (!res.ok) throw new Error('Gallery feed not found');
       const data = await res.json();
-      allItems = normalizeItems(data.items || []);
+      const items = normalizeItems(data.items || []);
+      allItems = assetBase
+        ? items.map((it) => ({
+          ...it,
+          file: absolutizeAssetUrl(it.file, assetBase),
+          thumb: absolutizeAssetUrl(it.thumb, assetBase)
+        }))
+        : items;
     } catch {
       allItems = [];
     }
