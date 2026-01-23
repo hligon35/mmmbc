@@ -23,6 +23,8 @@ describe('admin auth + csrf', () => {
     process.env.ADMIN_EMAIL = 'admin@example.com';
     process.env.ADMIN_PASSWORD = 'Str0ng!Passw0rd';
     process.env.ENFORCE_HTTPS = 'false';
+    process.env.SUPPORT_API_TOKEN = 'test_support_token_123';
+    process.env.SUPPORT_DISABLE_SEND = 'true';
 
     ({ app, boot } = require('../server'));
     await boot({ listen: false });
@@ -66,5 +68,18 @@ describe('admin auth + csrf', () => {
       .send({ title: 'Hello', body: 'World' });
     expect(ok.status).toBe(200);
     expect(ok.body.ok).toBe(true);
+  });
+
+  test('support endpoint accepts SUPPORT_API_TOKEN without CSRF', async () => {
+    const res = await request(app)
+      .post('/api/support/message')
+      .set('X-Support-Token', 'test_support_token_123')
+      .set('X-Support-Actor', 'support-emailer@test')
+      .send({ subject: 'Test', message: 'Hello', replyTo: 'user@example.com' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    // In tests we disable sending to avoid network calls.
+    expect(res.body.disabled).toBe(true);
   });
 });

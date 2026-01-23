@@ -139,15 +139,25 @@ body {
     color: white;
     text-decoration: none;
     padding: 8px 4px; /* Tighter so menu fits without internal scroll */
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center; /* Centered text for dropdown items */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Separator for dropdown items */
-    font-size: 0.95em;
+    font-size: 1.05em;
     white-space: normal; /* Allow full labels to wrap */
     overflow-wrap: anywhere;
     word-break: normal;
     overflow: visible;
     text-overflow: clip;
+}
+
+/* Remove the public-site Login tab (admin is not a public nav destination). */
+.nav-links a[href="admin/"],
+.nav-links a[href="/admin/"],
+.nav-links a[href="../admin/"],
+.nav-links a[href$="/admin/"] {
+    display: none !important;
 }
 
 .nav-links a:last-child {
@@ -157,6 +167,19 @@ body {
 .nav-links a:hover {
     background-color: rgb(196, 97, 35);
     border-radius: 0; /* Override previous border-radius if any, or keep if desired */
+}
+
+/* Photo gallery: center the dropdown menu and bump nav text slightly (local request). */
+@media (max-width: 1399px) {
+    .page-photo-gallery .nav-links {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+    }
+
+    .page-photo-gallery .nav-links a {
+        font-size: 1.15em;
+    }
 }
 
 /* Desktop navigation: show links as horizontal tabs with centered, stacked text */
@@ -190,7 +213,7 @@ body {
         display: flex;
         flex-direction: row;
         align-items: stretch;
-        justify-content: flex-start;
+        justify-content: center;
 
         position: static;
         width: 100%;
@@ -227,16 +250,11 @@ body {
         overflow: hidden;
         text-overflow: clip;
         line-height: 1.05;
-        font-size: 0.82em;
+        font-size: 1.02em;
         font-weight: 700;
-
-        /* Prevent long labels from pushing the tab bar taller (causing vertical scroll). */
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-box-pack: center;
-        -webkit-box-align: center;
-        -webkit-line-clamp: 2;
     }
+
+    /* Keep labels centered vertically. Avoid overriding display:flex with -webkit-box here. */
 
     .nav-links a + a {
         margin-left: 2px; /* small gap between keys */

@@ -164,6 +164,38 @@ function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
 }
 
+function timingSafeEqualString(a, b) {
+  const aa = Buffer.from(String(a || ''), 'utf8');
+  const bb = Buffer.from(String(b || ''), 'utf8');
+  if (aa.length !== bb.length) return false;
+  try {
+    return crypto.timingSafeEqual(aa, bb);
+  } catch {
+    return false;
+  }
+}
+
+function getBearerToken(req) {
+  const raw = String(req.headers.authorization || '').trim();
+  const m = raw.match(/^Bearer\s+(.+)$/i);
+  return m ? String(m[1] || '').trim() : '';
+}
+
+function hasValidSupportApiToken(req) {
+  const expected = String(process.env.SUPPORT_API_TOKEN || '').trim();
+  if (!expected) return false;
+  const provided = String(req.headers['x-support-token'] || '').trim() || getBearerToken(req);
+  if (!provided) return false;
+  return timingSafeEqualString(provided, expected);
+}
+
+function getSupportActor(req) {
+  const sessionEmail = String(req.session?.user?.email || '').trim();
+  if (sessionEmail) return sessionEmail;
+  const actor = String(req.headers['x-support-actor'] || '').trim();
+  return actor.slice(0, 120) || 'support-api';
+}
+
 function randomToken() {
   return crypto.randomBytes(32).toString('base64url');
 }
@@ -334,6 +366,9 @@ app.use((req, res, next) => {
   if (p === '/api/auth/login' || p === '/api/auth/logout' || p === '/api/auth/recover') return next();
   if (p.startsWith('/api/invites/')) return next();
   if (p === '/api/csrf') return next();
+  // Support emailer automation: allow server-to-server calls with a shared secret
+  // without requiring browser CSRF cookies.
+  if (p === '/api/support/message' && hasValidSupportApiToken(req)) return next();
   return csrfProtection(req, res, next);
 });
 
@@ -730,7 +765,20 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // ----------------- SUPPORT -----------------
-app.post('/api/support/message', requireAuth, async (req, res) => {
+app.post('/api/support/message', (req, res, next) => {
+  // Allow either an authenticated admin session OR a support API token.
+  if (req.session && req.session.user && req.session.user.role === 'admin') return next();
+  if (hasValidSupportApiToken(req)) return next();
+  return res.status(401).json({ error: 'Unauthorized' });
+}, async (req, res) => {
+  if (envBool('SUPPORT_DISABLE_SEND', false) || process.env.NODE_ENV === 'test') {
+    const subjectRaw = String(req.body?.subject || '').trim();
+    const messageRaw = String(req.body?.message || '').trim();
+    if (!subjectRaw || !messageRaw) return res.status(400).json({ error: 'Subject and message are required.' });
+    logger.info('support_email_disabled', { subject: subjectRaw.slice(0, 140), actor: getSupportActor(req) });
+    return res.json({ ok: true, disabled: true });
+  }
+
   // MailChannels is intended to be called from Cloudflare (Workers). When local admin is
   // configured with WORKER_ORIGIN, proxy this request to the Worker so sending works.
   if (String(process.env.WORKER_ORIGIN || '').trim()) {
@@ -752,7 +800,7 @@ app.post('/api/support/message', requireAuth, async (req, res) => {
 
   const composedSubject = `[MMMBC Support] ${subject}`;
   const textBody = [
-    `From (admin): ${String(req.session?.user?.email || '')}`,
+    `From: ${getSupportActor(req)}`,
     replyTo ? `Reply-To: ${replyTo}` : 'Reply-To: (not provided)',
     '',
     message

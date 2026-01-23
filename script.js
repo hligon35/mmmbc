@@ -1,6 +1,17 @@
 // Basic script for interactivity
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Remove dev/admin and login shortcuts from the public nav (local request).
+    document.querySelectorAll('.devicon-btn').forEach((el) => el.remove());
+    document.querySelectorAll('.nav-links').forEach((nav) => {
+        nav.querySelectorAll('a').forEach((a) => {
+            const text = String(a.textContent || '').trim().toLowerCase();
+            const href = String(a.getAttribute('href') || '').trim().toLowerCase();
+            const isAdminHref = href === '../admin/' || href === '/admin/' || href.endsWith('/admin/');
+            if (text === 'login' && isAdminHref) a.remove();
+        });
+    });
+
     // FAQ Accordion
     const faqItems = document.querySelectorAll('.faq-item');
 

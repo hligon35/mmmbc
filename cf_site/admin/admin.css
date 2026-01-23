@@ -140,7 +140,7 @@ body{
 .label{display:grid;gap:6px;font-weight:700;}
 .label--inline{display:flex;align-items:center;gap:10px;font-weight:700;}
 
-.input,.textarea,.select{
+.input:not([type="time"]),.textarea,.select{
   width:100%;
   padding:12px 12px;
   border-radius:10px;
@@ -149,6 +149,21 @@ body{
   color:var(--text);
   font-size:1.05rem;
 }
+
+/* Time inputs: style separately so they stay visible and the clock icon isn't lost on dark backgrounds */
+input[type="time"].input{
+  width:160px;
+  max-width:100%;
+  padding:12px 12px;
+  padding-right:44px;
+  border-radius:10px;
+  border:2px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.04);
+  color:var(--text);
+  font-size:1.05rem;
+}
+input[type="time"].input:hover{border-color:rgba(255,255,255,.45);}
+input[type="time"].input::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.9;}
 
 /* Give dropdown chevrons a more "push button" look */
 .select{
