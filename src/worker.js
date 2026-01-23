@@ -815,6 +815,13 @@ export default {
       return text('Assets binding missing. Check wrangler.jsonc assets config.', { status: 500 });
     }
 
-    return env.ASSETS.fetch(request);
+    // Avoid stale admin assets at the edge during frequent updates.
+    const assetRes = await env.ASSETS.fetch(request);
+    if (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname.startsWith('/admin/')) {
+      const headers = new Headers(assetRes.headers);
+      headers.set('Cache-Control', 'no-store');
+      return new Response(assetRes.body, { status: assetRes.status, headers });
+    }
+    return assetRes;
   }
 };

@@ -3480,8 +3480,8 @@ document.addEventListener('DOMContentLoaded', () => {
   syncHex('themeAccent', 'themeAccentHex');
 
   // Time pickers
-  initTimePicker('recurringTimePicker', 'recurringTime', { required: true, defaultValue: '10:00' });
-  initTimePicker('eventTimePicker', 'eventTime', { required: false });
+  if ($('recurringTimePicker') && $('recurringTime')) initTimePicker('recurringTimePicker', 'recurringTime', { required: true, defaultValue: '10:00' });
+  if ($('eventTimePicker') && $('eventTime')) initTimePicker('eventTimePicker', 'eventTime', { required: false });
   syncHex('themeText', 'themeTextHex');
   syncHex('themeBackground', 'themeBackgroundHex');
 

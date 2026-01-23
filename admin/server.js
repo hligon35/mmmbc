@@ -316,7 +316,10 @@ app.use(
     // ENOENT retries in that case. Treat missing sessions as normal.
     store: new FileStore({
       path: SESSIONS_DIR,
-      retries: 0,
+      // Windows can intermittently throw EPERM on atomic rename (AV/OneDrive/file indexer).
+      // Allow a few retries and avoid writing on every request.
+      retries: 5,
+      touchAfter: 60,
       logFn: () => {}
     })
   })
@@ -400,7 +403,13 @@ app.get('/admin', (req, res, next) => {
   if (req.originalUrl === '/admin') return res.redirect(302, '/admin/');
   return next();
 });
-app.use('/admin', express.static(path.join(ADMIN_DIR, 'public'), { extensions: ['html'] }));
+app.use('/admin', express.static(path.join(ADMIN_DIR, 'public'), {
+  extensions: ['html'],
+  setHeaders: (res) => {
+    // During admin work we frequently tweak CSS/JS; prevent stale assets.
+    res.setHeader('Cache-Control', 'no-store');
+  }
+}));
 
 // Expose gallery images and uploaded docs
 // Standard gallery path (compatible with existing gallery.json)

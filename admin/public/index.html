@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MMMBC Admin Dashboard</title>
   <meta name="description" content="Admin dashboard for Mt. Moriah Missionary Baptist Church website." />
-  <link rel="stylesheet" href="/admin/admin.css" />
+  <link rel="stylesheet" href="/admin/admin.css?v=20260123" />
 </head>
 <body>
   <a class="skip-link" href="#app">Skip to content</a>
@@ -665,8 +665,7 @@
           </label>
           <label class="label">
             Time
-            <div class="timePicker" id="eventTimePicker" data-time-picker="optional"></div>
-            <input class="input" id="eventTime" name="time" type="hidden" />
+            <input class="input" id="eventTime" name="time" type="time" />
           </label>
           <button class="btn btn--primary" type="submit">Add Event</button>
           <div class="hint" id="eventHint" aria-live="polite"></div>
@@ -706,6 +705,6 @@
     </section>
   </main>
 
-  <script src="/admin/admin.js"></script>
+  <script src="/admin/admin.js?v=20260123"></script>
 </body>
 </html>

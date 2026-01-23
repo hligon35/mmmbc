@@ -118,9 +118,11 @@ body{
 
 /* Events time picker inputs can visually disappear against the card background; force size + contrast */
 #eventForm #eventTimePicker input.select{
-  background:rgba(255,255,255,.04);
-  border-color:rgba(255,255,255,.28);
+  background:rgba(255,255,255,.09);
+  border-color:rgba(255,255,255,.45);
+  box-shadow:0 0 0 1px rgba(0,0,0,.25) inset;
 }
+#eventForm #eventTimePicker input.select::placeholder{color:rgba(255,255,255,.78);}
 #eventForm #eventTimePicker input.select[aria-label="H"],
 #eventForm #eventTimePicker input.select[aria-label="M"]{min-width:56px;}
 #eventForm #eventTimePicker input.select[aria-label="A/P"]{min-width:84px;}
