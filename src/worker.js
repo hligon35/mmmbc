@@ -7,24 +7,47 @@
 
 import { EmailMessage } from 'cloudflare:email';
 
+function applySecurityHeaders(headers, { isHttps = true } = {}) {
+  const setIfMissing = (k, v) => {
+    try {
+      if (!headers.has(k)) headers.set(k, v);
+    } catch {
+      // ignore
+    }
+  };
+
+  setIfMissing('X-Content-Type-Options', 'nosniff');
+  setIfMissing('Referrer-Policy', 'strict-origin-when-cross-origin');
+  setIfMissing('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+  // Only meaningful on HTTPS.
+  if (isHttps) {
+    setIfMissing('Strict-Transport-Security', 'max-age=15552000');
+  }
+}
+
 function json(resBody, { status = 200, headers = {} } = {}) {
+  const mergedHeaders = new Headers({
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...headers
+  });
+  applySecurityHeaders(mergedHeaders);
   return new Response(JSON.stringify(resBody), {
     status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      ...headers
-    }
+    headers: mergedHeaders
   });
 }
 
 function text(body, { status = 200, headers = {} } = {}) {
+  const mergedHeaders = new Headers({
+    'Content-Type': 'text/plain; charset=utf-8',
+    ...headers
+  });
+  applySecurityHeaders(mergedHeaders);
   return new Response(body, {
     status,
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      ...headers
-    }
+    headers: mergedHeaders
   });
 }
 
@@ -50,6 +73,135 @@ function sanitizePrefix(input, { fallback = 'gallery/', ensureTrailingSlash = fa
   if (!cleaned) cleaned = fallback;
   if (ensureTrailingSlash && !cleaned.endsWith('/')) cleaned += '/';
   return cleaned;
+}
+
+function youtubeChannelId(env) {
+  return String(env.YOUTUBE_CHANNEL_ID || 'UCkAaHiYmUKIdKePifg1D2pg').trim();
+}
+
+function decodeHtmlEntities(input) {
+  return String(input || '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+async function fetchYoutubeFeed(channelId) {
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
+  const resp = await fetch(url, {
+    headers: {
+      Accept: 'application/atom+xml,text/xml;q=0.9,*/*;q=0.1',
+      'User-Agent': 'MMMBC-Worker/1.0'
+    }
+  });
+  if (!resp.ok) throw new Error(`YouTube feed fetch failed (${resp.status})`);
+  const xml = await resp.text();
+
+  const entries = [];
+  const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
+  let m;
+  while ((m = entryRe.exec(xml))) {
+    const chunk = m[1] || '';
+    const id = (chunk.match(/<yt:videoId>([^<]+)<\/yt:videoId>/) || [])[1];
+    if (!id) continue;
+    const titleRaw = (chunk.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+    const published = (chunk.match(/<published>([^<]+)<\/published>/) || [])[1] || '';
+    entries.push({
+      id: String(id).trim(),
+      title: decodeHtmlEntities(titleRaw).trim(),
+      published: String(published).trim()
+    });
+    if (entries.length >= 30) break;
+  }
+  return entries;
+}
+
+function parseVideoIdFromWatchUrl(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    const v = u.searchParams.get('v');
+    return v ? String(v).trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+async function detectYoutubeLiveVideo(channelId) {
+  const url = `https://www.youtube.com/channel/${encodeURIComponent(channelId)}/live`;
+  const resp = await fetch(url, {
+    redirect: 'follow',
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': 'MMMBC-Worker/1.0'
+    }
+  });
+
+  const finalUrl = String(resp.url || url);
+  const fromUrl = parseVideoIdFromWatchUrl(finalUrl);
+  if (fromUrl) return { isLive: true, videoId: fromUrl, source: 'redirect' };
+
+  // Fallback: some setups may not redirect. Try a best-effort parse.
+  const html = await resp.text().catch(() => '');
+  const fromHtml = (html.match(/\"videoId\"\s*:\s*\"([a-zA-Z0-9_-]{11})\"/) || [])[1];
+  if (fromHtml) {
+    // We can't reliably tell if it's live from HTML alone without a full parse.
+    // Only treat this as live if the /live page strongly indicates live content.
+    const indicatesLive = /isLiveContent\"\s*:\s*true|\"LIVE\"/i.test(html);
+    if (indicatesLive) return { isLive: true, videoId: fromHtml, source: 'html' };
+  }
+
+  return { isLive: false, videoId: '', source: 'none' };
+}
+
+async function handlePublicYoutube(request, env) {
+  const channelId = youtubeChannelId(env);
+
+  let live = { isLive: false, videoId: '', source: 'none' };
+  let videos = [];
+  let errors = [];
+
+  try {
+    live = await detectYoutubeLiveVideo(channelId);
+  } catch (e) {
+    errors.push({ type: 'live', error: String(e?.message || e).slice(0, 200) });
+  }
+
+  try {
+    videos = await fetchYoutubeFeed(channelId);
+  } catch (e) {
+    errors.push({ type: 'feed', error: String(e?.message || e).slice(0, 200) });
+  }
+
+  // YouTube feeds can include scheduled/upcoming livestream entries. Embedding those
+  // often shows a "Live stream offline" state. Prefer videos already published.
+  if (Array.isArray(videos) && videos.length) {
+    const now = Date.now();
+    const graceMs = 5 * 60 * 1000;
+    const published = videos.filter((v) => {
+      const t = Date.parse(String(v?.published || ''));
+      return Number.isFinite(t) && t <= (now + graceMs);
+    });
+    if (published.length) videos = published;
+  }
+
+  return json(
+    {
+      ok: true,
+      channelId,
+      live,
+      videos,
+      fetchedAt: new Date().toISOString(),
+      errors
+    },
+    {
+      headers: {
+        // Keep this fresh so it can flip quickly when you start streaming.
+        'Cache-Control': 'public, max-age=60'
+      }
+    }
+  );
 }
 
 function splitTags(raw) {
@@ -803,12 +955,15 @@ async function handleCdn(request, env) {
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
 
+  applySecurityHeaders(headers);
+
   return new Response(obj.body, { status: 200, headers });
 }
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const isHttps = url.protocol === 'https:';
 
     // Production hardening: once you have a real domain, force admin/api to it.
     // This also avoids confusion where Cloudflare Access is configured only on the real hostname.
@@ -838,6 +993,7 @@ export default {
         Location: '/Icons/favicon.png',
         'Cache-Control': 'public, max-age=86400'
       });
+      applySecurityHeaders(headers, { isHttps });
       return new Response(null, { status: 302, headers });
     }
 
@@ -847,6 +1003,11 @@ export default {
     // Public gallery feed (used by the public Photo Gallery page)
     if ((url.pathname === '/public/gallery.json' || url.pathname === '/public/gallery') && request.method === 'GET') {
       return handlePublicGallery(request, env);
+    }
+
+    // Public YouTube status/feed (used by Live Praise page)
+    if ((url.pathname === '/public/youtube.json' || url.pathname === '/public/youtube') && request.method === 'GET') {
+      return handlePublicYoutube(request, env);
     }
 
     // CDN endpoint for gallery objects in R2
@@ -958,11 +1119,15 @@ export default {
 
     // Avoid stale admin assets at the edge during frequent updates.
     const assetRes = await env.ASSETS.fetch(request);
+    const headers = new Headers(assetRes.headers);
+    applySecurityHeaders(headers, { isHttps });
+
     if (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname.startsWith('/admin/')) {
-      const headers = new Headers(assetRes.headers);
       headers.set('Cache-Control', 'no-store');
-      return new Response(assetRes.body, { status: assetRes.status, headers });
     }
-    return assetRes;
+
+    // If we didn't change anything, returning the original response is fine too,
+    // but this keeps header logic consistent and explicit.
+    return new Response(assetRes.body, { status: assetRes.status, headers });
   }
 };

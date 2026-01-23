@@ -1203,7 +1203,7 @@ footer {
     padding: 5px;
     max-width: none;
     width: 100%;
-    margin: 0 0 50px;
+    margin: 0 auto 50px;
     background-color: #000;
     border-radius: 15px;
     color: #ffffff; /* Updated for consistency with homepage sections */
@@ -1750,6 +1750,26 @@ footer {
 .youtube-section__cta {
     text-align: center;
     margin-top: 12px;
+}
+
+.youtube-section__status {
+    margin: 6px 0 10px;
+    font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+.youtube-card__link {
+    display: block;
+    padding: 10px 12px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+    border-top: 1px solid rgba(196, 97, 35, 0.35);
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.youtube-card__link:hover {
+    background: rgba(0, 0, 0, 0.32);
 }
 
 /* =====================================================================

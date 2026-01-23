@@ -86,7 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Contact page: toggle between Prayer Request and Contact Information forms
+    // Contact page: optional toggle between Prayer Request and Contact Information forms
+    // (Some deployments/pages may only include the contact form.)
     const prayerForm = document.getElementById('prayerRequestForm');
     const contactForm = document.getElementById('contactInfoForm');
     const prayerBtn = document.getElementById('showPrayerFormBtn');
@@ -104,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         prayerBtn.addEventListener('click', () => showForm('prayerRequestForm'));
         contactBtn.addEventListener('click', () => showForm('contactInfoForm'));
         showForm('prayerRequestForm');
+    } else if (contactForm) {
+        contactForm.classList.remove('hidden');
     }
 
     // Site settings: update social/contact links from exported site-settings.json

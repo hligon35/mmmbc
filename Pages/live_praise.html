@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Watch live services and recent videos from Mt. Moriah Missionary Baptist Church in Paducah, KY." />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" type="image/png" href="../Icons/favicon.png">
     <link rel="apple-touch-icon" href="../Icons/favicon.png">
     <link rel="stylesheet" href="../style.css">
@@ -44,7 +45,10 @@
             <div class="youtube-live-placeholder" aria-label="YouTube live stream">
                 <div class="youtube-live-placeholder__inner">
                     <div class="youtube-embed">
-                        <iframe title="Mt. Moriah Missionary Baptist Church - Live Stream" loading="lazy" src="https://www.youtube-nocookie.com/embed/DI0RZZt0ju0?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        <iframe id="livePraiseTopPlayer" title="Mt. Moriah Missionary Baptist Church - Live Stream" loading="lazy" src="https://www.youtube.com/embed/live_stream?channel=UCkAaHiYmUKIdKePifg1D2pg&rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <a class="youtube-live-placeholder__button" id="livePraiseWatchLink" href="https://www.youtube.com/channel/UCkAaHiYmUKIdKePifg1D2pg/live" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                     <!-- <p class="youtube-live-placeholder__text">Paste the YouTube Live embed URL into the iframe <strong>src</strong> to enable the live player.</p> -->
                 </div>
@@ -52,40 +56,48 @@
 
             <div class="youtube-section" aria-label="Recent YouTube videos">
                 <h2 class="youtube-section__title">Recent Videos</h2>
-                <div class="youtube-grid">
+                <p class="youtube-section__status" id="youtubeFeedStatus">Loading latest videos…</p>
+                <p class="youtube-section__status" style="margin-top: -6px;"><a id="youtubeFeedLink" href="/public/youtube.json" rel="noopener noreferrer" target="_blank">Open the live feed JSON</a></p>
+                <div class="youtube-grid" id="recentVideosGrid">
                     <div class="youtube-card">
                         <div class="youtube-embed">
-                            <iframe title="Recent video 1" loading="lazy" src="https://www.youtube-nocookie.com/embed/DI0RZZt0ju0?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe title="Recent video 1" loading="lazy" src="https://www.youtube.com/embed/DI0RZZt0ju0?rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
+                        <a class="youtube-card__link" href="https://www.youtube.com/watch?v=DI0RZZt0ju0" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                     <div class="youtube-card">
                         <div class="youtube-embed">
-                            <iframe title="Recent video 2" loading="lazy" src="https://www.youtube-nocookie.com/embed/bNzPE9jPbcU?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe title="Recent video 2" loading="lazy" src="https://www.youtube.com/embed/bNzPE9jPbcU?rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
+                        <a class="youtube-card__link" href="https://www.youtube.com/watch?v=bNzPE9jPbcU" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                     <div class="youtube-card">
                         <div class="youtube-embed">
-                            <iframe title="Recent video 3" loading="lazy" src="https://www.youtube-nocookie.com/embed/PhojfsrhtJA?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe title="Recent video 3" loading="lazy" src="https://www.youtube.com/embed/PhojfsrhtJA?rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
+                        <a class="youtube-card__link" href="https://www.youtube.com/watch?v=PhojfsrhtJA" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                     <div class="youtube-card">
                         <div class="youtube-embed">
-                            <iframe title="Recent video 4" loading="lazy" src="https://www.youtube-nocookie.com/embed/O39QmbszzxI?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe title="Recent video 4" loading="lazy" src="https://www.youtube.com/embed/O39QmbszzxI?rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
+                        <a class="youtube-card__link" href="https://www.youtube.com/watch?v=O39QmbszzxI" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                     <div class="youtube-card">
                         <div class="youtube-embed">
-                            <iframe title="Recent video 5" loading="lazy" src="https://www.youtube-nocookie.com/embed/sq_bGsEiAO4?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe title="Recent video 5" loading="lazy" src="https://www.youtube.com/embed/sq_bGsEiAO4?rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
+                        <a class="youtube-card__link" href="https://www.youtube.com/watch?v=sq_bGsEiAO4" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                     <div class="youtube-card">
                         <div class="youtube-embed">
-                            <iframe title="Recent video 6" loading="lazy" src="https://www.youtube-nocookie.com/embed/6VUHyYuI_xs?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe title="Recent video 6" loading="lazy" src="https://www.youtube.com/embed/6VUHyYuI_xs?rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
+                        <a class="youtube-card__link" href="https://www.youtube.com/watch?v=6VUHyYuI_xs" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
                     </div>
                 </div>
                 <div class="youtube-section__cta">
-                    <a class="youtube-section__button" href="https://www.youtube.com/@MMMBC-Paducah" rel="noopener noreferrer" target="_blank">View All Videos on YouTube</a>
+                    <a class="youtube-section__button" href="https://youtube.com/channel/UCkAaHiYmUKIdKePifg1D2pg" rel="noopener noreferrer" target="_blank">View All Videos on YouTube</a>
                 </div>
             </div>
         </section>
@@ -117,7 +129,7 @@
                     <li><a href="tel:2704433714"><img src="../Icons/phone.png" alt="Phone icon" class="link-icon"><span class="link-text">(270) 443-3714</span></a></li>
                     <li><a href="mailto:mtmoriahmbc1201@gmail.com"><img src="../Icons/mailus.png" alt="Email Us icon" class="link-icon"><span class="link-text">Email Us</span></a></li>
                     <li><a href="https://www.facebook.com/MtMoriahPaducah"><img src="../Icons/facebook.png" alt="Facebook icon" class="link-icon"><span class="link-text">Like us on Facebook</span></a></li>
-                    <li><a href="https://www.youtube.com/@MMMBC-Paducah"><img src="../Icons/youtube.png" alt="YouTube icon" class="link-icon"><span class="link-text">Subscribe on YouTube</span></a></li>
+                    <li><a href="https://youtube.com/channel/UCkAaHiYmUKIdKePifg1D2pg"><img src="../Icons/youtube.png" alt="YouTube icon" class="link-icon"><span class="link-text">Subscribe on YouTube</span></a></li>
                 </ul>
             </div>
         </div>
@@ -127,6 +139,108 @@
         </div>
     </footer>
 
-    <script src="../script.js"></script>
+        <script src="../script.js"></script>
+        <script>
+            (function () {
+                var CHANNEL_ID = 'UCkAaHiYmUKIdKePifg1D2pg';
+                var topPlayer = document.getElementById('livePraiseTopPlayer');
+                var topWatchLink = document.getElementById('livePraiseWatchLink');
+                var grid = document.getElementById('recentVideosGrid');
+                var statusEl = document.getElementById('youtubeFeedStatus');
+
+                if (!topPlayer || !grid) return;
+
+                function embedUrl(videoId) {
+                    return 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?rel=0';
+                }
+
+                function liveUrl() {
+                    return 'https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(CHANNEL_ID) + '&rel=0';
+                }
+
+                function renderRecent(videos, topVideoId) {
+                    if (!Array.isArray(videos) || videos.length === 0) return;
+
+                    var filtered = videos.filter(function (v) {
+                        return v && v.id && v.id !== topVideoId;
+                    });
+
+                    var take = filtered.slice(0, 12);
+                    if (take.length === 0) return;
+
+                    grid.innerHTML = '';
+                    take.forEach(function (v, idx) {
+                        var card = document.createElement('div');
+                        card.className = 'youtube-card';
+
+                        var embed = document.createElement('div');
+                        embed.className = 'youtube-embed';
+
+                        var iframe = document.createElement('iframe');
+                        iframe.loading = 'lazy';
+                        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+                        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+                        iframe.allowFullscreen = true;
+                        iframe.title = (v.title || ('Recent video ' + (idx + 1)));
+                        iframe.src = embedUrl(v.id);
+
+                        embed.appendChild(iframe);
+                        card.appendChild(embed);
+
+                        var link = document.createElement('a');
+                        link.className = 'youtube-card__link';
+                        link.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(v.id);
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.textContent = 'Watch on YouTube';
+                        card.appendChild(link);
+
+                        grid.appendChild(card);
+                    });
+                }
+
+                function setTop(videoId) {
+                    if (!videoId) return;
+                    topPlayer.src = embedUrl(videoId);
+                    if (topWatchLink) {
+                        topWatchLink.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(videoId);
+                    }
+                }
+
+                // Default behavior:
+                // - If you are LIVE right now, show the live video.
+                // - Otherwise, show the most recent upload.
+                // - Always show a most-to-least-recent list below.
+                fetch('/public/youtube.json', { cache: 'no-store' })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (!data || !data.ok) return;
+
+                        var topVideoId = '';
+                        if (data.live && data.live.isLive && data.live.videoId) {
+                            topVideoId = data.live.videoId;
+                            setTop(topVideoId);
+                        } else if (Array.isArray(data.videos) && data.videos[0] && data.videos[0].id) {
+                            topVideoId = data.videos[0].id;
+                            setTop(topVideoId);
+                        } else {
+                            // Fall back to the live-by-channel embed if we couldn't determine anything.
+                            topPlayer.src = liveUrl();
+                        }
+
+                        renderRecent(data.videos, topVideoId);
+
+                        if (statusEl) {
+                            statusEl.textContent = 'Updated: ' + (data.fetchedAt || 'just now');
+                        }
+                    })
+                    .catch(function () {
+                        if (statusEl) {
+                            statusEl.textContent = 'Could not load the latest list. Showing the built-in videos below.';
+                        }
+                        // Keep the existing hardcoded embeds as a safe fallback.
+                    });
+            })();
+        </script>
 </body>
 </html>

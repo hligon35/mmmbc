@@ -15,7 +15,8 @@ New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
 # Copy top-level public files
 $files=@(
-  "index.html","style.css","theme.css","schedule_app.css","schedule_app.js","script.js",
+  "index.html","robots.txt","sitemap.xml",
+  "style.css","theme.css","schedule_app.css","schedule_app.js","script.js",
   "announcements_ticker.js","bulletins_widget.js","facility_rental_form.js","facility_rental_nonmembers_form.js",
   "announcements.json","bulletins.json","documents.json","gallery.json","livestream.json","schedule.json","site-settings.json"
 )
