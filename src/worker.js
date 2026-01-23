@@ -175,6 +175,7 @@ async function handleSupportMessage(request, env) {
 
   // Prefer Cloudflare Email Routing (send_email binding) when configured.
   // This is more reliable than the legacy MailChannels endpoint, which may reject requests.
+  let emailRoutingError = '';
   if (env.SUPPORT_EMAIL && typeof env.SUPPORT_EMAIL.send === 'function') {
     const escapeQuotes = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\"/g, '\\"');
     const fromHeaderName = fromName ? `"${escapeQuotes(fromName)}" ` : '';
@@ -198,8 +199,9 @@ async function handleSupportMessage(request, env) {
       await env.SUPPORT_EMAIL.send(msg);
       return json({ ok: true });
     } catch (e) {
-      const msg = (e && (e.stack || e.message)) ? String(e.stack || e.message) : String(e);
-      return json({ error: `Email send failed (Email Routing). ${msg}`.slice(0, 2000) }, { status: 502 });
+      // Common Cloudflare Email Routing error: destination address not verified.
+      // Fall back to MailChannels when possible.
+      emailRoutingError = (e && (e.stack || e.message)) ? String(e.stack || e.message) : String(e);
     }
   }
 
@@ -227,7 +229,10 @@ async function handleSupportMessage(request, env) {
         { status: 502 }
       );
     }
-    return json({ error: `Email send failed (${res.status}). ${errText}`.trim().slice(0, 2000) }, { status: 502 });
+    const prefix = emailRoutingError
+      ? `Email Routing failed (${String(emailRoutingError).slice(0, 500)}). `
+      : '';
+    return json({ error: `${prefix}Email send failed (${res.status}). ${errText}`.trim().slice(0, 2000) }, { status: 502 });
   }
 
   return json({ ok: true });
