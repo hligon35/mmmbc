@@ -33,6 +33,9 @@
 		// Comma-separated emails allowed for admin API access (when Cloudflare Access is enabled).
 		// Example: "you@example.com,other@example.com"
 		"ADMIN_ALLOW_EMAILS": "",
+		// Optional: set this when you move the Worker to a custom domain (e.g. mmmbc.com).
+		// When set, /admin* and /api* requests to *.workers.dev will redirect to the canonical host.
+		"CANONICAL_HOST": "",
 		// When true, allow Cloudflare Access Service Tokens to call admin APIs (e.g. for migrations).
 		"ALLOW_SERVICE_TOKEN_ADMIN": "false",
 		// Set to true only for local development/testing.
@@ -45,6 +48,42 @@
 	// - Deploy prod:    npx wrangler deploy
 	// - Deploy preview: npx wrangler deploy --env preview
 	"env": {
+		"production": {
+			// Deploy with: npx wrangler deploy --env production
+			// Intended for the live custom domain (mmmbc.com).
+			"name": "mmmbc",
+			"main": "./src/worker.js",
+			"assets": {
+				"directory": "./cf_site"
+			},
+			"r2_buckets": [
+				{
+					"binding": "GALLERY_BUCKET",
+					"bucket_name": "mmmbc-gallery"
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "mmdb",
+					"database_id": "a981265d-7e16-486c-9d02-48dfa5017bed"
+				}
+			],
+			"send_email": [
+				{
+					"name": "SUPPORT_EMAIL",
+					"destination_address": "hligon@getsparqd.com"
+				}
+			],
+			"vars": {
+				"ADMIN_ALLOW_EMAILS": "",
+				"CANONICAL_HOST": "mmmbc.com",
+				"ALLOW_SERVICE_TOKEN_ADMIN": "false",
+				"DEV_BYPASS_AUTH": "false",
+				"SUPPORT_TO_EMAIL": "support@hldesignedit.com",
+				"SUPPORT_EMAIL_DESTINATION": "hligon@getsparqd.com"
+			}
+		},
 		"preview": {
 			"name": "mmmbc-preview",
 			"main": "./src/worker.js",
@@ -72,6 +111,7 @@
 			],
 			"vars": {
 				"ADMIN_ALLOW_EMAILS": "",
+				"CANONICAL_HOST": "",
 				"ALLOW_SERVICE_TOKEN_ADMIN": "true",
 				"DEV_BYPASS_AUTH": "false",
 				"SUPPORT_TO_EMAIL": "support@hldesignedit.com",
@@ -113,6 +153,7 @@
 			],
 			"vars": {
 				"ADMIN_ALLOW_EMAILS": "",
+				"CANONICAL_HOST": "",
 				"ALLOW_SERVICE_TOKEN_ADMIN": "true",
 				"DEV_BYPASS_AUTH": "false",
 				"SUPPORT_TO_EMAIL": "support@hldesignedit.com",

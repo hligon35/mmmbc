@@ -473,16 +473,22 @@ async function refreshAuthUI() {
   $('dashboardCard').hidden = !loggedIn || inInviteFlow;
   $('logoutBtn').hidden = !loggedIn;
 
-  // Option B (Workers): use a custom login page that triggers Cloudflare Access.
-  // The legacy password form is not used in Workers deployments.
-  if (!loggedIn && !inInviteFlow && isWorkersDeployment()) {
-    // Prefer navigating to /admin/ and letting Cloudflare Access intercept/redirect.
-    // Directly hitting /cdn-cgi/access/login can 404 on some Workers setups.
-    window.location.replace('/admin/');
-    return;
+  // Access-only UI: /admin is the single entry point.
+  // Cloudflare Access (when configured) should intercept /admin/* and handle authentication.
+  // Avoid client-side redirects here to prevent refresh loops when Access is not active.
+  if (!loggedIn && !inInviteFlow) {
+    const accessPanel = $('accessOnlyPanel');
+    const form = $('loginForm');
+    const forgotToggle = $('forgotToggle');
+    const forgotPanel = $('forgotPanel');
+
+    if (accessPanel) accessPanel.hidden = false;
+    if (form) form.hidden = true;
+    if (forgotToggle) forgotToggle.hidden = true;
+    if (forgotPanel) forgotPanel.hidden = true;
   }
 
-  $('authStatus').textContent = loggedIn ? `Signed in as ${me.user.email}` : 'Not signed in';
+  $('authStatus').textContent = loggedIn ? `Signed in as ${me.user.email}` : 'Cloudflare Access required';
 
   if (loggedIn) {
     $('salutation').textContent = `Welcome, ${me.user.name || me.user.email}`;
@@ -3323,10 +3329,10 @@ document.addEventListener('DOMContentLoaded', () => {
     $('loginError').hidden = true;
 
     if (isWorkersDeployment()) {
-      // Prefer the explicit Access link if present.
-      const link = $('accessLoginBtn');
-      const href = String(link?.getAttribute('href') || '/cdn-cgi/access/login');
-      window.location.href = href;
+      showToast(
+        'Cloudflare Access login happens in Cloudflare Zero Trust (not inside this admin page). If you are not being redirected to a Cloudflare login screen, you still need to configure an Access policy for this hostname and for /admin/* (and usually /api/*).',
+        { variant: 'danger', timeoutMs: 9000 }
+      );
       return;
     }
 
@@ -3339,6 +3345,36 @@ document.addEventListener('DOMContentLoaded', () => {
       $('loginError').hidden = false;
     }
   });
+
+  // Cloudflare Access button (Workers deployments)
+  const accessBtn = $('accessLoginBtn');
+  if (accessBtn) {
+    accessBtn.addEventListener('click', async () => {
+      let diag = null;
+      try {
+        diag = await api('/api/access/status', { method: 'GET' });
+      } catch {
+        diag = null;
+      }
+
+      if (!diag?.access) {
+        showToast(
+          'Access check failed. If you are not being redirected to a Cloudflare login screen, configure a Zero Trust Access app + policy for this hostname and for /admin/* (and /api/*).',
+          { variant: 'danger', timeoutMs: 10000 }
+        );
+        return;
+      }
+
+      const a = diag.access;
+      const flags = `cookie=${a.hasSessionCookie ? 'yes' : 'no'}, jwt=${a.hasJwtAssertion ? 'yes' : 'no'}, emailHeader=${a.hasEmailHeader ? 'yes' : 'no'}`;
+      const who = a.email ? `email=${a.email}` : 'email=(none)';
+
+      showToast(
+        `Cloudflare Access diagnostics: ${flags}; ${who}. ${String(diag.hint || '')}`.trim(),
+        { variant: 'danger', timeoutMs: 11000 }
+      );
+    });
+  }
 
   // Invite onboarding
   if ($('copySecretBtn') && $('inviteSecret')) {

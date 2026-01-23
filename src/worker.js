@@ -28,6 +28,12 @@ function text(body, { status = 200, headers = {} } = {}) {
   });
 }
 
+function canonicalHost(env) {
+  // Optional: set this when you move from *.workers.dev to your real domain.
+  // Example: CANONICAL_HOST=mmmbc.com
+  return String(env.CANONICAL_HOST || '').trim().toLowerCase();
+}
+
 function sanitizeSegment(input) {
   return String(input || '')
     .trim()
@@ -54,12 +60,53 @@ function splitTags(raw) {
     .slice(0, 25);
 }
 
-function getAccessEmail(request) {
+function tryParseJwtPayload(jwt) {
+  const token = String(jwt || '').trim();
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+
+  const b64url = parts[1];
+  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+  const padLen = (4 - (b64.length % 4)) % 4;
+  const padded = b64 + '='.repeat(padLen);
+
+  try {
+    const jsonStr = atob(padded);
+    const payload = JSON.parse(jsonStr);
+    return payload && typeof payload === 'object' ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+function getAccessJwt(request) {
+  return (
+    getHeaderTrim(request, 'cf-access-jwt-assertion')
+    || getHeaderTrim(request, 'Cf-Access-Jwt-Assertion')
+    || ''
+  ).trim();
+}
+
+function getAccessEmailHeaderOnly(request) {
   return (
     request.headers.get('cf-access-authenticated-user-email')
     || request.headers.get('Cf-Access-Authenticated-User-Email')
     || ''
   ).trim().toLowerCase();
+}
+
+function getAccessEmail(request) {
+  const headerEmail = getAccessEmailHeaderOnly(request);
+  if (headerEmail) return headerEmail;
+
+  // Some Access setups do not forward the email header, but DO forward a JWT assertion.
+  // In that case, derive email from the JWT payload.
+  const jwt = getAccessJwt(request);
+  if (!jwt) return '';
+
+  const payload = tryParseJwtPayload(jwt);
+  const email = String(payload?.email || payload?.user_email || payload?.upn || '').trim().toLowerCase();
+  return email;
 }
 
 function hasAccessSessionCookie(request) {
@@ -117,10 +164,7 @@ function hasValidServiceToken(request, env) {
 }
 
 function hasAccessJwtAssertion(request) {
-  return Boolean(
-    getHeaderTrim(request, 'cf-access-jwt-assertion')
-    || getHeaderTrim(request, 'Cf-Access-Jwt-Assertion')
-  );
+  return Boolean(getAccessJwt(request));
 }
 
 function requireAdmin(request, env) {
@@ -766,6 +810,37 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    // Production hardening: once you have a real domain, force admin/api to it.
+    // This also avoids confusion where Cloudflare Access is configured only on the real hostname.
+    const canon = canonicalHost(env);
+    if (
+      canon
+      && url.hostname.endsWith('.workers.dev')
+      && (url.pathname.startsWith('/admin') || url.pathname.startsWith('/api'))
+      && (request.method === 'GET' || request.method === 'HEAD')
+    ) {
+      const dest = new URL(request.url);
+      dest.hostname = canon;
+      dest.protocol = 'https:';
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: dest.toString(),
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
+
+    // Browsers commonly request /favicon.ico even when the site uses a PNG favicon.
+    // Ensure this never 500s by redirecting to the existing asset.
+    if (/\/favicon\.ico$/i.test(url.pathname) && (request.method === 'GET' || request.method === 'HEAD')) {
+      const headers = new Headers({
+        Location: '/Icons/favicon.png',
+        'Cache-Control': 'public, max-age=86400'
+      });
+      return new Response(null, { status: 302, headers });
+    }
+
     // Admin auth is expected to be enforced by Cloudflare Access at the edge.
     // Keep the Worker itself agnostic: if Access isn't configured, /admin/* will still load.
 
@@ -780,6 +855,34 @@ export default {
     }
 
     // Minimal API
+    if (url.pathname === '/api/access/status' && request.method === 'GET') {
+      const emailHeader = getAccessEmailHeaderOnly(request);
+      const jwt = getAccessJwt(request);
+      const jwtPayload = tryParseJwtPayload(jwt);
+      const emailFromJwt = String(jwtPayload?.email || jwtPayload?.user_email || jwtPayload?.upn || '').trim().toLowerCase();
+      const email = getAccessEmail(request);
+
+      return json({
+        ok: true,
+        hostname: url.hostname,
+        pathname: url.pathname,
+        devBypass: isDevBypass(env),
+        allowListEnabled: Boolean(allowList(env)),
+        access: {
+          hasSessionCookie: hasAccessSessionCookie(request),
+          hasJwtAssertion: Boolean(jwt),
+          hasEmailHeader: Boolean(emailHeader),
+          hasServiceTokenHeaders: hasServiceTokenHeaders(request),
+          email,
+          emailHeader,
+          emailFromJwt,
+          jwtIssuer: String(jwtPayload?.iss || ''),
+          jwtAudience: jwtPayload?.aud || null
+        },
+        hint: 'If hasSessionCookie/hasJwtAssertion/hasEmailHeader are all false, Cloudflare Access is not currently protecting this hostname/path (or you are using a hostname Access cannot intercept, like some workers.dev setups).'
+      });
+    }
+
     if (url.pathname === '/api/me' && request.method === 'GET') {
       const email = getAccessEmail(request);
       if (!email && !isDevBypass(env)) return json({ user: null });
