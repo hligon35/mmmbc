@@ -476,11 +476,10 @@ async function refreshAuthUI() {
   // Option B (Workers): use a custom login page that triggers Cloudflare Access.
   // The legacy password form is not used in Workers deployments.
   if (!loggedIn && !inInviteFlow && isWorkersDeployment()) {
-    const here = String(window.location.pathname || '');
-    if (!here.endsWith('/admin/login.html')) {
-      window.location.replace('/admin/login.html');
-      return;
-    }
+    // Prefer navigating to /admin/ and letting Cloudflare Access intercept/redirect.
+    // Directly hitting /cdn-cgi/access/login can 404 on some Workers setups.
+    window.location.replace('/admin/');
+    return;
   }
 
   $('authStatus').textContent = loggedIn ? `Signed in as ${me.user.email}` : 'Not signed in';
@@ -508,7 +507,7 @@ async function refreshAuthUI() {
 async function login(email, password) {
   if (isWorkersDeployment()) {
     // In Option B, Access is the auth layer (no password login endpoint).
-    throw new Error('This admin uses Cloudflare Access. Use Access login, then refresh.');
+    throw new Error('This admin uses Cloudflare Access. Use Access login.');
   }
   await api('/api/auth/login', {
     method: 'POST',

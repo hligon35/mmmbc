@@ -5,6 +5,12 @@ param(
 $ErrorActionPreference = "Stop"
 
 $dest = Join-Path $Root "cf_site"
+
+# Ensure the output is an exact mirror of the canonical source files.
+# This also removes any stale/duplicate folders (ex: cf_site/Pages/Pages) from prior builds.
+if (Test-Path $dest) {
+  Remove-Item -Recurse -Force $dest
+}
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
 # Copy top-level public files
@@ -33,6 +39,13 @@ if(Test-Path $adminUi){
   $adminDest = Join-Path $dest "admin"
   New-Item -ItemType Directory -Force -Path $adminDest | Out-Null
   Copy-Item -Recurse -Force (Join-Path $adminUi "*") $adminDest
+
+  # Remove custom login pages from the deployed static admin.
+  $remove=@("login.html","login.js","login_legacy.html")
+  foreach($f in $remove){
+    $p = Join-Path $adminDest $f
+    if(Test-Path $p){ Remove-Item -Force $p }
+  }
 }
 
 # Never publish server code or data

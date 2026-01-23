@@ -31,7 +31,7 @@
       <div class="card" id="accessOnlyPanel" hidden>
         <div class="card__subtitle">Cloudflare Access sign-in</div>
         <p class="muted">This deployment is protected by Cloudflare Access. Use the Access login, then refresh this page.</p>
-        <a class="btn btn--primary" id="accessLoginBtn" href="/admin/login.html">Continue to sign-in</a>
+        <a class="btn btn--primary" id="accessLoginBtn" href="/admin/">Continue</a>
       </div>
 
       <form id="loginForm" class="form">
@@ -175,6 +175,12 @@
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-content" id="tabBtn-content">Announcements</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-finances" id="tabBtn-finances">Finances</button>
           <button class="tab tab--nav" role="tab" aria-selected="false" aria-controls="tab-support" id="tabBtn-support">Support</button>
+
+          <div class="photoBulkBar photoBulkBar--nav" id="photoBulkBar" hidden>
+            <button class="btn btn--primary" id="photoBulkEditBtn" type="button">Edit selected</button>
+            <button class="btn" id="photoBulkDeleteBtn" type="button">Delete selected</button>
+            <span class="muted" id="photoBulkCount" aria-live="polite"></span>
+          </div>
         </nav>
 
         <div class="adminMain">
@@ -190,8 +196,14 @@
             </div>
           </div>
           <div class="iconGroup" aria-label="Photo gallery actions">
-            <a class="iconBtn iconBtn--help" id="photoHelpBtn" href="#photoHelpDialog" aria-label="Photo upload instructions" title="Photo upload instructions">?</a>
-            <button class="btn" id="exportBtn" type="button">Sync Gallery</button>
+            <div class="iconGroup__row">
+              <a class="iconBtn iconBtn--help" id="photoHelpBtn" href="#photoHelpDialog" aria-label="Photo upload instructions" title="Photo upload instructions">?</a>
+              <button class="btn" id="exportBtn" type="button">Sync Gallery</button>
+            </div>
+            <div class="syncProgress" id="syncProgressWrap" aria-live="polite" hidden>
+              <progress class="syncProgress__meter" id="syncProgressMeter" max="500" value="0"></progress>
+              <div class="syncProgress__text" id="syncProgressText">Ready.</div>
+            </div>
           </div>
         </div>
 
@@ -249,7 +261,7 @@
             <div class="hint" id="photoUploadHint" aria-live="polite"></div>
           </form>
 
-          <div class="toolbar toolbar--nowrap" aria-label="Photo sorting and filters">
+          <div class="toolbar toolbar--nowrap" id="photoToolbar" aria-label="Photo sorting and filters">
             <label class="label label--inline">
               Sort
               <select class="select" id="photoSort">
@@ -276,7 +288,19 @@
             </label>
           </div>
 
+          <div class="toolbar toolbar--tightTop photoPager" id="photoPager" aria-label="Photo gallery pagination" hidden>
+            <button class="btn" id="photoPrevPageBtn" type="button">Prev</button>
+            <span class="muted" id="photoPageInfo" aria-live="polite"></span>
+            <button class="btn" id="photoNextPageBtn" type="button">Next</button>
+          </div>
+
           <div class="grid" id="photoGrid" aria-live="polite"></div>
+
+          <div class="toolbar toolbar--tightTop photoPager photoPager--bottom" id="photoPagerBottom" aria-label="Photo gallery pagination (bottom)" hidden>
+            <button class="btn" id="photoPrevPageBtnBottom" type="button">Prev</button>
+            <span class="muted" id="photoPageInfoBottom" aria-live="polite"></span>
+            <button class="btn" id="photoNextPageBtnBottom" type="button">Next</button>
+          </div>
         </div>
 
         <div class="subTabPanel" role="tabpanel" id="panel-photos-bucket" aria-labelledby="subTabBtn-photos-bucket" hidden>
@@ -575,19 +599,19 @@
               <input class="input" id="financeDate" type="date" required />
             </label>
             <label class="label">
-              Type
+              <span id="financeTypeLabelText">Type</span>
               <select class="select" id="financeType" required>
                 <option value="income">Income</option>
                 <option value="expense">Expense</option>
               </select>
             </label>
             <label class="label">
-              Category
-              <input class="input" id="financeCategory" type="text" list="financeCategoriesList" placeholder="Tithes" required />
+              <span id="financeCategoryLabelText">Category</span>
+              <select class="select" id="financeCategory" required></select>
             </label>
             <label class="label">
-              Fund
-              <input class="input" id="financeFund" type="text" list="financeFundsList" placeholder="General" />
+              <span id="financeFundLabelText">Fund</span>
+              <select class="select" id="financeFund"></select>
             </label>
             <label class="label">
               Method
@@ -609,7 +633,7 @@
           <div class="formRow">
             <label class="label">
               <span id="financePartyLabel">From (optional)</span>
-              <input class="input" id="financeParty" type="text" maxlength="120" placeholder="John Doe / Vendor" />
+              <input class="input" id="financeParty" type="text" maxlength="120" placeholder="John Doe / Vendor" list="financePartiesList" autocomplete="off" />
             </label>
             <label class="label">
               Memo (optional)
@@ -624,8 +648,7 @@
           </div>
         </form>
 
-        <datalist id="financeCategoriesList"></datalist>
-        <datalist id="financeFundsList"></datalist>
+        <datalist id="financePartiesList"></datalist>
 
         <div class="divider"></div>
 

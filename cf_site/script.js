@@ -1,7 +1,7 @@
 // Basic script for interactivity
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Remove dev/admin and login shortcuts from the public nav.
+    // Remove dev/admin and login shortcuts from the public nav (local request).
     document.querySelectorAll('.devicon-btn').forEach((el) => el.remove());
     document.querySelectorAll('.nav-links').forEach((nav) => {
         nav.querySelectorAll('a').forEach((a) => {

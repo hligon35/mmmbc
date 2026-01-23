@@ -766,17 +766,8 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Admin entrypoint: send unauthenticated users to the custom login page.
-    // Note: keep this narrow so that /admin/login.html can load its CSS/JS.
-    if (
-      request.method === 'GET'
-      && (url.pathname === '/admin' || url.pathname === '/admin/' || url.pathname === '/admin/index.html')
-      && !isDevBypass(env)
-      && !getAccessEmail(request)
-      && !hasAccessSessionCookie(request)
-    ) {
-      return Response.redirect(`${url.origin}/admin/login.html`, 302);
-    }
+    // Admin auth is expected to be enforced by Cloudflare Access at the edge.
+    // Keep the Worker itself agnostic: if Access isn't configured, /admin/* will still load.
 
     // Public gallery feed (used by the public Photo Gallery page)
     if ((url.pathname === '/public/gallery.json' || url.pathname === '/public/gallery') && request.method === 'GET') {
