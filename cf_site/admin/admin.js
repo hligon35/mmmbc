@@ -1022,7 +1022,10 @@ function setPhotosSubTab(panelId) {
 
   if (panelId === 'panel-photos-bucket') {
     // Lazy refresh when switching to the bucket browser.
-    loadR2Tree(r2Prefix).catch(() => {});
+    // Do not fetch before login (would spam 401s and confuse the login flow).
+    const dashboard = $('dashboardCard');
+    const loggedIn = dashboard && dashboard.hidden === false;
+    if (loggedIn) loadR2Tree(r2Prefix).catch(() => {});
   }
 }
 
@@ -1478,9 +1481,15 @@ async function loadR2Tree(prefix) {
   }
 }
 
-async function syncFromR2(prefix) {
+async function syncFromR2(prefix, { confirm: shouldConfirm = true } = {}) {
   const p = normalizeR2Prefix(prefix);
-  if (!confirmWrite(`Sync D1 gallery records from R2 under:\n\n${p}\n\nThis updates what the public Photo Gallery shows.`)) return;
+  if (shouldConfirm) {
+    const ok = confirmWrite(`Sync D1 gallery records from R2 under:\n\n${p}\n\nThis updates what the public Photo Gallery shows.`);
+    if (!ok) {
+      setR2Status('Sync canceled.');
+      return { ok: false, canceled: true };
+    }
+  }
 
   setR2UiBusy(true);
   setR2Status('Syncing…');
@@ -1506,9 +1515,11 @@ async function syncFromR2(prefix) {
     showToast(`Gallery synced. Added ${totalAdded} item(s).`, { variant: 'success' });
     await loadGallery();
     await loadR2Tree(p);
+    return { ok: true, added: totalAdded, existing: totalExisting, processed: totalProcessed };
   } catch (e) {
     setR2Status(e.message);
     showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
+    return { ok: false, error: String(e?.message || e || 'Unknown error') };
   } finally {
     setR2UiBusy(false);
   }
@@ -2531,7 +2542,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Default Photo Gallery view
   if ($('panel-photos-manage') && $('panel-photos-bucket')) {
-    setPhotosSubTab('panel-photos-bucket');
+    // Keep login clean; bucket browsing requires auth.
+    setPhotosSubTab('panel-photos-manage');
   }
   if ($('subTabBtn-settings-social')) {
     $('subTabBtn-settings-social').addEventListener('click', () => setSettingsSubTab('panel-settings-social'));
@@ -3097,69 +3109,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  $('logoutBtn').addEventListener('click', async () => {
-    await logout();
-    await refreshAuthUI();
-  });
-
-  // Account profile
-  $('accountForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const hint = $('accountHint');
-    if (!confirmWrite('Save account profile changes?')) return;
-    hint.textContent = 'Saving…';
-    const fd = new FormData(e.currentTarget);
-    try {
-      await api('/api/account', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: String(fd.get('name') || ''),
-          email: String(fd.get('email') || '')
-        })
-      });
-      hint.textContent = 'Saved.';
+  const logoutBtn = $('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      await logout();
       await refreshAuthUI();
-    } catch (err) {
-      hint.textContent = err.message;
-    }
-  });
+    });
+  }
 
-  // Account password
-  $('passwordForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const hint = $('passwordHint');
-    hint.textContent = '';
-    const fd = new FormData(e.currentTarget);
-    const newPassword = String(fd.get('newPassword') || '');
-    const confirmPassword = String(fd.get('confirmPassword') || '');
-    if (newPassword !== confirmPassword) {
-      hint.textContent = 'Passwords do not match.';
-      return;
-    }
-    const policyErr = passwordPolicyError(newPassword);
-    if (policyErr) {
-      hint.textContent = policyErr;
-      return;
-    }
+  // Account profile (optional UI)
+  const accountForm = $('accountForm');
+  if (accountForm) {
+    accountForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hint = $('accountHint');
+      if (!confirmWrite('Save account profile changes?')) return;
+      if (hint) hint.textContent = 'Saving…';
+      const fd = new FormData(e.currentTarget);
+      try {
+        await api('/api/account', {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: String(fd.get('name') || ''),
+            email: String(fd.get('email') || '')
+          })
+        });
+        if (hint) hint.textContent = 'Saved.';
+        await refreshAuthUI();
+      } catch (err) {
+        if (hint) hint.textContent = err.message;
+      }
+    });
+  }
 
-    if (!confirmWrite('Update your password?')) return;
+  // Account password (optional UI)
+  const passwordForm = $('passwordForm');
+  if (passwordForm) {
+    passwordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hint = $('passwordHint');
+      if (hint) hint.textContent = '';
+      const fd = new FormData(e.currentTarget);
+      const newPassword = String(fd.get('newPassword') || '');
+      const confirmPassword = String(fd.get('confirmPassword') || '');
+      if (newPassword !== confirmPassword) {
+        if (hint) hint.textContent = 'Passwords do not match.';
+        return;
+      }
+      const policyErr = passwordPolicyError(newPassword);
+      if (policyErr) {
+        if (hint) hint.textContent = policyErr;
+        return;
+      }
 
-    hint.textContent = 'Updating…';
-    try {
-      await api('/api/account/password', {
-        method: 'PUT',
-        body: JSON.stringify({
-          currentPassword: String(fd.get('currentPassword') || ''),
-          newPassword
-        })
-      });
-      hint.textContent = 'Password updated.';
-      safeResetForm(e);
-      wirePasswordMeter('newPassword', 'accountPwMeter', 'accountPwText');
-    } catch (err) {
-      hint.textContent = err.message;
-    }
-  });
+      if (!confirmWrite('Update your password?')) return;
+
+      if (hint) hint.textContent = 'Updating…';
+      try {
+        await api('/api/account/password', {
+          method: 'PUT',
+          body: JSON.stringify({
+            currentPassword: String(fd.get('currentPassword') || ''),
+            newPassword
+          })
+        });
+        if (hint) hint.textContent = 'Password updated.';
+        safeResetForm(e);
+        wirePasswordMeter('newPassword', 'accountPwMeter', 'accountPwText');
+      } catch (err) {
+        if (hint) hint.textContent = err.message;
+      }
+    });
+  }
 
   // Photo uploads (multipart)
   $('photoUploadForm').addEventListener('submit', async (e) => {
@@ -3206,10 +3227,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('exportBtn').addEventListener('click', async () => {
+    const btn = $('exportBtn');
+    const prevText = btn ? btn.textContent : '';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Syncing…';
+    }
     try {
-      await syncFromR2('gallery/');
+      // Avoid confirm() here: some embedded browsers/policies block dialogs,
+      // which makes the button appear to do nothing.
+      const out = await syncFromR2('gallery/', { confirm: false });
+      if (out?.canceled) showToast('Gallery sync canceled.', { variant: 'success' });
     } catch (e) {
       showToast(`Gallery sync failed: ${String(e?.message || e || 'Unknown error')}`, { variant: 'danger' });
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = prevText || 'Sync Gallery';
+      }
     }
   });
 
@@ -3296,9 +3331,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   if ($('r2RefreshBtn')) {
-    $('r2RefreshBtn').addEventListener('click', () => {
+    $('r2RefreshBtn').addEventListener('click', async () => {
       const raw = $('r2PrefixInput') ? $('r2PrefixInput').value : r2Prefix;
-      loadR2Tree(raw).catch((e) => setR2Status(e.message));
+      setR2UiBusy(true);
+      setR2Status('Refreshing…');
+      try {
+        await loadR2Tree(raw);
+        // Keep the gallery list in sync with any bucket-side changes.
+        await loadGallery();
+        setR2Status('Refreshed.');
+      } catch (e) {
+        setR2Status(e.message);
+      } finally {
+        setR2UiBusy(false);
+      }
     });
   }
   if ($('r2SyncFolderBtn')) {
@@ -3582,11 +3628,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  $('exportAllBtn').addEventListener('click', async () => {
-    if (!confirmWrite('Export current content to website files now?')) return;
-    await api('/api/export', { method: 'POST', body: '{}' });
-    alert('Exported to website files.');
-  });
+  const exportAllBtn = $('exportAllBtn');
+  if (exportAllBtn) {
+    exportAllBtn.addEventListener('click', async () => {
+      if (!confirmWrite('Export current content to website files now?')) return;
+      await api('/api/export', { method: 'POST', body: '{}' });
+      alert('Exported to website files.');
+    });
+  }
 
   // Initial
   refreshAuthUI().catch((err) => {
