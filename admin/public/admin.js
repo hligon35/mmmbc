@@ -75,6 +75,47 @@ async function api(path, options = {}) {
 
 function $(id) { return document.getElementById(id); }
 
+let syncProgressHideTimer = null;
+
+function updateHeaderBumper() {
+  const header = document.querySelector?.('.header');
+  if (!header) return;
+  try {
+    const h = Math.max(0, Math.round(header.getBoundingClientRect().height || 0));
+    document.documentElement.style.setProperty('--header-bumper', `${h}px`);
+  } catch {
+    // ignore
+  }
+}
+
+function resetTransientUiState() {
+  // Covers initial load AND BFCache restores (where DOMContentLoaded may not fire).
+  if (syncProgressHideTimer) {
+    try { window.clearTimeout(syncProgressHideTimer); } catch { /* ignore */ }
+    syncProgressHideTimer = null;
+  }
+  setSyncProgress({ visible: false, text: '' });
+
+  try { photoSelectedIds.clear(); } catch { /* ignore */ }
+  try {
+    const checks = Array.from(document.querySelectorAll('.thumb__check'));
+    for (const cb of checks) {
+      if (cb instanceof HTMLInputElement) cb.checked = false;
+    }
+    const selected = Array.from(document.querySelectorAll('.thumb--selected'));
+    for (const el of selected) {
+      try { el.classList.remove('thumb--selected'); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+  try {
+    const bar = $('photoBulkBar');
+    if (bar) {
+      bar.hidden = true;
+      bar.dataset.stickyTopSet = '0';
+    }
+  } catch { /* ignore */ }
+}
+
 function setSyncProgress({ visible, indeterminate, value, max, text } = {}) {
   const wrap = $('syncProgressWrap');
   const meter = $('syncProgressMeter');
@@ -887,8 +928,35 @@ function financeStartEdit(entry) {
   try { $('financeCategory').focus(); } catch { /* ignore */ }
 }
 
+function populateFinancePartyDatalist() {
+  const dl = $('financePartiesList');
+  if (!dl) return;
+
+  const all = Array.isArray(finances?.entries) ? finances.entries : [];
+  const seen = new Set();
+  const names = [];
+
+  for (const e of all) {
+    const raw = String(e?.party || '').trim();
+    if (!raw) continue;
+    const key = raw.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    names.push(raw);
+  }
+
+  names.sort((a, b) => a.localeCompare(b));
+  dl.innerHTML = '';
+  for (const n of names) {
+    const opt = document.createElement('option');
+    opt.value = n;
+    dl.appendChild(opt);
+  }
+}
+
 function renderFinances() {
   populateFinanceDatalists();
+  populateFinancePartyDatalist();
 
   const filters = financeCurrentFilters();
   const all = Array.isArray(finances?.entries) ? finances.entries : [];
@@ -1206,8 +1274,11 @@ function photoUpdateBulkBar() {
   bar.hidden = n === 0;
   if (count) count.textContent = n ? `${n} selected` : '';
 
-  // Stick the bulk controls in-view while scrolling down, but never let them
-  // move higher than where they first appeared.
+  // For the nav bulk bar, CSS handles sticky using the header bumper.
+  if (bar.classList.contains('photoBulkBar--nav')) return;
+
+  // (Fallback) Stick in-view while scrolling down, but never let it move
+  // higher than where it first appeared.
   if (n > 0 && bar.dataset.stickyTopSet !== '1') {
     requestAnimationFrame(() => {
       if (bar.hidden) return;
@@ -1224,10 +1295,16 @@ function photoUpdateBulkBar() {
 }
 
 function photoUpdatePager() {
-  const pager = $('photoPager');
-  const info = $('photoPageInfo');
-  const prev = $('photoPrevPageBtn');
-  const next = $('photoNextPageBtn');
+  const pagerTop = $('photoPager');
+  const infoTop = $('photoPageInfo');
+  const prevTop = $('photoPrevPageBtn');
+  const nextTop = $('photoNextPageBtn');
+
+  const pagerBottom = $('photoPagerBottom');
+  const infoBottom = $('photoPageInfoBottom');
+  const prevBottom = $('photoPrevPageBtnBottom');
+  const nextBottom = $('photoNextPageBtnBottom');
+
   const pageSize = photoPageSize();
   const total = photoFilteredItems.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -1235,10 +1312,18 @@ function photoUpdatePager() {
   if (photoCurrentPage > totalPages) photoCurrentPage = totalPages;
   if (photoCurrentPage < 1) photoCurrentPage = 1;
 
-  if (pager) pager.hidden = total <= pageSize;
-  if (info) info.textContent = total ? `Page ${photoCurrentPage} of ${totalPages} • ${total} photo(s)` : '';
-  if (prev) prev.disabled = photoCurrentPage <= 1;
-  if (next) next.disabled = photoCurrentPage >= totalPages;
+  const showPager = total > pageSize;
+  const text = total ? `Page ${photoCurrentPage} of ${totalPages} • ${total} photo(s)` : '';
+
+  if (pagerTop) pagerTop.hidden = !showPager;
+  if (infoTop) infoTop.textContent = text;
+  if (prevTop) prevTop.disabled = photoCurrentPage <= 1;
+  if (nextTop) nextTop.disabled = photoCurrentPage >= totalPages;
+
+  if (pagerBottom) pagerBottom.hidden = !showPager;
+  if (infoBottom) infoBottom.textContent = text;
+  if (prevBottom) prevBottom.disabled = photoCurrentPage <= 1;
+  if (nextBottom) nextBottom.disabled = photoCurrentPage >= totalPages;
 }
 
 function toNumberOrNull(v) {
@@ -1717,6 +1802,11 @@ async function syncFromR2(prefix, { confirm: shouldConfirm = true } = {}) {
 
   setR2UiBusy(true);
   setR2Status('Syncing…');
+
+  if (syncProgressHideTimer) {
+    try { window.clearTimeout(syncProgressHideTimer); } catch { /* ignore */ }
+    syncProgressHideTimer = null;
+  }
 
   setSyncProgress({ visible: true, indeterminate: true, text: 'Starting sync…' });
 
@@ -2767,6 +2857,20 @@ async function loadAll() {
 
 // -------- Wire UI --------
 document.addEventListener('DOMContentLoaded', () => {
+  updateHeaderBumper();
+  window.addEventListener('resize', () => {
+    try { updateHeaderBumper(); } catch { /* ignore */ }
+  });
+
+  resetTransientUiState();
+
+  // If the page is restored from bfcache (back/forward), DOMContentLoaded
+  // may not run; this ensures transient UI stays reset.
+  window.addEventListener('pageshow', () => {
+    try { updateHeaderBumper(); } catch { /* ignore */ }
+    try { resetTransientUiState(); } catch { /* ignore */ }
+  });
+
   // Default print mode (prints are initiated from Finances).
   setPrintMode('finance');
   window.addEventListener('afterprint', () => {
@@ -3492,16 +3596,30 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Photo paging (6 rows at a time)
+  const photoPageDelta = (delta) => {
+    photoCurrentPage = Math.max(1, Number(photoCurrentPage || 1) + Number(delta || 0));
+    applyPhotoFilters({ resetPage: false });
+  };
+
   if ($('photoPrevPageBtn')) {
     $('photoPrevPageBtn').addEventListener('click', () => {
-      photoCurrentPage = Math.max(1, Number(photoCurrentPage || 1) - 1);
-      applyPhotoFilters({ resetPage: false });
+      photoPageDelta(-1);
     });
   }
   if ($('photoNextPageBtn')) {
     $('photoNextPageBtn').addEventListener('click', () => {
-      photoCurrentPage = Math.max(1, Number(photoCurrentPage || 1) + 1);
-      applyPhotoFilters({ resetPage: false });
+      photoPageDelta(1);
+    });
+  }
+
+  if ($('photoPrevPageBtnBottom')) {
+    $('photoPrevPageBtnBottom').addEventListener('click', () => {
+      photoPageDelta(-1);
+    });
+  }
+  if ($('photoNextPageBtnBottom')) {
+    $('photoNextPageBtnBottom').addEventListener('click', () => {
+      photoPageDelta(1);
     });
   }
 
@@ -3630,6 +3748,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = false;
         btn.textContent = prevText || 'Sync Gallery';
       }
+
+      // Never leave the progress meter hanging around after the action.
+      if (syncProgressHideTimer) {
+        try { window.clearTimeout(syncProgressHideTimer); } catch { /* ignore */ }
+      }
+      syncProgressHideTimer = window.setTimeout(() => {
+        setSyncProgress({ visible: false, text: '' });
+      }, 2000);
     }
   });
 

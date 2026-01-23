@@ -295,6 +295,12 @@
           </div>
 
           <div class="grid" id="photoGrid" aria-live="polite"></div>
+
+          <div class="toolbar toolbar--tightTop photoPager photoPager--bottom" id="photoPagerBottom" aria-label="Photo gallery pagination (bottom)" hidden>
+            <button class="btn" id="photoPrevPageBtnBottom" type="button">Prev</button>
+            <span class="muted" id="photoPageInfoBottom" aria-live="polite"></span>
+            <button class="btn" id="photoNextPageBtnBottom" type="button">Next</button>
+          </div>
         </div>
 
         <div class="subTabPanel" role="tabpanel" id="panel-photos-bucket" aria-labelledby="subTabBtn-photos-bucket" hidden>
@@ -627,7 +633,7 @@
           <div class="formRow">
             <label class="label">
               <span id="financePartyLabel">From (optional)</span>
-              <input class="input" id="financeParty" type="text" maxlength="120" placeholder="John Doe / Vendor" />
+              <input class="input" id="financeParty" type="text" maxlength="120" placeholder="John Doe / Vendor" list="financePartiesList" autocomplete="off" />
             </label>
             <label class="label">
               Memo (optional)
@@ -641,6 +647,8 @@
             <div class="hint" id="financeHint" aria-live="polite"></div>
           </div>
         </form>
+
+        <datalist id="financePartiesList"></datalist>
 
         <div class="divider"></div>
 
