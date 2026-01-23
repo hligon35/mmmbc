@@ -96,11 +96,12 @@ body{
 
 /* Events: keep controls on one row by shortening Title and moving hint below */
 #eventForm{
-  grid-template-columns:minmax(212px, 1fr) max-content max-content;
+  grid-template-columns:minmax(212px, 1fr) minmax(138px, 160px) minmax(200px, 1fr);
   align-items:end;
 }
+#eventForm > .label{min-width:0;}
 #eventForm input[type="date"].input{width:138px;padding:8px 8px;}
-#eventForm .timePicker{width:max-content;}
+#eventForm .timePicker{width:100%;max-width:100%;}
 
 /* Time picker: small selects (just enough for labels) */
 #eventForm #eventTimePicker .select{
@@ -115,11 +116,20 @@ body{
 #eventForm #eventTimePicker .select[aria-label="M"],
 #eventForm #eventTimePicker .select[aria-label="A/P"]{width:auto;}
 
+/* Events time picker inputs can visually disappear against the card background; force size + contrast */
+#eventForm #eventTimePicker input.select{
+  background:rgba(255,255,255,.04);
+  border-color:rgba(255,255,255,.28);
+}
+#eventForm #eventTimePicker input.select[aria-label="H"],
+#eventForm #eventTimePicker input.select[aria-label="M"]{min-width:56px;}
+#eventForm #eventTimePicker input.select[aria-label="A/P"]{min-width:84px;}
+
 /* Add button on its own row */
 #eventForm > button.btn{grid-column:1 / -1;width:fit-content;justify-self:start;}
 #eventForm #eventHint{grid-column:1 / -1;}
 
-@media (max-width:560px){
+@media (max-width:720px){
   #eventForm{grid-template-columns:1fr;}
 }
 
@@ -488,7 +498,7 @@ body{
 .fieldset legend{padding:0 8px;color:var(--muted);font-weight:900;}
 .checkRow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
 
-.timePicker{display:flex;flex-wrap:nowrap;gap:10px;align-items:center;}
+.timePicker{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
 .timePicker .select{width:auto;min-width:0;}
 
 .list--scroll5{max-height:420px;overflow:auto;}
