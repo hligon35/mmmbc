@@ -47,8 +47,17 @@
                     <div class="youtube-embed">
                         <iframe id="livePraiseTopPlayer" title="Mt. Moriah Missionary Baptist Church - Live Stream" loading="lazy" src="https://www.youtube.com/embed/live_stream?channel=UCkAaHiYmUKIdKePifg1D2pg&rel=0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                     </div>
-                    <div style="margin-top: 10px;">
+                    <div class="live-player-actions live-player-actions--spaced">
                         <a class="youtube-live-placeholder__button" id="livePraiseWatchLink" href="https://www.youtube.com/channel/UCkAaHiYmUKIdKePifg1D2pg/live" rel="noopener noreferrer" target="_blank">Watch on YouTube</a>
+                        <button class="youtube-live-placeholder__button secondary" id="livePraiseUseFacebookBtn" type="button">Use Facebook player</button>
+                        <a class="youtube-live-placeholder__button secondary" id="livePraiseFacebookLink" href="https://www.facebook.com/MtMoriahPaducah/live" rel="noopener noreferrer" target="_blank">Watch on Facebook</a>
+                    </div>
+
+                    <div class="youtube-live-fallback hidden" id="livePraiseFacebookWrap" aria-label="Facebook live stream">
+                        <div class="youtube-embed">
+                            <iframe id="livePraiseFacebookPlayer" title="Mt. Moriah Missionary Baptist Church - Facebook Live" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
+                        <p class="youtube-live-placeholder__text live-player-note">If YouTube shows an error, use the Facebook player or the links above.</p>
                     </div>
                     <!-- <p class="youtube-live-placeholder__text">Paste the YouTube Live embed URL into the iframe <strong>src</strong> to enable the live player.</p> -->
                 </div>
@@ -57,7 +66,7 @@
             <div class="youtube-section" aria-label="Recent YouTube videos">
                 <h2 class="youtube-section__title">Recent Videos</h2>
                 <p class="youtube-section__status" id="youtubeFeedStatus">Loading latest videos…</p>
-                <p class="youtube-section__status" style="margin-top: -6px;"><a id="youtubeFeedLink" href="/public/youtube.json" rel="noopener noreferrer" target="_blank">Open the live feed JSON</a></p>
+                <p class="youtube-section__status youtube-section__status--tight"><a id="youtubeFeedLink" href="/public/youtube.json" rel="noopener noreferrer" target="_blank">Open the live feed JSON</a></p>
                 <div class="youtube-grid" id="recentVideosGrid">
                     <div class="youtube-card">
                         <div class="youtube-embed">
@@ -143,12 +152,59 @@
         <script>
             (function () {
                 var CHANNEL_ID = 'UCkAaHiYmUKIdKePifg1D2pg';
+                var FB_PAGE_URL = 'https://www.facebook.com/MtMoriahPaducah';
                 var topPlayer = document.getElementById('livePraiseTopPlayer');
                 var topWatchLink = document.getElementById('livePraiseWatchLink');
+                var fbWrap = document.getElementById('livePraiseFacebookWrap');
+                var fbPlayer = document.getElementById('livePraiseFacebookPlayer');
+                var fbUseBtn = document.getElementById('livePraiseUseFacebookBtn');
+                var fbWatchLink = document.getElementById('livePraiseFacebookLink');
                 var grid = document.getElementById('recentVideosGrid');
                 var statusEl = document.getElementById('youtubeFeedStatus');
 
                 if (!topPlayer || !grid) return;
+
+                function normalizeUrl(url) {
+                    return String(url || '').trim().replace(/\/+$/, '');
+                }
+
+                function buildFacebookLiveUrl() {
+                    var base = normalizeUrl(FB_PAGE_URL);
+                    return base ? (base + '/live') : '';
+                }
+
+                function buildFacebookEmbedUrl(liveUrl) {
+                    if (!liveUrl) return '';
+                    return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(liveUrl) + '&show_text=false&width=560';
+                }
+
+                function showFacebookPlayer() {
+                    if (!fbWrap || !fbPlayer) return;
+                    var liveUrl = buildFacebookLiveUrl();
+                    var embedUrl = buildFacebookEmbedUrl(liveUrl);
+                    if (fbWatchLink && liveUrl) fbWatchLink.href = liveUrl;
+                    if (embedUrl && !fbPlayer.src) fbPlayer.src = embedUrl;
+                    fbWrap.classList.remove('hidden');
+                    if (fbUseBtn) {
+                        fbUseBtn.disabled = true;
+                        fbUseBtn.textContent = 'Facebook player enabled';
+                    }
+                }
+
+                if (fbUseBtn) {
+                    fbUseBtn.addEventListener('click', showFacebookPlayer);
+                }
+
+                // Optional auto-fallback: add ?platform=facebook (or ?fallback=facebook)
+                try {
+                    var params = new URLSearchParams(window.location.search || '');
+                    var platform = (params.get('platform') || params.get('fallback') || '').toLowerCase();
+                    if (platform === 'facebook') {
+                        showFacebookPlayer();
+                    }
+                } catch {
+                    // ignore
+                }
 
                 function embedUrl(videoId) {
                     return 'https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?rel=0';

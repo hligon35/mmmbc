@@ -86,26 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Contact page: optional toggle between Prayer Request and Contact Information forms
-    // (Some deployments/pages may only include the contact form.)
-    const prayerForm = document.getElementById('prayerRequestForm');
+    // Contact page: ensure the contact form is visible when present
     const contactForm = document.getElementById('contactInfoForm');
-    const prayerBtn = document.getElementById('showPrayerFormBtn');
-    const contactBtn = document.getElementById('showContactFormBtn');
-
-    if (prayerForm && contactForm && prayerBtn && contactBtn) {
-        const showForm = (formIdToShow) => {
-            const showPrayer = formIdToShow === 'prayerRequestForm';
-            prayerForm.classList.toggle('hidden', !showPrayer);
-            contactForm.classList.toggle('hidden', showPrayer);
-            prayerBtn.classList.toggle('active', showPrayer);
-            contactBtn.classList.toggle('active', !showPrayer);
-        };
-
-        prayerBtn.addEventListener('click', () => showForm('prayerRequestForm'));
-        contactBtn.addEventListener('click', () => showForm('contactInfoForm'));
-        showForm('prayerRequestForm');
-    } else if (contactForm) {
+    if (contactForm) {
         contactForm.classList.remove('hidden');
     }
 

@@ -1589,6 +1589,51 @@ footer {
     border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
+.contact-form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 0 12px;
+}
+
+.contact-form label {
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: rgba(255, 255, 255, 0.96);
+}
+
+.contact-form input:not([type="checkbox"]):not([type="radio"]),
+.contact-form textarea {
+    width: 100%;
+    padding: 12px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+    box-sizing: border-box;
+    font-size: 1rem;
+    line-height: 1.35;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: rgba(196, 97, 35, 0.75);
+    box-shadow: 0 0 0 3px rgba(196, 97, 35, 0.25);
+}
+
+.contact-form button.submit-btn {
+    width: min(260px, 100%);
+    display: block;
+    margin: 10px auto 0;
+}
+
 .contact-form h2 {
     text-align: center;
     margin-top: 12px;
@@ -1701,6 +1746,43 @@ footer {
     color: #ffffff;
     text-decoration: none;
     font-weight: 700;
+}
+
+.live-player-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+button.youtube-live-placeholder__button {
+    cursor: pointer;
+}
+
+.youtube-live-placeholder__button.secondary {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.youtube-live-placeholder__button.secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.live-player-actions--spaced {
+    margin-top: 10px;
+}
+
+.youtube-live-fallback {
+    margin-top: 12px;
+}
+
+.live-player-note {
+    margin: 10px 0 0;
+}
+
+.youtube-section__status--tight {
+    margin-top: -6px;
 }
 
 .youtube-live-placeholder__button:hover,
@@ -1914,7 +1996,7 @@ footer {
 
 .form-field input:not([type="checkbox"]):not([type="radio"]),
 .form-field select,
-.contact-form textarea {
+.form-field textarea {
     width: 100%;
     padding: 10px 12px;
     border-radius: 10px;
